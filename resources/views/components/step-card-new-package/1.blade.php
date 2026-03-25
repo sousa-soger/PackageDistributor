@@ -12,12 +12,14 @@
 
             <select
                 x-model="selectedRepository"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 focus:border-blue-500 focus:ring-blue-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
             >
                 <option value="" disabled>Select a repository...</option>
 
                 @foreach ($repositories as $repository)
-                    <option value="{{ $repository }}">{{ $repository }}</option>
+                    <option value="{{ $repository['id'] }}">
+                        {{ $repository['label'] }} ({{ $repository['owner'] }}/{{ $repository['repo'] }})
+                    </option>
                 @endforeach
             </select>
         </div>

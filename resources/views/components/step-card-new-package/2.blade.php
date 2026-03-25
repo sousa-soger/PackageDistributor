@@ -1,3 +1,4 @@
+{{--  
 <x-ui.card class="p-8 w-full">
     <div class="space-y-6">
         <div>
@@ -148,3 +149,4 @@
         </div>
     </div>
 </x-ui.card>
+--}}

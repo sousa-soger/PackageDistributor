@@ -9,9 +9,14 @@
             currentStep: 1,
             selectedRepository: '',
             selectedVersion: '',
+            repositories: @json($repositories),
             versionSearch: '',
             versionTypeFilter: '',
             allVersions: @js($versions)
+
+            get selectedRepoData() {
+                return this.repositories.find(repo => repo.id === this.selectedRepository) || null;
+            }
         }"
     >
         <div class="flex items-start justify-between">

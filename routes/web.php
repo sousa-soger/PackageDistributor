@@ -31,3 +31,5 @@ Route::get('/dummy-package', function () {
 
 //to get package data from github
 Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
+
+Route::get('/repo-data', [PackageController::class, 'repoData'])->name('packages.repo-data');

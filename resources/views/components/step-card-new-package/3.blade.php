@@ -1,4 +1,4 @@
-<x-ui.card class="p-8 w-full">
+{{--<x-ui.card class="p-8 w-full">
     <div class="space-y-6">
         <div>
             <h2 class="text-xl font-semibold text-slate-900">Configure Packaging Options</h2>
@@ -58,3 +58,4 @@
         </div>
     </div>
 </x-ui.card>
+--}}

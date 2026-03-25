@@ -1,4 +1,4 @@
-<x-ui.card class="p-8 w-full">
+{{--<x-ui.card class="p-8 w-full">
     <div class="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
 
         <!-- Left -->
@@ -183,3 +183,4 @@
         </div>
     </div>
 </x-ui.card>
+  --}}
