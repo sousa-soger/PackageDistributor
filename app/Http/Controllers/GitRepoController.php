@@ -17,14 +17,19 @@ class GitHubController extends Controller
             ], 422);
         }
 
-        $response = Http::withHeaders([
+        $headers = [
             'Accept' => 'application/vnd.github+json',
             'User-Agent' => 'Laravel-App',
-        ])->get("https://api.github.com/repos/{$repo}");
+            'Authorization' => 'Bearer ' . config('services.github.token'),
+        ];
+
+        $response = Http::withHeaders($headers)
+            ->get("https://api.github.com/repos/{$repo}");
 
         if ($response->failed()) {
             return response()->json([
                 'message' => 'Failed to fetch repository info',
+                'status' => $response->status(),
                 'error' => $response->json(),
             ], $response->status());
         }
@@ -43,6 +48,7 @@ class GitHubController extends Controller
         $headers = [
             'Accept' => 'application/vnd.github+json',
             'User-Agent' => 'Laravel-App',
+            'Authorization' => 'Bearer ' . config('services.github.token'),
         ];
 
         $branchesResponse = Http::withHeaders($headers)
@@ -51,21 +57,25 @@ class GitHubController extends Controller
         $tagsResponse = Http::withHeaders($headers)
             ->get("https://api.github.com/repos/{$repo}/tags");
 
-        $commitsResponse = Http::withHeaders($headers)
-            ->get("https://api.github.com/repos/{$repo}/commits", [
-                'per_page' => 15,
-            ]);
+        $releasesResponse = Http::withHeaders($headers)
+            ->get("https://api.github.com/repos/{$repo}/releases");
 
-        if ($branchesResponse->failed() || $tagsResponse->failed() || $commitsResponse->failed()) {
+        if ($branchesResponse->failed() || $tagsResponse->failed() || $releasesResponse->failed()) {
             return response()->json([
-                'message' => 'Failed to fetch repository versions'
+                'message' => 'Failed to fetch repository versions',
+                'branches_status' => $branchesResponse->status(),
+                'branches_error' => $branchesResponse->json(),
+                'tags_status' => $tagsResponse->status(),
+                'tags_error' => $tagsResponse->json(),
+                'releases_status' => $releasesResponse->status(),
+                'releases_error' => $releasesResponse->json(),
             ], 500);
         }
 
         return response()->json([
             'branches' => $branchesResponse->json(),
             'tags' => $tagsResponse->json(),
-            'commits' => $commitsResponse->json(),
+            'releases' => $releasesResponse->json(),
         ]);
     }
 }

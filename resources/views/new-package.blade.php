@@ -15,8 +15,10 @@
         repoData: null,
         repoBranches: [],
         repoTags: [],
-        repoCommits: [],
+        repoReleases: [],
         isLoadingVersions: false,
+
+        testurl:`/github/repo-info?repo=${encodeURIComponent(this.selectedRepository)}`,
 
         get selectedRepoData() {
             return this.repositories.find(repo => repo.id === this.selectedRepository) || null;
@@ -28,9 +30,13 @@
                 type: 'branch',
                 name: branch.name,
                 ref: branch.name,
-                sha: branch.commit?.sha || '',
-                subtitle: branch.commit?.sha ? `Latest SHA: ${branch.commit.sha.substring(0, 7)}` : 'Branch',
-                date: ''
+                subtitle: branch.commit?.sha
+                    ? `Latest SHA: ${branch.commit.sha.substring(0, 7)}`
+                    : 'Branch',
+                date: '',
+                asset_count: null,
+                is_prerelease: false,
+                is_draft: false
             }));
 
             const tags = this.repoTags.map(tag => ({
@@ -38,24 +44,32 @@
                 type: 'tag',
                 name: tag.name,
                 ref: tag.name,
-                sha: tag.commit?.sha || '',
-                subtitle: tag.commit?.sha ? `Tag SHA: ${tag.commit.sha.substring(0, 7)}` : 'Tag',
-                date: ''
+                subtitle: tag.commit?.sha
+                    ? `Tagged commit: ${tag.commit.sha.substring(0, 7)}`
+                    : 'Tag',
+                date: '',
+                asset_count: null,
+                is_prerelease: false,
+                is_draft: false
             }));
 
-            const commits = this.repoCommits.map(commit => ({
-                unique_key: `commit:${commit.sha}`,
-                type: 'commit',
-                name: commit.sha.substring(0, 7),
-                ref: commit.sha,
-                sha: commit.sha,
-                subtitle: commit.commit?.message || 'Commit',
-                date: commit.commit?.author?.date
-                    ? new Date(commit.commit.author.date).toLocaleDateString()
-                    : ''
+            const releases = this.repoReleases.map(release => ({
+                unique_key: `release:${release.id}`,
+                type: 'release',
+                name: release.name || release.tag_name,
+                ref: release.tag_name,
+                subtitle: release.tag_name
+                    ? `Tag: ${release.tag_name}`
+                    : 'Release',
+                date: release.published_at
+                    ? new Date(release.published_at).toLocaleDateString()
+                    : '',
+                asset_count: Array.isArray(release.assets) ? release.assets.length : 0,
+                is_prerelease: !!release.prerelease,
+                is_draft: !!release.draft
             }));
 
-            return [...branches, ...tags, ...commits];
+            return [...releases, ...tags, ...branches];
         },
 
         get filteredVersions() {
@@ -69,8 +83,8 @@
                 const matchesSearch =
                     keyword === '' ||
                     version.name.toLowerCase().includes(keyword) ||
-                    (version.subtitle && version.subtitle.toLowerCase().includes(keyword)) ||
-                    (version.sha && version.sha.toLowerCase().includes(keyword));
+                    version.subtitle.toLowerCase().includes(keyword) ||
+                    (version.ref && version.ref.toLowerCase().includes(keyword));
 
                 return matchesType && matchesSearch;
             });
@@ -93,7 +107,7 @@
 
                 this.repoData = data;
             } catch (error) {
-                console.error(error);
+                console.error('Failed to fetch repo info:', error);
                 this.repoData = null;
             }
         },
@@ -102,7 +116,7 @@
             if (!this.selectedRepository) {
                 this.repoBranches = [];
                 this.repoTags = [];
-                this.repoCommits = [];
+                this.repoReleases = [];
                 this.selectedVersion = '';
                 return;
             }
@@ -117,18 +131,18 @@
                 if (!response.ok) {
                     this.repoBranches = [];
                     this.repoTags = [];
-                    this.repoCommits = [];
+                    this.repoReleases = [];
                     return;
                 }
 
                 this.repoBranches = data.branches || [];
                 this.repoTags = data.tags || [];
-                this.repoCommits = data.commits || [];
+                this.repoReleases = data.releases || [];
             } catch (error) {
-                console.error(error);
+                console.error('Failed to fetch repo versions:', error);
                 this.repoBranches = [];
                 this.repoTags = [];
-                this.repoCommits = [];
+                this.repoReleases = [];
             } finally {
                 this.isLoadingVersions = false;
             }
@@ -235,6 +249,10 @@
                     <p>Selected Repository: <span x-text="selectedRepository" class="text-black"></span></p>
                     <p>Repositories: <span x-text="repositories.length" class="text-black"></span></p>
                     <p>Selected Version: <span x-text="selectedVersion" class="text-black"></span></p>
+                    <p>Repo Data: <span x-text="repoData ? 'Loaded' : 'Not Loaded'" class="text-black"></span></p>
+                    <p>Branches: <span x-text="repoBranches.length" class="text-black   "></span></p>
+                    <p>selectedRepoData: <span x-text="selectedRepoData" class="text-black"></span></p>
+                    <p>testurl: <span x-text="testurl" class="text-black"></span></p>
                 </div>
             </footer>
     </div>
