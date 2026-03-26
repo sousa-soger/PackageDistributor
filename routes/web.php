@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\GitHubController;
 use Illuminate\Support\Facades\Route;
 
 //** Route for Sidebar nav but only logged in user can view
@@ -9,7 +10,7 @@ Route::view('/user-auth', 'user-auth')->name('user-auth');
 
 Route::middleware('auth')->group(function(){
     Route::view('/', 'home')->name('home');
-    Route::get('/new-package', [PackageController::class, 'create'])->name('new-package');
+    Route::get('/new-package', [PackageController::class, 'index'])->name('new-package');
     Route::view('/settings', 'settings')->name('settings');
 });
 
@@ -33,3 +34,6 @@ Route::get('/dummy-package', function () {
 Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
 
 Route::get('/repo-data', [PackageController::class, 'repoData'])->name('packages.repo-data');
+
+Route::get('/github/repo-info', [GitHubController::class, 'repoInfo'])->name('github.repo-info');
+Route::get('/github/repo-versions', [GitHubController::class, 'repoVersions'])->name('github.repo-versions');

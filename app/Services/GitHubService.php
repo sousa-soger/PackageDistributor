@@ -15,8 +15,8 @@ class GitHubService
             'X-GitHub-Api-Version' => '2022-11-28',
         ];
 
-        if (!empty(env('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'))) {
-            $headers['Authorization'] = 'Bearer ' . env('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');
+        if (!empty(env('GITHUB_TOKEN'))) {
+            $headers['Authorization'] = 'Bearer ' . env('GITHUB_TOKEN');
         }
 
         return Http::withHeaders($headers);
@@ -60,4 +60,5 @@ class GitHubService
     {
         return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/compare/{$base}...{$head}")->json();
     }
+    
 }

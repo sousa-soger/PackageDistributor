@@ -1,4 +1,3 @@
-{{--  
 <x-ui.card class="p-8 w-full">
     <div class="space-y-6">
         <div>
@@ -12,6 +11,17 @@
         <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
             <span class="font-semibold">Repository:</span>
             <span x-text="selectedRepository || 'No repository selected'"></span>
+        </div>
+
+        <!-- Repo summary -->
+        <div
+            x-show="repoData"
+            class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700"
+        >
+            <div class="flex flex-col gap-1">
+                <span class="font-semibold text-slate-900" x-text="repoData?.full_name"></span>
+                <span class="text-slate-500" x-text="repoData?.description || 'No description available'"></span>
+            </div>
         </div>
 
         <!-- Search + Filter -->
@@ -46,85 +56,72 @@
             </div>
         </div>
 
+        <!-- Loading -->
+        <div
+            x-show="isLoadingVersions"
+            class="rounded-2xl border border-slate-200 bg-white px-5 py-8 text-sm text-slate-500"
+        >
+            Loading repository versions...
+        </div>
+
         <!-- Version List -->
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div
+            x-show="!isLoadingVersions"
+            class="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+        >
             <template
-                x-for="version in allVersions.filter(v => {
-                    const matchesRepository = v.app_name === selectedRepository;
-
-                    const matchesType = versionTypeFilter === '' || v.commit_type === versionTypeFilter;
-
-                    const keyword = versionSearch.toLowerCase();
-                    const matchesSearch =
-                        keyword === '' ||
-                        (v.version_name && v.version_name.toLowerCase().includes(keyword)) ||
-                        (v.update_type && v.update_type.toLowerCase().includes(keyword)) ||
-                        (v.release_notes && v.release_notes.toLowerCase().includes(keyword)) ||
-                        (v.commit_type && v.commit_type.toLowerCase().includes(keyword));
-
-                    return matchesRepository && matchesType && matchesSearch;
-                })"
-                :key="version.id"
+                x-for="version in filteredVersions"
+                :key="version.unique_key"
             >
                 <label
                     class="flex cursor-pointer items-start justify-between gap-4 border-t border-slate-200 px-5 py-5 first:border-t-0 hover:bg-slate-50"
-                    :class="selectedVersion == version.id ? 'border border-blue-500 bg-blue-50' : ''"
+                    :class="selectedVersion === version.unique_key ? 'border border-blue-500 bg-blue-50' : ''"
                 >
                     <div class="flex items-start gap-4">
                         <input
                             type="radio"
                             name="selected_version"
                             class="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
-                            :value="version.id"
+                            :value="version.unique_key"
                             x-model="selectedVersion"
                         >
 
                         <div class="space-y-1">
                             <div class="flex items-center gap-3">
-                                <h3 class="text-sm font-semibold text-slate-900" x-text="version.version_name"></h3>
+                                <h3
+                                    class="text-sm font-semibold text-slate-900"
+                                    x-text="version.name">
+                                </h3>
 
                                 <span
-                                    x-show="version.is_active"
-                                    class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700"
-                                >
-                                    ACTIVE
+                                    class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600"
+                                    x-text="version.type">
                                 </span>
 
-                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 uppercase"
-                                      x-text="version.commit_type">
+                                <span
+                                    x-show="version.type === 'branch' && version.name === repoData?.default_branch"
+                                    class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700"
+                                >
+                                    DEFAULT
                                 </span>
                             </div>
 
                             <p class="text-xs text-slate-700">
-                                <span class="capitalize" x-text="version.update_type"></span>
-                                <span> • </span>
-                                <span x-text="version.release_notes"></span>
+                                <span x-text="version.subtitle"></span>
                             </p>
                         </div>
                     </div>
 
-                    <div class="shrink-0 pt-1 text-xs text-slate-500"
-                         x-text="new Date(version.created_at).toLocaleDateString()">
+                    <div
+                        class="shrink-0 pt-1 text-xs text-slate-500"
+                        x-text="version.date || ''">
                     </div>
                 </label>
             </template>
 
             <!-- Empty state -->
             <div
-                x-show="allVersions.filter(v => {
-                    const matchesRepository = v.app_name === selectedRepository;
-                    const matchesType = versionTypeFilter === '' || v.commit_type === versionTypeFilter;
-
-                    const keyword = versionSearch.toLowerCase();
-                    const matchesSearch =
-                        keyword === '' ||
-                        (v.version_name && v.version_name.toLowerCase().includes(keyword)) ||
-                        (v.update_type && v.update_type.toLowerCase().includes(keyword)) ||
-                        (v.release_notes && v.release_notes.toLowerCase().includes(keyword)) ||
-                        (v.commit_type && v.commit_type.toLowerCase().includes(keyword));
-
-                    return matchesRepository && matchesType && matchesSearch;
-                }).length === 0"
+                x-show="filteredVersions.length === 0"
                 class="px-5 py-8 text-sm text-slate-500"
             >
                 No versions found for the selected repository.
@@ -149,4 +146,3 @@
         </div>
     </div>
 </x-ui.card>
---}}
