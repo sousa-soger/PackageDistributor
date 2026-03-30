@@ -27,7 +27,7 @@
         <div class="flex items-center justify-end gap-3 pt-2">
             <x-ui.primary-button
                 type="button"
-                @click="if (selectedRepository) { selectedVersion = ''; currentStep = 2 }"
+                @click="if (selectedRepository) { selectedVersionBase = ''; selectedVersionHead = ''; currentStep = 2 }"
             >
                 Continue
             </x-ui.primary-button>

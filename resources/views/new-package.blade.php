@@ -6,25 +6,20 @@
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="{
         currentStep: 1,
         selectedRepository: '',
-        selectedVersion: '',
         repositories: @js($repositories),
 
-        versionSearch: '',
-        versionTypeFilter: '',
+        versionSearchBase: '',
+        versionSearchHead: '',
+        versionTypeFilterBase: '',
+        versionTypeFilterHead: '',
+        selectedVersionBase: '',
+        selectedVersionHead: '',
 
         repoData: null,
         repoBranches: [],
         repoTags: [],
         repoReleases: [],
         isLoadingVersions: false,
-
-        get testurl() {
-            return `/github/repo-info?repo=${encodeURIComponent(this.selectedRepository || '')}`;
-        },
-
-        get selectedRepoData() {
-            return this.repositories.find(repo => repo.id === this.selectedRepository) || null;
-        },
 
         get allRepoVersions() {
             const branches = this.repoBranches.map(branch => ({
@@ -74,13 +69,13 @@
             return [...releases, ...tags, ...branches];
         },
 
-        get filteredVersions() {
-            const keyword = this.versionSearch.trim().toLowerCase();
+        filterVersions(search, typeFilter) {
+            const keyword = (search || '').trim().toLowerCase();
 
             return this.allRepoVersions.filter(version => {
                 const matchesType =
-                    this.versionTypeFilter === '' ||
-                    version.type === this.versionTypeFilter;
+                    typeFilter === '' ||
+                    version.type === typeFilter;
 
                 const matchesSearch =
                     keyword === '' ||
@@ -90,6 +85,28 @@
 
                 return matchesType && matchesSearch;
             });
+        },
+
+        get filteredVersionsBase() {
+            return this.filterVersions(this.versionSearchBase, this.versionTypeFilterBase);
+        },
+
+        get filteredVersionsHead() {
+            return this.filterVersions(this.versionSearchHead, this.versionTypeFilterHead);
+        },
+
+        get selectedBaseLabel() {
+            const v = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionBase);
+            return v ? v.name : '';
+        },
+
+        get selectedHeadLabel() {
+            const v = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionHead);
+            return v ? v.name : '';
+        },
+
+        get comparisonReady() {
+            return !!(this.selectedVersionBase && this.selectedVersionHead);
         },
 
         async fetchRepoData() {
@@ -119,12 +136,14 @@
                 this.repoBranches = [];
                 this.repoTags = [];
                 this.repoReleases = [];
-                this.selectedVersion = '';
+                this.selectedVersionBase = '';
+                this.selectedVersionHead = '';
                 return;
             }
 
             this.isLoadingVersions = true;
-            this.selectedVersion = '';
+            this.selectedVersionBase = '';
+            this.selectedVersionHead = '';
 
             try {
                 const response = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
@@ -250,11 +269,9 @@
                     <p>Current Step: <span x-text="currentStep" class="text-black"></span></p>
                     <p>Selected Repository: <span x-text="selectedRepository" class="text-black"></span></p>
                     <p>Repositories: <span x-text="repositories.length" class="text-black"></span></p>
-                    <p>Selected Version: <span x-text="selectedVersion" class="text-black"></span></p>
+                    <p>Base / Head: <span x-text="selectedVersionBase" class="text-black"></span> → <span x-text="selectedVersionHead" class="text-black"></span></p>
                     <p>Repo Data: <span x-text="repoData ? 'Loaded' : 'Not Loaded'" class="text-black"></span></p>
                     <p>Branches: <span x-text="repoBranches.length" class="text-black   "></span></p>
-                    <p>selectedRepoData: <span x-text="selectedRepoData" class="text-black"></span></p>
-                    <p>testurl: <span x-text="testurl" class="text-black"></span></p>
                 </div>
             </footer>
     </div>

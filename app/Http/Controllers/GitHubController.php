@@ -2,29 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\GitHubService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class GitHubController extends Controller
 {
-    public function repoInfo(Request $request)
+    public function repoInfo(Request $request, GitHubService $github)
     {
         $repo = $request->query('repo');
 
-        if (!$repo) {
+        if (! $repo) {
             return response()->json([
                 'message' => 'Repository is required',
             ], 422);
         }
 
-        $headers = [
-            'Accept' => 'application/vnd.github+json',
-            'User-Agent' => 'Laravel-App',
-            'Authorization' => 'Bearer ' . config('services.github.token'),
-        ];
+        $parsed = $this->parseOwnerRepo($repo);
+        if ($parsed === null) {
+            return response()->json([
+                'message' => 'Invalid repository format (expected owner/repo)',
+            ], 422);
+        }
 
-        $response = Http::withHeaders($headers)
-            ->get("https://api.github.com/repos/{$repo}");
+        [$owner, $name] = $parsed;
+
+        $response = $github->getRepository($owner, $name);
 
         if ($response->failed()) {
             return response()->json([
@@ -37,28 +39,26 @@ class GitHubController extends Controller
         return response()->json($response->json());
     }
 
-    public function repoVersions(Request $request)
+    public function repoVersions(Request $request, GitHubService $github)
     {
         $repo = $request->query('repo');
 
-        if (!$repo) {
+        if (! $repo) {
             return response()->json(['message' => 'Repository is required'], 422);
         }
 
-        $headers = [
-            'Accept' => 'application/vnd.github+json',
-            'User-Agent' => 'Laravel-App',
-            'Authorization' => 'Bearer ' . config('services.github.token'),
-        ];
+        $parsed = $this->parseOwnerRepo($repo);
+        if ($parsed === null) {
+            return response()->json([
+                'message' => 'Invalid repository format (expected owner/repo)',
+            ], 422);
+        }
 
-        $branchesResponse = Http::withHeaders($headers)
-            ->get("https://api.github.com/repos/{$repo}/branches");
+        [$owner, $name] = $parsed;
 
-        $tagsResponse = Http::withHeaders($headers)
-            ->get("https://api.github.com/repos/{$repo}/tags");
-
-        $releasesResponse = Http::withHeaders($headers)
-            ->get("https://api.github.com/repos/{$repo}/releases");
+        $branchesResponse = $github->getBranches($owner, $name);
+        $tagsResponse = $github->getTags($owner, $name);
+        $releasesResponse = $github->getReleases($owner, $name);
 
         if ($branchesResponse->failed() || $tagsResponse->failed() || $releasesResponse->failed()) {
             return response()->json([
@@ -77,5 +77,19 @@ class GitHubController extends Controller
             'tags' => $tagsResponse->json(),
             'releases' => $releasesResponse->json(),
         ]);
+    }
+
+    /**
+     * @return array{0: string, 1: string}|null
+     */
+    protected function parseOwnerRepo(string $repo): ?array
+    {
+        $parts = explode('/', $repo, 2);
+
+        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
+            return null;
+        }
+
+        return [$parts[0], $parts[1]];
     }
 }

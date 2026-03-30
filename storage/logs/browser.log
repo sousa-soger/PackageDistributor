@@ -5126,3 +5126,329 @@ Expression: "allVersions.filter(v => {
 [2026-03-30 02:58:58] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
     at addLog (http://localhost:8000/new-package:965:20)
     at HTMLDocument.startPackaging (http://localhost:8000/new-package:1005:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T02:58:58.618Z"} 
+[2026-03-30 03:22:36] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:965:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1005:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T03:22:36.432Z"} 
+[2026-03-30 03:53:44] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:965:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1005:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T03:53:43.608Z"} 
+[2026-03-30 03:54:36] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:965:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1005:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T03:54:35.916Z"} 
+[2026-03-30 04:02:06] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T04:02:05.543Z"} 
+[2026-03-30 04:02:06] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:02:05.334Z"} 
+[2026-03-30 04:02:13] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T04:02:13.706Z"} 
+[2026-03-30 04:02:14] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:02:13.863Z"} 
+[2026-03-30 04:02:22] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T04:02:21.560Z"} 
+[2026-03-30 04:02:22] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:02:21.692Z"} 
+[2026-03-30 04:04:11] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T04:04:11.058Z"} 
+[2026-03-30 04:04:12] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:04:11.227Z"} 
+[2026-03-30 04:04:18] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:04:17.496Z"} 
+[2026-03-30 04:04:21] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T04:04:21.089Z"} 
+[2026-03-30 04:04:26] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T04:04:25.859Z"} 
+[2026-03-30 04:04:27] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:04:26.047Z"} 
+[2026-03-30 05:12:47] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T04:05:16.239Z"} 
+[2026-03-30 05:12:53] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:12:52.370Z"} 
+[2026-03-30 05:12:53] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:12:52.733Z"} 
+[2026-03-30 05:21:45] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:21:44.477Z"} 
+[2026-03-30 05:21:45] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:21:44.853Z"} 
+[2026-03-30 05:21:59] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:21:59.283Z"} 
+[2026-03-30 05:22:00] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:21:59.618Z"} 
+[2026-03-30 05:22:03] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:22:03.370Z"} 
+[2026-03-30 05:22:04] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:955:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:995:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:22:03.811Z"} 
+[2026-03-30 05:24:06] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:954:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:994:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:24:06.206Z"} 
+[2026-03-30 05:24:06] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:954:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:994:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:24:06.317Z"} 
+[2026-03-30 05:24:14] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:954:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:994:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:24:13.691Z"} 
+[2026-03-30 05:24:14] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:954:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:994:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:24:13.850Z"} 
+[2026-03-30 05:24:45] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1066:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1106:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:24:45.154Z"} 
+[2026-03-30 05:24:45] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1066:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1106:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:24:45.320Z"} 
+[2026-03-30 05:25:48] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1068:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1108:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:25:47.536Z"} 
+[2026-03-30 05:25:48] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1068:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1108:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:25:47.703Z"} 
+[2026-03-30 05:26:55] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1072:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1112:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:26:55.217Z"} 
+[2026-03-30 05:26:55] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1072:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1112:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:26:55.091Z"} 
+[2026-03-30 05:28:22] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1072:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1112:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:28:22.553Z"} 
+[2026-03-30 05:28:23] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1072:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1112:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:28:22.673Z"} 
+[2026-03-30 05:29:56] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1075:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1115:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:29:56.037Z"} 
+[2026-03-30 05:29:56] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1075:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1115:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:29:56.171Z"} 
+[2026-03-30 05:31:18] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:31:18.092Z"} 
+[2026-03-30 05:31:18] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:31:18.221Z"} 
+[2026-03-30 05:32:17] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:32:17.239Z"} 
+[2026-03-30 05:32:17] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:32:17.356Z"} 
+[2026-03-30 05:33:37] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:33:36.993Z"} 
+[2026-03-30 05:33:37] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:33:37.127Z"} 
+[2026-03-30 05:38:14] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:13.520Z"} 
+[2026-03-30 05:38:14] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1078:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1118:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:13.902Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionSearchBase is not defined
+
+Expression: "versionSearchBase" null 176 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.923Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionTypeFilterBase is not defined
+
+Expression: "versionTypeFilterBase" 179 180 181 182 null 178 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.923Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionSearchHead is not defined
+
+Expression: "versionSearchHead" null 194 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.923Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionTypeFilterHead is not defined
+
+Expression: "versionTypeFilterHead" 197 198 199 200 null 196 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.923Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedVersionBase is not defined
+
+Expression: "selectedVersionBase" null null 203 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.923Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedBaseLabel is not defined
+
+Expression: "selectedBaseLabel" null 204 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsBase is not defined
+
+Expression: "filteredVersionsBase" null null 'base-' + version.unique_key false 207 'base-' + version.unique_key null null    {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsBase is not defined
+
+Expression: "filteredVersionsBase.length === 0" null 208 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedVersionHead is not defined
+
+Expression: "selectedVersionHead" null null 215 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedHeadLabel is not defined
+
+Expression: "selectedHeadLabel" null 216 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsHead is not defined
+
+Expression: "filteredVersionsHead" null null 'head-' + version.unique_key false 219 'head-' + version.unique_key null null    {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsHead is not defined
+
+Expression: "filteredVersionsHead.length === 0" null 220 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.924Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.936Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.937Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.937Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.937Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.937Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.937Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.937Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.938Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.939Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.939Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.939Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.939Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.939Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:30.939Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionSearchBase is not defined
+
+Expression: "versionSearchBase" null 176 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.933Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionTypeFilterBase is not defined
+
+Expression: "versionTypeFilterBase" 179 180 181 182 null 178 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.934Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionSearchHead is not defined
+
+Expression: "versionSearchHead" null 194 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.934Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: versionTypeFilterHead is not defined
+
+Expression: "versionTypeFilterHead" 197 198 199 200 null 196 null null     {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.934Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedVersionBase is not defined
+
+Expression: "selectedVersionBase" null null 203 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.934Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedBaseLabel is not defined
+
+Expression: "selectedBaseLabel" null 204 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.935Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsBase is not defined
+
+Expression: "filteredVersionsBase" null null 'base-' + version.unique_key false 207 'base-' + version.unique_key null null   {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.935Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsBase is not defined
+
+Expression: "filteredVersionsBase.length === 0" null 208 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.935Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedVersionHead is not defined
+
+Expression: "selectedVersionHead" null null 215 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.935Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: selectedHeadLabel is not defined
+
+Expression: "selectedHeadLabel" null 216 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.935Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsHead is not defined
+
+Expression: "filteredVersionsHead" null null 'head-' + version.unique_key false 219 'head-' + version.unique_key null null   {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.936Z"} 
+[2026-03-30 05:38:31] local.WARNING: Alpine Expression Error: filteredVersionsHead is not defined
+
+Expression: "filteredVersionsHead.length === 0" null 220 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.936Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.949Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.950Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.950Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.950Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.950Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.950Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.950Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1084:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1124:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:30.951Z"} 
+[2026-03-30 05:38:31] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1084:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1124:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:31.114Z"} 
+[2026-03-30 05:38:51] local.WARNING: Alpine Expression Error: selectedVersion is not defined
+
+Expression: "selectedVersion" null 238 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:50.950Z"} 
+[2026-03-30 05:38:51] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:50.954Z"} 
+[2026-03-30 05:38:51] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:50.954Z"} 
+[2026-03-30 05:38:51] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1109:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1149:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:38:50.960Z"} 
+[2026-03-30 05:38:51] local.WARNING: Alpine Expression Error: selectedVersion is not defined
+
+Expression: "selectedVersion" null 238 null  {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:50.775Z"} 
+[2026-03-30 05:38:51] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:50.782Z"} 
+[2026-03-30 05:38:51] local.ERROR: Script error. null 0 0 null {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:50.782Z"} 
+[2026-03-30 05:38:51] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1109:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1149:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:38:50.782Z"} 
+[2026-03-30 05:39:03] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1111:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1151:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:39:03.276Z"} 
+[2026-03-30 05:39:03] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1111:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1151:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:39:03.119Z"} 
+[2026-03-30 05:39:24] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1111:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1151:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:39:24.096Z"} 
+[2026-03-30 05:39:24] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1111:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1151:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:39:23.854Z"} 
+[2026-03-30 05:39:32] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1111:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1151:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:39:32.071Z"} 
+[2026-03-30 05:39:32] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1111:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1151:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:39:31.911Z"} 
+[2026-03-30 05:39:39] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:39:38.424Z"} 
+[2026-03-30 05:39:39] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:39:38.451Z"} 
+[2026-03-30 05:47:14] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:47:14.540Z"} 
+[2026-03-30 05:47:15] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:47:14.671Z"} 
+[2026-03-30 05:47:28] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T05:47:28.036Z"} 
+[2026-03-30 05:47:28] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T05:47:28.178Z"} 
+[2026-03-30 06:03:27] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T06:03:26.489Z"} 
+[2026-03-30 06:03:27] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T06:03:26.676Z"} 
+[2026-03-30 06:04:48] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T06:04:48.472Z"} 
+[2026-03-30 06:04:48] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T06:04:48.652Z"} 
