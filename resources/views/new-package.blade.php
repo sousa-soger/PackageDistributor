@@ -18,7 +18,9 @@
         repoReleases: [],
         isLoadingVersions: false,
 
-        testurl:`/github/repo-info?repo=${encodeURIComponent(this.selectedRepository)}`,
+        get testurl() {
+            return `/github/repo-info?repo=${encodeURIComponent(this.selectedRepository || '')}`;
+        },
 
         get selectedRepoData() {
             return this.repositories.find(repo => repo.id === this.selectedRepository) || null;

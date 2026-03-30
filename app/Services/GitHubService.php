@@ -13,33 +13,40 @@ class GitHubService
         $headers = [
             'Accept' => 'application/vnd.github+json',
             'X-GitHub-Api-Version' => '2022-11-28',
+            'User-Agent' => 'Laravel-App',
         ];
 
-        if (!empty(env('GITHUB_TOKEN'))) {
-            $headers['Authorization'] = 'Bearer ' . env('GITHUB_TOKEN');
+        $token = config('services.github.token');
+        if (! empty($token)) {
+            $headers['Authorization'] = 'Bearer ' . $token;
         }
 
         return Http::withHeaders($headers);
     }
 
-    public function getRepo(string $owner, string $repo)
+    public function getRepo(string $owner, string $repo): ?array
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}")->json();
+        $response = $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}");
+
+        return $response->successful() ? $response->json() : null;
     }
 
-    public function getBranches(string $owner, string $repo)
+    public function getBranches(string $owner, string $repo): array
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/branches")->json();
+        $response = $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/branches");
+        return $response->successful() ? $response->json() : [];
     }
 
-    public function getTags(string $owner, string $repo)
+    public function getTags(string $owner, string $repo): array
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/tags")->json();
+        $response = $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/tags");
+        return $response->successful() ? $response->json() : [];
     }
 
-    public function getReleases(string $owner, string $repo)
+    public function getReleases(string $owner, string $repo): array
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/releases")->json();
+        $response = $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/releases");
+        return $response->successful() ? $response->json() : [];
     }
 
     public function getFile(string $owner, string $repo, string $path, string $ref = 'main')
