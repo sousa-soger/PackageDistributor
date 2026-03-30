@@ -5452,3 +5452,6 @@ Expression: "selectedVersion" null 238 null  {"url":"http://localhost:8000/new-p
 [2026-03-30 06:04:48] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
     at addLog (http://localhost:8000/new-package:1113:20)
     at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.6.22 Chrome/142.0.7444.265 Electron/39.8.1 Safari/537.36","timestamp":"2026-03-30T06:04:48.652Z"} 
+[2026-03-30 07:22:19] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'appendChild') TypeError: Cannot read properties of null (reading 'appendChild')
+    at addLog (http://localhost:8000/new-package:1113:20)
+    at HTMLDocument.startPackaging (http://localhost:8000/new-package:1153:17) {"url":"http://localhost:8000/new-package","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","timestamp":"2026-03-30T07:22:18.565Z"} 
