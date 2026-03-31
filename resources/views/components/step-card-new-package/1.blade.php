@@ -12,12 +12,14 @@
 
             <select
                 x-model="selectedRepository"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 focus:border-blue-500 focus:ring-blue-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
             >
                 <option value="" disabled>Select a repository...</option>
 
                 @foreach ($repositories as $repository)
-                    <option value="{{ $repository }}">{{ $repository }}</option>
+                    <option value="{{ $repository['id'] }}">
+                        {{ $repository['label'] }} ({{ $repository['owner'] }}/{{ $repository['repo'] }})
+                    </option>
                 @endforeach
             </select>
         </div>
@@ -25,7 +27,7 @@
         <div class="flex items-center justify-end gap-3 pt-2">
             <x-ui.primary-button
                 type="button"
-                @click="if (selectedRepository) { selectedVersion = ''; currentStep = 2 }"
+                @click="if (selectedRepository) { selectedVersionBase = ''; selectedVersionHead = ''; currentStep = 2 }"
             >
                 Continue
             </x-ui.primary-button>
