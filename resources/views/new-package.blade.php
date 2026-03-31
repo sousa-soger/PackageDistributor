@@ -4,179 +4,180 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="{
-        currentStep: 1,
-        selectedRepository: '',
-        repositories: @js($repositories),
+                                        currentStep: 1,
+                                        selectedRepository: '',
+                                        repositories: @js($repositories),
 
-        versionSearchBase: '',
-        versionSearchHead: '',
-        versionTypeFilterBase: '',
-        versionTypeFilterHead: '',
-        selectedVersionBase: '',
-        selectedVersionHead: '',
+                                        selectedEnvironment: '',
+                                        selectedFormat: '',
 
-        repoData: null,
-        repoBranches: [],
-        repoTags: [],
-        repoReleases: [],
-        isLoadingVersions: false,
+                                        versionSearchBase: '',
+                                        versionSearchHead: '',
+                                        versionTypeFilterBase: '',
+                                        versionTypeFilterHead: '',
+                                        selectedVersionBase: '',
+                                        selectedVersionHead: '',
 
-        get allRepoVersions() {
-            const branches = this.repoBranches.map(branch => ({
-                unique_key: `branch:${branch.name}`,
-                type: 'branch',
-                name: branch.name,
-                ref: branch.name,
-                subtitle: branch.commit?.sha
-                    ? `Latest SHA: ${branch.commit.sha.substring(0, 7)}`
-                    : 'Branch',
-                date: '',
-                asset_count: null,
-                is_prerelease: false,
-                is_draft: false
-            }));
+                                        repoData: null,
+                                        repoBranches: [],
+                                        repoTags: [],
+                                        repoReleases: [],
+                                        isLoadingVersions: false,
 
-            const tags = this.repoTags.map(tag => ({
-                unique_key: `tag:${tag.name}`,
-                type: 'tag',
-                name: tag.name,
-                ref: tag.name,
-                subtitle: tag.commit?.sha
-                    ? `Tagged commit: ${tag.commit.sha.substring(0, 7)}`
-                    : 'Tag',
-                date: '',
-                asset_count: null,
-                is_prerelease: false,
-                is_draft: false
-            }));
+                                        get allRepoVersions() {
+                                            const branches = this.repoBranches.map(branch => ({
+                                                unique_key: `branch:${branch.name}`,
+                                                type: 'branch',
+                                                name: branch.name,
+                                                ref: branch.name,
+                                                subtitle: branch.commit?.sha
+                                                    ? `Latest SHA: ${branch.commit.sha.substring(0, 7)}`
+                                                    : 'Branch',
+                                                date: '',
+                                                asset_count: null,
+                                                is_prerelease: false,
+                                                is_draft: false
+                                            }));
 
-            const releases = this.repoReleases.map(release => ({
-                unique_key: `release:${release.id}`,
-                type: 'release',
-                name: release.name || release.tag_name,
-                ref: release.tag_name,
-                subtitle: release.tag_name
-                    ? `Tag: ${release.tag_name}`
-                    : 'Release',
-                date: release.published_at
-                    ? new Date(release.published_at).toLocaleDateString()
-                    : '',
-                asset_count: Array.isArray(release.assets) ? release.assets.length : 0,
-                is_prerelease: !!release.prerelease,
-                is_draft: !!release.draft
-            }));
+                                            const tags = this.repoTags.map(tag => ({
+                                                unique_key: `tag:${tag.name}`,
+                                                type: 'tag',
+                                                name: tag.name,
+                                                ref: tag.name,
+                                                subtitle: tag.commit?.sha
+                                                    ? `Tagged commit: ${tag.commit.sha.substring(0, 7)}`
+                                                    : 'Tag',
+                                                date: '',
+                                                asset_count: null,
+                                                is_prerelease: false,
+                                                is_draft: false
+                                            }));
 
-            return [...releases, ...tags, ...branches];
-        },
+                                            const releases = this.repoReleases.map(release => ({
+                                                unique_key: `release:${release.id}`,
+                                                type: 'release',
+                                                name: release.name || release.tag_name,
+                                                ref: release.tag_name,
+                                                subtitle: release.tag_name
+                                                    ? `Tag: ${release.tag_name}`
+                                                    : 'Release',
+                                                date: release.published_at
+                                                    ? new Date(release.published_at).toLocaleDateString()
+                                                    : '',
+                                                asset_count: Array.isArray(release.assets) ? release.assets.length : 0,
+                                                is_prerelease: !!release.prerelease,
+                                                is_draft: !!release.draft
+                                            }));
 
-        filterVersions(search, typeFilter) {
-            const keyword = (search || '').trim().toLowerCase();
+                                            return [...releases, ...tags, ...branches];
+                                        },
 
-            return this.allRepoVersions.filter(version => {
-                const matchesType =
-                    typeFilter === '' ||
-                    version.type === typeFilter;
+                                        filterVersions(search, typeFilter) {
+                                            const keyword = (search || '').trim().toLowerCase();
 
-                const matchesSearch =
-                    keyword === '' ||
-                    version.name.toLowerCase().includes(keyword) ||
-                    version.subtitle.toLowerCase().includes(keyword) ||
-                    (version.ref && version.ref.toLowerCase().includes(keyword));
+                                            return this.allRepoVersions.filter(version => {
+                                                const matchesType =
+                                                    typeFilter === '' ||
+                                                    version.type === typeFilter;
 
-                return matchesType && matchesSearch;
-            });
-        },
+                                                const matchesSearch =
+                                                    keyword === '' ||
+                                                    version.name.toLowerCase().includes(keyword) ||
+                                                    version.subtitle.toLowerCase().includes(keyword) ||
+                                                    (version.ref && version.ref.toLowerCase().includes(keyword));
 
-        get filteredVersionsBase() {
-            return this.filterVersions(this.versionSearchBase, this.versionTypeFilterBase);
-        },
+                                                return matchesType && matchesSearch;
+                                            });
+                                        },
 
-        get filteredVersionsHead() {
-            return this.filterVersions(this.versionSearchHead, this.versionTypeFilterHead);
-        },
+                                        get filteredVersionsBase() {
+                                            return this.filterVersions(this.versionSearchBase, this.versionTypeFilterBase);
+                                        },
 
-        get selectedBaseLabel() {
-            const v = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionBase);
-            return v ? v.name : '';
-        },
+                                        get filteredVersionsHead() {
+                                            return this.filterVersions(this.versionSearchHead, this.versionTypeFilterHead);
+                                        },
 
-        get selectedHeadLabel() {
-            const v = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionHead);
-            return v ? v.name : '';
-        },
+                                        get selectedBaseLabel() {
+                                            const v = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionBase);
+                                            return v ? v.name : '';
+                                        },
 
-        get comparisonReady() {
-            return !!(this.selectedVersionBase && this.selectedVersionHead);
-        },
+                                        get selectedHeadLabel() {
+                                            const v = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionHead);
+                                            return v ? v.name : '';
+                                        },
 
-        async fetchRepoData() {
-            if (!this.selectedRepository) {
-                this.repoData = null;
-                return;
-            }
+                                        get comparisonReady() {
+                                            return !!(this.selectedVersionBase && this.selectedVersionHead);
+                                        },
 
-            try {
-                const response = await fetch(`/github/repo-info?repo=${encodeURIComponent(this.selectedRepository)}`);
-                const data = await response.json();
+                                        async fetchRepoData() {
+                                            if (!this.selectedRepository) {
+                                                this.repoData = null;
+                                                return;
+                                            }
 
-                if (!response.ok) {
-                    this.repoData = null;
-                    return;
-                }
+                                            try {
+                                                const response = await fetch(`/github/repo-info?repo=${encodeURIComponent(this.selectedRepository)}`);
+                                                const data = await response.json();
 
-                this.repoData = data;
-            } catch (error) {
-                console.error('Failed to fetch repo info:', error);
-                this.repoData = null;
-            }
-        },
+                                                if (!response.ok) {
+                                                    this.repoData = null;
+                                                    return;
+                                                }
 
-        async fetchRepoVersions() {
-            if (!this.selectedRepository) {
-                this.repoBranches = [];
-                this.repoTags = [];
-                this.repoReleases = [];
-                this.selectedVersionBase = '';
-                this.selectedVersionHead = '';
-                return;
-            }
+                                                this.repoData = data;
+                                            } catch (error) {
+                                                console.error('Failed to fetch repo info:', error);
+                                                this.repoData = null;
+                                            }
+                                        },
 
-            this.isLoadingVersions = true;
-            this.selectedVersionBase = '';
-            this.selectedVersionHead = '';
+                                        async fetchRepoVersions() {
+                                            if (!this.selectedRepository) {
+                                                this.repoBranches = [];
+                                                this.repoTags = [];
+                                                this.repoReleases = [];
+                                                this.selectedVersionBase = '';
+                                                this.selectedVersionHead = '';
+                                                return;
+                                            }
 
-            try {
-                const response = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
-                const data = await response.json();
+                                            this.isLoadingVersions = true;
+                                            this.selectedVersionBase = '';
+                                            this.selectedVersionHead = '';
 
-                if (!response.ok) {
-                    this.repoBranches = [];
-                    this.repoTags = [];
-                    this.repoReleases = [];
-                    return;
-                }
+                                            try {
+                                                const response = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
+                                                const data = await response.json();
 
-                this.repoBranches = data.branches || [];
-                this.repoTags = data.tags || [];
-                this.repoReleases = data.releases || [];
-            } catch (error) {
-                console.error('Failed to fetch repo versions:', error);
-                this.repoBranches = [];
-                this.repoTags = [];
-                this.repoReleases = [];
-            } finally {
-                this.isLoadingVersions = false;
-            }
-        }
-    }"
-    x-init="
-        $watch('selectedRepository', async () => {
-            await fetchRepoData();
-            await fetchRepoVersions();
-        });
-    "
-    >
-            
+                                                if (!response.ok) {
+                                                    this.repoBranches = [];
+                                                    this.repoTags = [];
+                                                    this.repoReleases = [];
+                                                    return;
+                                                }
+
+                                                this.repoBranches = data.branches || [];
+                                                this.repoTags = data.tags || [];
+                                                this.repoReleases = data.releases || [];
+                                            } catch (error) {
+                                                console.error('Failed to fetch repo versions:', error);
+                                                this.repoBranches = [];
+                                                this.repoTags = [];
+                                                this.repoReleases = [];
+                                            } finally {
+                                                this.isLoadingVersions = false;
+                                            }
+                                        }
+                                    }" x-init="
+                                        $watch('selectedRepository', async () => {
+                                            await fetchRepoData();
+                                            await fetchRepoVersions();
+                                        });
+                                    ">
+
         <div class="flex items-start justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-slate-900">Create Distribution Package</h1>
@@ -205,30 +206,30 @@
             <div x-show="currentStep > 2">
                 <x-ui.step-item number="✓" label="Version Selection" :completed="true" />
             </div>
-
-            <div x-show="currentStep < 3">
+            {{-- Make sure to remove this button when done --}}
+            <button x-show="currentStep < 3" @click="currentStep = 3">
                 <x-ui.step-item number="3" label="Packaging Options" />
-            </div>
+            </button>
             <div x-show="currentStep === 3">
                 <x-ui.step-item number="3" label="Packaging Options" :active="true" />
             </div>
-            <div x-show="currentStep > 3">
+            <button x-show="currentStep > 3" @click="currentStep = 3">
                 <x-ui.step-item number="✓" label="Packaging Options" :completed="true" />
-            </div>
-
-            <div x-show="currentStep < 4">
+            </button>
+            {{-- Make sure to remove this button when done --}}
+            <button x-show="currentStep < 4" @click="currentStep = 4">
                 <x-ui.step-item number="4" label="Packaging" />
-            </div>
+            </button>
             <div x-show="currentStep === 4">
                 <x-ui.step-item number="4" label="Packaging" :active="true" />
             </div>
             <div x-show="currentStep > 4">
                 <x-ui.step-item number="✓" label="Packaging" :completed="true" />
             </div>
-
-            <div x-show="currentStep < 5">
+            {{-- Make sure to remove this button when done --}}
+            <button x-show="currentStep < 5" @click="currentStep = 5">
                 <x-ui.step-item number="5" label="Download" :last="true" />
-            </div>
+            </button>
             <div x-show="currentStep === 5">
                 <x-ui.step-item number="5" label="Download" :active="true" :last="true" />
             </div>
@@ -262,18 +263,21 @@
             @include('components.step-card-new-package.5')
         </div>
 
-            {{-- Testing purposes --}}
-            <footer class="pt-6 text-sm text-slate-500">
-                <p>Testing Information:</p>
-                <div>
-                    <p>Current Step: <span x-text="currentStep" class="text-black"></span></p>
-                    <p>Selected Repository: <span x-text="selectedRepository" class="text-black"></span></p>
-                    <p>Repositories: <span x-text="repositories.length" class="text-black"></span></p>
-                    <p>Base / Head: <span x-text="selectedVersionBase" class="text-black"></span> → <span x-text="selectedVersionHead" class="text-black"></span></p>
-                    <p>Repo Data: <span x-text="repoData ? 'Loaded' : 'Not Loaded'" class="text-black"></span></p>
-                    <p>Branches: <span x-text="repoBranches.length" class="text-black   "></span></p>
-                </div>
-            </footer>
+        {{-- Testing purposes --}}
+        <footer class="pt-6 text-sm text-slate-500">
+            <p>Testing Information:</p>
+            <div>
+                <p>Current Step: <span x-text="currentStep" class="text-black"></span></p>
+                <p>Selected Repository: <span x-text="selectedRepository" class="text-black"></span></p>
+                <p>Repositories: <span x-text="repositories.length" class="text-black"></span></p>
+                <p>Base / Head: <span x-text="selectedVersionBase" class="text-black"></span> → <span
+                        x-text="selectedVersionHead" class="text-black"></span></p>
+                <p>Filtered Base Versions: <span x-text="filteredVersionsBase.length" class="text-black"></span></p>
+                <p>Filtered Head Versions: <span x-text="filteredVersionsHead.length" class="text-black"></span></p>
+                <p>Repo Data: <span x-text="repoData ? 'Loaded' : 'Not Loaded'" class="text-black"></span></p>
+                <p>Branches: <span x-text="repoBranches.length" class="text-black   "></span></p>
+            </div>
+        </footer>
     </div>
 
 @endsection

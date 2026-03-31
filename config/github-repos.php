@@ -14,4 +14,16 @@ return [
         'repo' => 'demo-1',
         'label' => 'Demo 1',
     ],
+    [
+        'id' => 'Revolutionary-Games/Thrive',
+        'owner' => 'Revolutionary-Games',
+        'repo' => 'Thrive',
+        'label' => 'Thrive',
+    ],
+    [
+        'id' => 'ninja-build/ninja',
+        'owner' => 'ninja-build',
+        'repo' => 'ninja',
+        'label' => 'Ninja',
+    ],
 ];
