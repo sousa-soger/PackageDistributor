@@ -86,73 +86,23 @@ class GitHubService
         return $this->client()->get("{$this->baseUrl}/rate_limit");
     }
 
-    public function downloadZip(string $owner, string $repo, string $ref, string $destinationPath): bool
+    public function downloadZip(string $owner, string $repo, string $ref, string $destinationZipPath): bool
     {
-        // Only create the parent directory (temp/yymmddhhmmss) so the zip can download securely.
-        // Don't create the target folder yet, otherwise Windows 'Access is Denied' Lock will occur during the rename later.
-        $parentDir = dirname($destinationPath);
+        $parentDir = dirname($destinationZipPath);
         if (!is_dir($parentDir)) {
             mkdir($parentDir, 0755, true);
         }
 
-        $zipPath = $destinationPath . '.zip';
-        
-        $response = $this->client()->withOptions(['sink' => $zipPath])
+        $response = $this->client()->withOptions(['sink' => $destinationZipPath])
             ->get("{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}");
 
         if (! $response->successful()) {
-            if (file_exists($zipPath)) {
-                unlink($zipPath);
+            if (file_exists($destinationZipPath)) {
+                unlink($destinationZipPath);
             }
             return false;
         }
 
-        // If the file is too big (e.g. > 50MB), leave it as a zip file to prevent memory/timeout issues
-        $maxExtractionSize = 50 * 1024 * 1024; // 50 MB
-        if (file_exists($zipPath) && filesize($zipPath) > $maxExtractionSize) {
-            return true; // Return success but do not extract
-        }
-
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath) === true) {
-            $extractTempPath = $destinationPath . '_extract_' . uniqid();
-            \Illuminate\Support\Facades\File::ensureDirectoryExists($extractTempPath);
-            
-            $zip->extractTo($extractTempPath);
-            $zip->close();
-            unlink($zipPath);
-
-            // GitHub zipballs contain a single root folder (e.g. owner-repo-commitHash)
-            $extractedFolders = glob($extractTempPath . '/*', GLOB_ONLYDIR);
-            
-            if (count($extractedFolders) === 1) {
-                $innerFolder = $extractedFolders[0];
-                
-                // Destination path is usually created before this method is called and is empty.
-                // We must remove it first so we can atomically rename the inner folder over it.
-                if (is_dir($destinationPath)) {
-                    // It should be empty, but just in case
-                    \Illuminate\Support\Facades\File::deleteDirectory($destinationPath);
-                }
-                
-                // Atomically rename the single inner folder to the destination path
-                rename($innerFolder, $destinationPath);
-            } else {
-                // If it isn't wrapped in a single folder, just move the whole temp directory
-                if (is_dir($destinationPath)) {
-                    \Illuminate\Support\Facades\File::deleteDirectory($destinationPath);
-                }
-                rename($extractTempPath, $destinationPath);
-            }
-            
-            // Clean up the extraction temp container if it still exists (e.g. if we moved the inner folder)
-            if (is_dir($extractTempPath)) {
-                \Illuminate\Support\Facades\File::deleteDirectory($extractTempPath);
-            }
-
-            return true;
-        }
-
-        return false;
+        return true;
     }
 }
