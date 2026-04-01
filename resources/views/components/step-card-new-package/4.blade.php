@@ -1,4 +1,31 @@
-<div x-show="currentStep === 4" x-cloak class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+<div x-show="currentStep === 4" x-cloak class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+    x-data="{ confirmation: false, hovered: false }">
+
+    <div x-show="confirmation" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold text-slate-800">Attention</h2>
+                <p class="mt-2 text-sm text-slate-500">
+                    Are you sure you want to stop packaging?
+                </p>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button"
+                    class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    @click="confirmation = false">
+                    Cancel
+                </button>
+
+                <button type="button"
+                    class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                    @click="stopPackaging(); confirmation = false">
+                    Stop Packaging
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="mb-6">
         <h2 class="text-xl font-semibold text-slate-800">Create Distribution Package</h2>
         <p class="mt-2 text-sm text-slate-500">
@@ -82,10 +109,16 @@
 
         <div class="flex items-center gap-3">
             <button type="button"
-                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                @click="runPackaging()" x-show="!packagingResult" :disabled="isPackaging">
-                <span x-show="!isPackaging">Start Packaging</span>
-                <span x-show="isPackaging">Packaging...</span>
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 "
+                x-show="!isPackaging && !packagingResult" @click="runPackaging()">
+                Start Packaging
+            </button>
+
+            <button type="button" @mouseover="hovered = true" @mouseleave="hovered = false"
+                class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+                x-show="isPackaging && !packagingResult" @click="confirmation = true">
+                <span x-show="!hovered">Packaging...</span>
+                <span x-show="hovered">Stop Packaging</span>
             </button>
 
             <button type="button"

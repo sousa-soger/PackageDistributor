@@ -4,10 +4,10 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                        repositories: @js($repositories),
-                                                        generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                        csrfToken: '{{ csrf_token() }}'
-                                                    })">
+                                                                repositories: @js($repositories),
+                                                                generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                csrfToken: '{{ csrf_token() }}'
+                                                            })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -113,13 +113,19 @@
                         <span class="text-black"
                             x-text="`${rateLimit.resources.core.remaining} / ${rateLimit.resources.core.limit} (Resets ${new Date(rateLimit.resources.core.reset * 1000).toLocaleTimeString()})`"></span>
                     </template></p>
-                
-                <template x-if="packagingResult && packagingResult.changed_files && packagingResult.changed_files.length > 0">
+
+                <template
+                    x-if="packagingResult && packagingResult.changed_files && packagingResult.changed_files.length > 0">
                     <div class="mt-4 border-t border-slate-200 pt-4 max-w-2xl">
-                        <p class="font-bold text-slate-800">Files changed from <span x-text="selectedVersionBase"></span> to <span x-text="selectedVersionHead"></span>:</p>
-                        <ul class="list-disc pl-5 mt-2 max-h-64 overflow-y-auto w-full text-slate-600 bg-slate-50 p-2 rounded border border-slate-200">
+                        <p class="font-bold text-slate-800">Files changed from <span x-text="selectedVersionBase"></span> to
+                            <span x-text="selectedVersionHead"></span>:
+                        </p>
+                        <ul
+                            class="list-disc pl-5 mt-2 max-h-64 overflow-y-auto w-full text-slate-600 bg-slate-50 p-2 rounded border border-slate-200">
                             <template x-for="file in packagingResult.changed_files" :key="file.filename">
-                                <li class="text-xs font-mono truncate" :title="file.filename" x-html="`<span class='font-semibold text-slate-500 uppercase mr-1'>[${file.status}]</span> ${file.filename}`"></li>
+                                <li class="text-xs font-mono truncate" :title="file.filename"
+                                    x-html="`<span class='font-semibold text-slate-500 uppercase mr-1'>[${file.status}]</span> ${file.filename}`">
+                                </li>
                             </template>
                         </ul>
                     </div>
@@ -156,6 +162,7 @@
                 rateLimit: null,
 
                 isPackaging: false,
+                abortController: null,
                 packagingProgress: 0,
                 packagingMessage: 'Ready to generate package.',
                 packagingError: '',
@@ -375,6 +382,7 @@
                     }
 
                     this.isPackaging = true;
+                    this.abortController = new AbortController();
                     this.packagingError = '';
                     this.packagingResult = null;
                     this.packagingProgress = 10;
@@ -392,13 +400,14 @@
 
                         const base_obj = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionBase);
                         const head_obj = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionHead);
-                        
+
                         // Use the actual 'ref' (like branch or tag name) instead of splitting the ID
                         const base_ref = base_obj ? base_obj.ref : this.selectedVersionBase.split(':').slice(1).join(':');
                         const head_ref = head_obj ? head_obj.ref : this.selectedVersionHead.split(':').slice(1).join(':');
 
                         const response = await fetch(generateUrl, {
                             method: 'POST',
+                            signal: this.abortController.signal,
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': csrfToken,
@@ -428,11 +437,22 @@
                         this.packagingResult = data;
                     } catch (error) {
                         this.packagingProgress = 0;
-                        this.packagingMessage = 'Packaging stopped.';
-                        this.packagingError = error.message || 'Unexpected error during packaging.';
+                        if (error.name === 'AbortError') {
+                            this.packagingMessage = 'Packaging stopped manually.';
+                            this.packagingError = 'Operation was aborted by the user.';
+                        } else {
+                            this.packagingMessage = 'Packaging stopped.';
+                            this.packagingError = error.message || 'Unexpected error during packaging.';
+                        }
                     } finally {
                         clearTimeout(timeoutId);
                         this.isPackaging = false;
+                    }
+                },
+
+                stopPackaging() {
+                    if (this.abortController) {
+                        this.abortController.abort();
                     }
                 },
             };
