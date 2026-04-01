@@ -10,6 +10,9 @@ class DeploymentPackageController extends Controller
 {
     public function generate(Request $request)
     {
+        // Prevent PHP from crashing if the download/extraction takes longer than 60s
+        set_time_limit(600);
+
         $validated = $request->validate([
             'environment'  => ['required', 'string', 'max:20'],
             'project_name' => ['required', 'string', 'max:100'],

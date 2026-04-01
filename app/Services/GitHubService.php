@@ -88,9 +88,11 @@ class GitHubService
 
     public function downloadZip(string $owner, string $repo, string $ref, string $destinationPath): bool
     {
-        // Create directory if it doesn't exist
-        if (!is_dir($destinationPath)) {
-            mkdir($destinationPath, 0755, true);
+        // Only create the parent directory (temp/yymmddhhmmss) so the zip can download securely.
+        // Don't create the target folder yet, otherwise Windows 'Access is Denied' Lock will occur during the rename later.
+        $parentDir = dirname($destinationPath);
+        if (!is_dir($parentDir)) {
+            mkdir($parentDir, 0755, true);
         }
 
         $zipPath = $destinationPath . '.zip';
@@ -113,23 +115,39 @@ class GitHubService
 
         $zip = new \ZipArchive();
         if ($zip->open($zipPath) === true) {
-            $zip->extractTo($destinationPath);
+            $extractTempPath = $destinationPath . '_extract_' . uniqid();
+            \Illuminate\Support\Facades\File::ensureDirectoryExists($extractTempPath);
+            
+            $zip->extractTo($extractTempPath);
             $zip->close();
             unlink($zipPath);
 
             // GitHub zipballs contain a single root folder (e.g. owner-repo-commitHash)
-            // Move its contents up to destinationPath
-            $extractedFolders = glob($destinationPath . '/*', GLOB_ONLYDIR);
+            $extractedFolders = glob($extractTempPath . '/*', GLOB_ONLYDIR);
+            
             if (count($extractedFolders) === 1) {
                 $innerFolder = $extractedFolders[0];
-                $files = scandir($innerFolder);
-                foreach ($files as $file) {
-                    if ($file !== '.' && $file !== '..') {
-                        // For Windows we might want to use a robust move or File facade
-                        \Illuminate\Support\Facades\File::move($innerFolder . DIRECTORY_SEPARATOR . $file, $destinationPath . DIRECTORY_SEPARATOR . $file);
-                    }
+                
+                // Destination path is usually created before this method is called and is empty.
+                // We must remove it first so we can atomically rename the inner folder over it.
+                if (is_dir($destinationPath)) {
+                    // It should be empty, but just in case
+                    \Illuminate\Support\Facades\File::deleteDirectory($destinationPath);
                 }
-                rmdir($innerFolder);
+                
+                // Atomically rename the single inner folder to the destination path
+                rename($innerFolder, $destinationPath);
+            } else {
+                // If it isn't wrapped in a single folder, just move the whole temp directory
+                if (is_dir($destinationPath)) {
+                    \Illuminate\Support\Facades\File::deleteDirectory($destinationPath);
+                }
+                rename($extractTempPath, $destinationPath);
+            }
+            
+            // Clean up the extraction temp container if it still exists (e.g. if we moved the inner folder)
+            if (is_dir($extractTempPath)) {
+                \Illuminate\Support\Facades\File::deleteDirectory($extractTempPath);
             }
 
             return true;
