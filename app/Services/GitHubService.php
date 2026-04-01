@@ -80,4 +80,61 @@ class GitHubService
 
         return $response->json() ?? [];
     }
+
+    public function getRateLimit(): Response
+    {
+        return $this->client()->get("{$this->baseUrl}/rate_limit");
+    }
+
+    public function downloadZip(string $owner, string $repo, string $ref, string $destinationPath): bool
+    {
+        // Create directory if it doesn't exist
+        if (!is_dir($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
+        }
+
+        $zipPath = $destinationPath . '.zip';
+        
+        $response = $this->client()->withOptions(['sink' => $zipPath])
+            ->get("{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}");
+
+        if (! $response->successful()) {
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+            return false;
+        }
+
+        // If the file is too big (e.g. > 50MB), leave it as a zip file to prevent memory/timeout issues
+        $maxExtractionSize = 50 * 1024 * 1024; // 50 MB
+        if (file_exists($zipPath) && filesize($zipPath) > $maxExtractionSize) {
+            return true; // Return success but do not extract
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) === true) {
+            $zip->extractTo($destinationPath);
+            $zip->close();
+            unlink($zipPath);
+
+            // GitHub zipballs contain a single root folder (e.g. owner-repo-commitHash)
+            // Move its contents up to destinationPath
+            $extractedFolders = glob($destinationPath . '/*', GLOB_ONLYDIR);
+            if (count($extractedFolders) === 1) {
+                $innerFolder = $extractedFolders[0];
+                $files = scandir($innerFolder);
+                foreach ($files as $file) {
+                    if ($file !== '.' && $file !== '..') {
+                        // For Windows we might want to use a robust move or File facade
+                        \Illuminate\Support\Facades\File::move($innerFolder . DIRECTORY_SEPARATOR . $file, $destinationPath . DIRECTORY_SEPARATOR . $file);
+                    }
+                }
+                rmdir($innerFolder);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
 }

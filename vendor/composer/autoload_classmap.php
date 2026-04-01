@@ -6,9 +6,16 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Console\\Commands\\GenerateDeltaPackage' => $baseDir . '/app/Console/Commands/GenerateDeltaPackage.php',
+    'App\\Http\\Controllers\\AuthController' => $baseDir . '/app/Http/Controllers/AuthController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
+    'App\\Http\\Controllers\\DeploymentPackageController' => $baseDir . '/app/Http/Controllers/DeploymentPackageController.php',
+    'App\\Http\\Controllers\\GitHubController' => $baseDir . '/app/Http/Controllers/GitHubController.php',
+    'App\\Http\\Controllers\\PackageController' => $baseDir . '/app/Http/Controllers/PackageController.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
+    'App\\Models\\Version' => $baseDir . '/app/Models/Version.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
+    'App\\Services\\GitHubService' => $baseDir . '/app/Services/GitHubService.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',
     'Brick\\Math\\BigInteger' => $vendorDir . '/brick/math/src/BigInteger.php',

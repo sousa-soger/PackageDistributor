@@ -26,4 +26,10 @@ return [
         'repo' => 'ninja',
         'label' => 'Ninja',
     ],
+    [
+        'id' => 'sousa-soger/PackageDistributor',
+        'owner' => 'sousa-soger',
+        'repo' => 'PackageDistributor',
+        'label' => 'Package Distributor',
+    ],
 ];
