@@ -54,18 +54,19 @@ class GenerateDeltaPackage extends Command
                 $tempTimestamp = now()->format('YmdHis');
                 $tempBasePath = storage_path("app/temp/{$tempTimestamp}");
                 
-                $baseFolder = $tempBasePath . DIRECTORY_SEPARATOR . 'base';
+                $baseZipPath = $tempBasePath . DIRECTORY_SEPARATOR . 'base.zip';
                 
-                $this->line("Downloading base version ({$base}) to {$baseFolder}...");
-                $githubService->downloadZip($owner, $repoName, $base, $baseFolder);
+                $this->line("Downloading base version ({$base}) to {$baseZipPath}...");
+                $githubService->downloadZip($owner, $repoName, $base, $baseZipPath);
                 
-                // For debugging: comment out head folder download for now
-                $headFolder = $tempBasePath . DIRECTORY_SEPARATOR . 'head';
-                $this->line("Downloading head version ({$head}) to {$headFolder}...");
-                $githubService->downloadZip($owner, $repoName, $head, $headFolder);
+                $headZipPath = $tempBasePath . DIRECTORY_SEPARATOR . 'head.zip';
+                $this->line("Downloading head version ({$head}) to {$headZipPath}...");
+                $githubService->downloadZip($owner, $repoName, $head, $headZipPath);
                 
-                // The previous compare logic was removed as requested
-                // But we still need to provide $changedFiles = [] to avoid breaking frontend
+                $this->line("Comparing zip manifests...");
+                $changedFiles = $this->compareZipFiles($baseZipPath, $headZipPath);
+                $totalChanges = count($changedFiles);
+                $this->line("Found {$totalChanges} changes.");
             }
 
             $result = [
@@ -94,5 +95,75 @@ class GenerateDeltaPackage extends Command
     protected function safe(string $value): string
     {
         return preg_replace('/[^\w.\-]+/', '_', $value);
+    }
+
+    private function compareZipFiles(string $baseZipPath, string $headZipPath): array
+    {
+        $baseFiles = $this->getZipManifest($baseZipPath);
+        $headFiles = $this->getZipManifest($headZipPath);
+
+        $changed = [];
+
+        // Identify Added and Modified
+        foreach ($headFiles as $path => $headInfo) {
+            if (!isset($baseFiles[$path])) {
+                $changed[] = [
+                    'filename' => $path,
+                    'status' => 'added',
+                    'head_internal_path' => $headInfo['internal_path'],
+                ];
+            } elseif ($baseFiles[$path]['crc'] !== $headInfo['crc'] || $baseFiles[$path]['size'] !== $headInfo['size']) {
+                $changed[] = [
+                    'filename' => $path,
+                    'status' => 'modified',
+                    'base_internal_path' => $baseFiles[$path]['internal_path'],
+                    'head_internal_path' => $headInfo['internal_path'],
+                ];
+            }
+        }
+
+        // Identify Deleted
+        foreach ($baseFiles as $path => $baseInfo) {
+            if (!isset($headFiles[$path])) {
+                $changed[] = [
+                    'filename' => $path,
+                    'status' => 'deleted',
+                    'base_internal_path' => $baseInfo['internal_path'],
+                ];
+            }
+        }
+
+        return $changed;
+    }
+
+    private function getZipManifest(string $zipPath): array
+    {
+        $manifest = [];
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) === true) {
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $stat = $zip->statIndex($i);
+                $internalPath = $stat['name'];
+                
+                // Exclude directory entries
+                if (substr($internalPath, -1) === '/') {
+                    continue;
+                }
+                
+                // GitHub wraps the repo in owner-repo-commitHash/
+                // We need to strip this prefix to get the normalized path
+                $parts = explode('/', $internalPath, 2);
+                if (count($parts) === 2) {
+                    $normalizedPath = $parts[1];
+                    $manifest[$normalizedPath] = [
+                        'crc' => $stat['crc'],
+                        'size' => $stat['size'],
+                        'internal_path' => $internalPath,
+                    ];
+                }
+            }
+            $zip->close();
+        }
+        return $manifest;
     }
 }
