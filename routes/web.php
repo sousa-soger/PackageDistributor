@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GitHubController;
+use App\Http\Controllers\DeploymentPackageController;
 use App\Http\Controllers\PackageController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,13 +23,20 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.user');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout.user');
 
 // for testing only - dummy loader
-Route::get('/dummy-package', function () {
-    sleep(2); // simulate backend work
+// Route::get('/dummy-package', function () {
+//     sleep(2); // simulate backend work
 
-    return response()->json([
-        'status' => 'success',
-    ]);
-});
+//     return response()->json([
+//         'status' => 'success',
+//     ]);
+// });
 
 Route::get('/github/repo-info', [GitHubController::class, 'repoInfo'])->name('github.repo-info');
 Route::get('/github/repo-versions', [GitHubController::class, 'repoVersions'])->name('github.repo-versions');
+Route::get('/github/rate-limit', [GitHubController::class, 'rateLimit'])->name('github.rate-limit');
+
+// ** Route for generate delta package
+Route::middleware('auth')->group(function () {
+    Route::post('/deployments/generate-delta', [DeploymentPackageController::class, 'generate'])
+        ->name('deployments.generate-delta');
+});

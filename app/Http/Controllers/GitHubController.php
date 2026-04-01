@@ -79,6 +79,20 @@ class GitHubController extends Controller
         ]);
     }
 
+    public function rateLimit(GitHubService $github)
+    {
+        $response = $github->getRateLimit();
+
+        if ($response->failed()) {
+            return response()->json([
+                'message' => 'Failed to fetch rate limit',
+                'error' => $response->json(),
+            ], $response->status());
+        }
+
+        return response()->json($response->json());
+    }
+
     /**
      * @return array{0: string, 1: string}|null
      */

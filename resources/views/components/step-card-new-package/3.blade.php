@@ -29,42 +29,7 @@
             </div>
         </div>
 
-        <div x-data="{
-            customNaming: false,
-            packageName: '',
-            get generatedName() {
-                const env = this.selectedEnvironment || '[Please select environment]';
-                const proj = this.selectedRepository ? this.selectedRepository.split('/').pop() : 'not found!';
-                const base = this.selectedBaseLabel || 'not found!';
-                const head = this.selectedHeadLabel || 'not found!';
-                
-                const now = new Date();
-                const yyyy = now.getFullYear();
-                const mm = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
-                const hh = String(now.getHours()).padStart(2, '0');
-                const min = String(now.getMinutes()).padStart(2, '0');
-                const timeStr = `${yyyy}${mm}${dd}-${hh}${min}`;
-                
-                return `${env}-${proj}-${base}-to-${head}-${timeStr}`;
-            },
-            updateName() {
-                if (!this.customNaming) {
-                    this.packageName = this.generatedName;
-                }
-            },
-            init() {
-                this.updateName();
-                this.$watch('selectedEnvironment', () => this.updateName());
-                this.$watch('selectedRepository', () => this.updateName());
-                this.$watch('selectedVersionBase', () => { setTimeout(() => this.updateName(), 50); });
-                this.$watch('selectedVersionHead', () => { setTimeout(() => this.updateName(), 50); });
-                this.$watch('customNaming', (val) => {
-                    if (!val) this.updateName();
-                });
-                setInterval(() => this.updateName(), 60000);
-            }
-        }">
+        <div>
 
             <div class="relative min-w-0 flex-1">
                 <label class="mb-2 block text-sm font-semibold text-slate-700">Package Name</label>
