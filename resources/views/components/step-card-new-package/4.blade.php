@@ -129,16 +129,6 @@
                 <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Package Root</div>
                 <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.package_root || '-'"></div>
             </div>
-
-            <div>
-                <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Update Zip</div>
-                <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.update_zip || '-'"></div>
-            </div>
-
-            <div>
-                <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Rollback Zip</div>
-                <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.rollback_zip || '-'"></div>
-            </div>
         </div>
     </div>
 
