@@ -4,10 +4,10 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                                    repositories: @js($repositories),
-                                                                    generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                    csrfToken: '{{ csrf_token() }}'
-                                                                })">
+                                                                        repositories: @js($repositories),
+                                                                        generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                        csrfToken: '{{ csrf_token() }}'
+                                                                    })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -95,6 +95,7 @@
         </div>
 
         {{-- Testing purposes --}}
+        {{--
         <footer class="pt-6 text-sm text-slate-500">
             <p>Testing Information:</p>
             <div>
@@ -132,6 +133,7 @@
                 </template>
             </div>
         </footer>
+        --}}
     </div>
 
 @endsection
@@ -162,6 +164,8 @@
                 rateLimit: null,
 
                 isPackaging: false,
+                confirmation: false,
+                hovered: false,
                 abortController: null,
                 packagingProgress: 0,
                 fileDownloadProgress: 0,

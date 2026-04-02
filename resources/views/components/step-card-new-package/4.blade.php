@@ -1,5 +1,4 @@
-<div x-show="currentStep === 4" x-cloak class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-    x-data="{ confirmation: false, hovered: false }">
+<div x-show="currentStep === 4" x-cloak class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
     <div x-show="confirmation" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -111,66 +110,67 @@
 
 
     <p class="mt-3 text-sm text-slate-500" x-text="packagingMessage"></p>
-</div>
 
-<div x-show="packagingError" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-    <div class="font-semibold">Packaging failed</div>
-    <div class="mt-1" x-text="packagingError"></div>
-</div>
+    <div x-show="packagingError" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div class="font-semibold">Packaging failed</div>
+        <div class="mt-1" x-text="packagingError"></div>
+    </div>
 
-<div x-show="packagingResult" x-cloak class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-    <div class="text-sm font-semibold text-emerald-800">Package created successfully</div>
+    <div x-show="packagingResult" x-cloak class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div class="text-sm font-semibold text-emerald-800">Package created successfully</div>
 
-    <div class="mt-3 grid gap-3 md:grid-cols-2">
-        <div>
-            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Folder</div>
-            <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.folder_name || '-'"></div>
-        </div>
+        <div class="mt-3 grid gap-3 md:grid-cols-2">
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Folder</div>
+                <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.folder_name || '-'"></div>
+            </div>
 
-        <div>
-            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Package Root</div>
-            <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.package_root || '-'"></div>
-        </div>
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Package Root</div>
+                <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.package_root || '-'"></div>
+            </div>
 
-        <div>
-            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Update Zip</div>
-            <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.update_zip || '-'"></div>
-        </div>
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Update Zip</div>
+                <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.update_zip || '-'"></div>
+            </div>
 
-        <div>
-            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Rollback Zip</div>
-            <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.rollback_zip || '-'"></div>
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Rollback Zip</div>
+                <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.rollback_zip || '-'"></div>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="mt-6 flex items-center justify-between">
-    <button type="button"
-        class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        @click="currentStep = 3" :disabled="isPackaging">
-        Back
-    </button>
-
-    <div class="flex items-center gap-3">
+    <div class="mt-6 flex items-center justify-between">
         <button type="button"
-            class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 "
-            x-show="!isPackaging && !packagingResult" @click="runPackaging()">
-            Start Packaging
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            @click="currentStep = 3" :disabled="isPackaging">
+            Back
         </button>
 
-        <button type="button" @mouseover="hovered = true" @mouseleave="hovered = false"
-            class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
-            x-show="isPackaging && !packagingResult" @click="confirmation = true">
-            <span x-show="!hovered">Packaging...</span>
-            <span x-show="hovered">Stop Packaging</span>
-        </button>
+        <div class="flex items-center gap-3">
+            <button type="button"
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 "
+                x-show="!isPackaging && !packagingResult" @click="runPackaging()">
+                Start Packaging
+            </button>
 
-        <button type="button"
-            class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            x-show="packagingResult" @click="currentStep = 5">
-            Continue
-        </button>
+            <button type="button" @mouseover="hovered = true" @mouseleave="hovered = false"
+                class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+                x-show="isPackaging && !packagingResult" @click="confirmation = true">
+                <span x-show="!hovered">Packaging...</span>
+                <span x-show="hovered">Stop Packaging</span>
+            </button>
+
+            <button type="button"
+                class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                x-show="packagingResult" @click="currentStep = 5">
+                Continue
+            </button>
+        </div>
     </div>
+
 </div>
 {{--
 <p class="mt-4 text-xs text-slate-400">
