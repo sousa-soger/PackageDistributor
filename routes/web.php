@@ -39,4 +39,6 @@ Route::get('/github/rate-limit', [GitHubController::class, 'rateLimit'])->name('
 Route::middleware('auth')->group(function () {
     Route::post('/deployments/generate-delta', [DeploymentPackageController::class, 'generate'])
         ->name('deployments.generate-delta');
+    Route::get('/deployments/progress/{name}', [DeploymentPackageController::class, 'progress'])
+        ->name('deployments.progress');
 });

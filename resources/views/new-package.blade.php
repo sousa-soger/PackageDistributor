@@ -4,10 +4,10 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                                repositories: @js($repositories),
-                                                                generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                csrfToken: '{{ csrf_token() }}'
-                                                            })">
+                                                                    repositories: @js($repositories),
+                                                                    generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                    csrfToken: '{{ csrf_token() }}'
+                                                                })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -164,6 +164,9 @@
                 isPackaging: false,
                 abortController: null,
                 packagingProgress: 0,
+                fileDownloadProgress: 0,
+                baseFileExtraction: 0,
+                headFileExtraction: 0,
                 packagingMessage: 'Ready to generate package.',
                 packagingError: '',
                 packagingResult: null,
@@ -386,6 +389,9 @@
                     this.packagingError = '';
                     this.packagingResult = null;
                     this.packagingProgress = 10;
+                    this.fileDownloadProgress = 0;
+                    this.baseFileExtraction = 0;
+                    this.headFileExtraction = 0;
                     this.packagingMessage = 'Validating selected versions...';
 
                     let timeoutId = setTimeout(() => {
@@ -393,6 +399,24 @@
                             this.packagingMessage = 'It is taking longer than usual... Please wait.';
                         }
                     }, 60000); // 1 minute
+
+                    const pollProgress = setInterval(async () => {
+                        try {
+                            const res = await fetch(`/deployments/progress/${this.packageName}`);
+                            if (res.ok) {
+                                const prog = await res.json();
+                                if (this.isPackaging && !this.packagingResult) {
+                                    if (prog.packagingProgress !== undefined && prog.packagingProgress > this.packagingProgress) this.packagingProgress = prog.packagingProgress;
+                                    if (prog.fileDownloadProgress !== undefined && prog.fileDownloadProgress > this.fileDownloadProgress) this.fileDownloadProgress = prog.fileDownloadProgress;
+                                    if (prog.baseFileExtraction !== undefined && prog.baseFileExtraction > this.baseFileExtraction) this.baseFileExtraction = prog.baseFileExtraction;
+                                    if (prog.headFileExtraction !== undefined && prog.headFileExtraction > this.headFileExtraction) this.headFileExtraction = prog.headFileExtraction;
+                                    if (prog.packagingMessage) this.packagingMessage = prog.packagingMessage;
+                                }
+                            }
+                        } catch (e) {
+                            // Suppress errors during polling
+                        }
+                    }, 1000);
 
                     try {
                         this.packagingProgress = 25;
@@ -423,7 +447,7 @@
                             }),
                         });
 
-                        this.packagingProgress = 75;
+                        this.packagingProgress = 85;
                         this.packagingMessage = 'Finalizing update and rollback packages...';
 
                         const data = await response.json();
@@ -433,6 +457,9 @@
                         }
 
                         this.packagingProgress = 100;
+                        this.fileDownloadProgress = 100;
+                        this.baseFileExtraction = 100;
+                        this.headFileExtraction = 100;
                         this.packagingMessage = 'Package created successfully.';
                         this.packagingResult = data;
                     } catch (error) {
@@ -445,6 +472,7 @@
                             this.packagingError = error.message || 'Unexpected error during packaging.';
                         }
                     } finally {
+                        clearInterval(pollProgress);
                         clearTimeout(timeoutId);
                         this.isPackaging = false;
                     }
