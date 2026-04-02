@@ -4,10 +4,10 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                                        repositories: @js($repositories),
-                                                                        generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                        csrfToken: '{{ csrf_token() }}'
-                                                                    })">
+                                                                                                repositories: @js($repositories),
+                                                                                                generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                                                csrfToken: '{{ csrf_token() }}'
+                                                                                            })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -34,13 +34,13 @@
             <div x-show="currentStep === 2">
                 <x-ui.step-item number="2" label="Version Selection" :active="true" />
             </div>
-            <div x-show="currentStep > 2">
+            <button x-show="currentStep > 2" @click="currentStep = 2">
                 <x-ui.step-item number="✓" label="Version Selection" :completed="true" />
-            </div>
-            {{-- Make sure to remove this button when done --}}
-            <button x-show="currentStep < 3" @click="currentStep = 3">
-                <x-ui.step-item number="3" label="Packaging Options" />
             </button>
+            {{-- Make sure to remove this button when done --}}
+            <div x-show="currentStep < 3">
+                <x-ui.step-item number="3" label="Packaging Options" />
+            </div>
             <div x-show="currentStep === 3">
                 <x-ui.step-item number="3" label="Packaging Options" :active="true" />
             </div>
@@ -48,15 +48,15 @@
                 <x-ui.step-item number="✓" label="Packaging Options" :completed="true" />
             </button>
             {{-- Make sure to remove this button when done --}}
-            <button x-show="currentStep < 4" @click="currentStep = 4">
+            <div x-show="currentStep < 4">
                 <x-ui.step-item number="4" label="Packaging" />
-            </button>
+            </div>
             <div x-show="currentStep === 4">
                 <x-ui.step-item number="4" label="Packaging" :active="true" />
             </div>
-            <div x-show="currentStep > 4">
+            <button x-show="currentStep > 4" @click="currentStep = 4">
                 <x-ui.step-item number="✓" label="Packaging" :completed="true" />
-            </div>
+            </button>
             {{-- Make sure to remove this button when done --}}
             <button x-show="currentStep < 5" @click="currentStep = 5">
                 <x-ui.step-item number="5" label="Download" :last="true" />
@@ -70,7 +70,7 @@
 
         </div>
 
-        <div x-show="currentStep === 1" x-cloak>
+        <div x-show="currentStep === 1" x-cloa k>
             @include('components.step-card-new-package.1')
         </div>
 
@@ -95,7 +95,7 @@
         </div>
 
         {{-- Testing purposes --}}
-        {{--
+
         <footer class="pt-6 text-sm text-slate-500">
             <p>Testing Information:</p>
             <div>
@@ -133,7 +133,7 @@
                 </template>
             </div>
         </footer>
-        --}}
+
     </div>
 
 @endsection
