@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Cache;
 
 class DeploymentPackageController extends Controller
 {
@@ -65,5 +66,18 @@ class DeploymentPackageController extends Controller
                 'message' => 'Failed to generate package: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function progress($name)
+    {
+        $progress = Cache::get("packaging_progress_{$name}", [
+            'fileDownloadProgress' => 0,
+            'baseFileExtraction' => 0,
+            'headFileExtraction' => 0,
+            'packagingProgress' => 0,
+            'packagingMessage' => 'Starting...',
+        ]);
+
+        return response()->json($progress);
     }
 }
