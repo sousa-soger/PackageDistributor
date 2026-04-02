@@ -121,6 +121,10 @@ class GenerateDeltaPackage extends Command
                 $this->line("Found {$totalChanges} changes.");
                 
                 $this->versionFileDifferenceTxt($packageRoot, $diffData['modifiedFiles'], $diffData['deletedFiles'], $diffData['addedFiles'], $base, $head);
+
+                $this->line("Generating packages for update and rollback...");
+                $this->updateProgress($folderName, ['packagingMessage' => "Creating package directories..."]);
+                $this->generatePackages($packageRoot, $baseExtractPath, $headExtractPath, $diffData);
             }
 
             $this->updateProgress($folderName, ['packagingMessage' => "Finalizing...", 'packagingProgress' => 95]);
@@ -301,6 +305,18 @@ class GenerateDeltaPackage extends Command
 
         $content = "{$base} -> {$head}\n\n";
 
+        $content .= "File(s) deleted (" . count($deletedFiles) . "):\n";
+        foreach ($deletedFiles as $file) {
+            $content .= " - {$file['filename']} (-{$file['old_size']} bytes)\n";
+        }
+        $content .= "\n";
+        
+        $content .= "File(s) added (" . count($addedFiles) . "):\n";
+        foreach ($addedFiles as $file) {
+            $content .= " + {$file['filename']} (+{$file['new_size']} bytes)\n";
+        }
+        $content .= "\n";
+        
         $content .= "File(s) modified (" . count($modifiedFiles) . "):\n";
         foreach ($modifiedFiles as $file) {
             $diffSign = $file['size_diff'] > 0 ? '+' : '';
@@ -308,18 +324,43 @@ class GenerateDeltaPackage extends Command
         }
         $content .= "\n";
 
-        $content .= "File(s) deleted (" . count($deletedFiles) . "):\n";
-        foreach ($deletedFiles as $file) {
-            $content .= " - {$file['filename']} (-{$file['old_size']} bytes)\n";
-        }
-        $content .= "\n";
-
-        $content .= "File(s) added (" . count($addedFiles) . "):\n";
-        foreach ($addedFiles as $file) {
-            $content .= " + {$file['filename']} (+{$file['new_size']} bytes)\n";
-        }
-        $content .= "\n";
-
         file_put_contents($versionChangesTxt, $content);
+    }
+
+    private function generatePackages(string $packageRoot, string $baseExtractPath, string $headExtractPath, array $diffData): void
+    {
+        $updatePath = $packageRoot . DIRECTORY_SEPARATOR . 'update';
+        $rollbackPath = $packageRoot . DIRECTORY_SEPARATOR . 'rollback';
+
+        File::ensureDirectoryExists($updatePath);
+        File::ensureDirectoryExists($rollbackPath);
+
+        // Populate updateRaw (Base -> Head)
+        foreach ($diffData['addedFiles'] as $file) {
+            $src = $headExtractPath . DIRECTORY_SEPARATOR . $file['head_internal_path'];
+            $dest = $updatePath . DIRECTORY_SEPARATOR . $file['filename'];
+            File::ensureDirectoryExists(dirname($dest));
+            File::copy($src, $dest);
+        }
+        foreach ($diffData['modifiedFiles'] as $file) {
+            $src = $headExtractPath . DIRECTORY_SEPARATOR . $file['head_internal_path'];
+            $dest = $updatePath . DIRECTORY_SEPARATOR . $file['filename'];
+            File::ensureDirectoryExists(dirname($dest));
+            File::copy($src, $dest);
+        }
+
+        // Populate rollbackRaw (Head -> Base)
+        foreach ($diffData['deletedFiles'] as $file) {
+            $src = $baseExtractPath . DIRECTORY_SEPARATOR . $file['base_internal_path'];
+            $dest = $rollbackPath . DIRECTORY_SEPARATOR . $file['filename'];
+            File::ensureDirectoryExists(dirname($dest));
+            File::copy($src, $dest);
+        }
+        foreach ($diffData['modifiedFiles'] as $file) {
+            $src = $baseExtractPath . DIRECTORY_SEPARATOR . $file['base_internal_path'];
+            $dest = $rollbackPath . DIRECTORY_SEPARATOR . $file['filename'];
+            File::ensureDirectoryExists(dirname($dest));
+            File::copy($src, $dest);
+        }
     }
 }
