@@ -36,6 +36,7 @@ class GenerateDeltaPackage extends Command
         Cache::put($cacheKey, array_merge($current, $data), 600);
     }
 
+    // Give admin permission to the folder
     private function grantWindowsPermissions(string $path)
     {
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
@@ -44,6 +45,7 @@ class GenerateDeltaPackage extends Command
         }
     }
 
+    //BIG DAWG PART
     public function handle(): int
     {
         $environment = strtoupper(trim($this->argument('environment')));
@@ -112,9 +114,13 @@ class GenerateDeltaPackage extends Command
                 
                 $this->line("Comparing zip manifests...");
                 $this->updateProgress($folderName, ['packagingMessage' => "Computing delta packages...", 'packagingProgress' => 75]);
-                $changedFiles = $this->compareZipFiles($baseExtractPath, $headExtractPath);
+                
+                $diffData = $this->compareFileSize($baseZipPath, $headZipPath);
+                $changedFiles = $diffData['changed'];
                 $totalChanges = count($changedFiles);
                 $this->line("Found {$totalChanges} changes.");
+                
+                $this->versionFileDifferenceTxt($packageRoot, $diffData['modifiedFiles'], $diffData['deletedFiles'], $diffData['addedFiles'], $base, $head);
             }
 
             $this->updateProgress($folderName, ['packagingMessage' => "Finalizing...", 'packagingProgress' => 95]);
@@ -225,5 +231,95 @@ class GenerateDeltaPackage extends Command
             $zip->close();
         }
         return $manifest;
+    }
+
+    private function compareFileSize(string $baseZipPath, string $headZipPath): array
+    {
+        $baseFiles = $this->getZipManifest($baseZipPath);
+        $headFiles = $this->getZipManifest($headZipPath);
+
+        $changed = [];
+        $addedFiles = [];
+        $modifiedFiles = [];
+        $deletedFiles = [];
+
+        // Identify Added and Modified
+        foreach ($headFiles as $path => $headInfo) {
+            if (!isset($baseFiles[$path])) {
+                $change = [
+                    'filename' => $path,
+                    'status' => 'added',
+                    'old_size' => 0,
+                    'new_size' => $headInfo['size'],
+                    'size_diff' => $headInfo['size'],
+                    'head_internal_path' => $headInfo['internal_path'],
+                ];
+                $changed[] = $change;
+                $addedFiles[] = $change;
+            } elseif ($baseFiles[$path]['crc'] !== $headInfo['crc'] || $baseFiles[$path]['size'] !== $headInfo['size']) {
+                $change = [
+                    'filename' => $path,
+                    'status' => 'modified',
+                    'old_size' => $baseFiles[$path]['size'],
+                    'new_size' => $headInfo['size'],
+                    'size_diff' => $headInfo['size'] - $baseFiles[$path]['size'],
+                    'base_internal_path' => $baseFiles[$path]['internal_path'],
+                    'head_internal_path' => $headInfo['internal_path'],
+                ];
+                $changed[] = $change;
+                $modifiedFiles[] = $change;
+            }
+        }
+
+        // Identify Deleted
+        foreach ($baseFiles as $path => $baseInfo) {
+            if (!isset($headFiles[$path])) {
+                $change = [
+                    'filename' => $path,
+                    'status' => 'deleted',
+                    'old_size' => $baseInfo['size'],
+                    'new_size' => 0,
+                    'size_diff' => -$baseInfo['size'],
+                    'base_internal_path' => $baseInfo['internal_path'],
+                ];
+                $changed[] = $change;
+                $deletedFiles[] = $change;
+            }
+        }
+
+        return [
+            'changed' => $changed,
+            'addedFiles' => $addedFiles,
+            'modifiedFiles' => $modifiedFiles,
+            'deletedFiles' => $deletedFiles,
+        ];
+    }
+
+    private function versionFileDifferenceTxt(string $packageRoot, array $modifiedFiles, array $deletedFiles, array $addedFiles, string $base, string $head)
+    {   
+        $versionChangesTxt = $packageRoot . DIRECTORY_SEPARATOR . 'version_changes.txt';
+
+        $content = "{$base} -> {$head}\n\n";
+
+        $content .= "File(s) modified (" . count($modifiedFiles) . "):\n";
+        foreach ($modifiedFiles as $file) {
+            $diffSign = $file['size_diff'] > 0 ? '+' : '';
+            $content .= " ~ {$file['filename']} (diff: {$diffSign}{$file['size_diff']} bytes)\n";
+        }
+        $content .= "\n";
+
+        $content .= "File(s) deleted (" . count($deletedFiles) . "):\n";
+        foreach ($deletedFiles as $file) {
+            $content .= " - {$file['filename']} (-{$file['old_size']} bytes)\n";
+        }
+        $content .= "\n";
+
+        $content .= "File(s) added (" . count($addedFiles) . "):\n";
+        foreach ($addedFiles as $file) {
+            $content .= " + {$file['filename']} (+{$file['new_size']} bytes)\n";
+        }
+        $content .= "\n";
+
+        file_put_contents($versionChangesTxt, $content);
     }
 }
