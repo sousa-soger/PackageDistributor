@@ -62,9 +62,17 @@ class GenerateDeltaPackage extends Command
                 $headZipPath = $tempBasePath . DIRECTORY_SEPARATOR . 'head.zip';
                 $this->line("Downloading head version ({$head}) to {$headZipPath}...");
                 $githubService->downloadZip($owner, $repoName, $head, $headZipPath);
+
+                $baseExtractPath = $tempBasePath . DIRECTORY_SEPARATOR . 'base_extract';
+                $this->line("Extracting base version ({$base}) to {$baseExtractPath}...");
+                $this->extractZip($baseZipPath, $baseExtractPath);
+                
+                $headExtractPath = $tempBasePath . DIRECTORY_SEPARATOR . 'head_extract';
+                $this->line("Extracting head version ({$head}) to {$headExtractPath}...");
+                $this->extractZip($headZipPath, $headExtractPath);
                 
                 $this->line("Comparing zip manifests...");
-                $changedFiles = $this->compareZipFiles($baseZipPath, $headZipPath);
+                $changedFiles = $this->compareZipFiles($baseExtractPath, $headExtractPath);
                 $totalChanges = count($changedFiles);
                 $this->line("Found {$totalChanges} changes.");
             }
@@ -95,6 +103,15 @@ class GenerateDeltaPackage extends Command
     protected function safe(string $value): string
     {
         return preg_replace('/[^\w.\-]+/', '_', $value);
+    }
+
+    private function extractZip(string $zipPath, string $destinationPath): void
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) === true) {
+            $zip->extractTo($destinationPath);
+            $zip->close();
+        }
     }
 
     private function compareZipFiles(string $baseZipPath, string $headZipPath): array
