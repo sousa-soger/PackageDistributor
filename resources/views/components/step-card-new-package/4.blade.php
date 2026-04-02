@@ -174,7 +174,7 @@
 </div>
 {{--
 <p class="mt-4 text-xs text-slate-400">
-    Navigation is locked while packaging is running.
+    Navigation is locked while packaging is running .
 </p>
 --}}
 </div>
