@@ -1,20 +1,19 @@
 <x-ui.card class="p-8 w-full">
-    <div class="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
+    <div>
+        <h3 class="text-2xl font-bold text-slate-900">
+            Package: <span x-text="packagingResult?.folder_name"></span>
+        </h3>
 
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+            <span>Size: <span x-text="packagingResult?.file_size"></span></span>
+            <span class="text-slate-300">|</span>
+            <span>SHA256 Checksum: <span x-text="packagingResult?.sha256"></span></span>
+        </div>
+    </div>
+
+    <div class="pt-6 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
         <!-- Left -->
-        <div class="space-y-8">
-            <div class="space-y-2">
-                <h2 class="text-2xl font-bold text-slate-900">
-                    CyBix Package [main_commit_v1.0].zip
-                </h2>
-
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-                    <span>Size: 45 MB</span>
-                    <span class="text-slate-300">|</span>
-                    <span>SHA256 Checksum: A3B1C9D4E5F6A3B1C9D4E5F6...</span>
-                </div>
-            </div>
-
+        <div class="space-y-8 center">
             <div class="space-y-2">
                 <h3 class="text-xl font-semibold text-slate-900">
                     Download Package Locally
@@ -158,18 +157,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="mt-10 flex items-center justify-end gap-3 border-t border-slate-200 pt-6">
-        <button type="button"
-            class="rounded-2xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
-            Back
-        </button>
-
-        <button type="button"
-            class="rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
-            Finish
-        </button>
-    </div>
 
     <div class="space-y-6">
         <div class="flex items-center justify-end gap-3 pt-2">
@@ -178,7 +165,7 @@
             </x-ui.clear-button>
 
             <x-ui.primary-button type="button" @click="if (selectedVersion) currentStep = 5">
-                Continue
+                Finish
             </x-ui.primary-button>
         </div>
     </div>
