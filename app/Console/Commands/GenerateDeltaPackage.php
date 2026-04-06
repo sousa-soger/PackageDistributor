@@ -136,6 +136,7 @@ class GenerateDeltaPackage extends Command
                 'temp_path' => isset($tempBasePath) ? $tempBasePath : null,
                 'message' => 'Created package folder successfully without packaging.',
                 'changed_files' => $changedFiles,
+                'file_size' => $this->getDirectorySize($packageRoot),
                 'summary' => [
                     'total_changes' => $totalChanges,
                     'update_delete_count' => 0,
@@ -151,6 +152,23 @@ class GenerateDeltaPackage extends Command
             $this->error($e->getMessage());
             return self::FAILURE;
         }
+    }
+
+    private function getDirectorySize(string $directory): string
+    {
+        if (!File::exists($directory)) {
+            return '0 B';
+        }
+        $size = 0;
+        foreach (File::allFiles($directory) as $file) {
+            $size += $file->getSize();
+        }
+        
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        for ($i = 0; $size >= 1024 && $i < 4; $i++) {
+            $size /= 1024;
+        }
+        return round($size, 2) . ' ' . $units[$i];
     }
 
     protected function safe(string $value): string
@@ -363,4 +381,6 @@ class GenerateDeltaPackage extends Command
             File::copy($src, $dest);
         }
     }
+
+
 }

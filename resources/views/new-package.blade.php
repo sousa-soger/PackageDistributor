@@ -4,17 +4,14 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                                                                repositories: @js($repositories),
-                                                                                                generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                                                csrfToken: '{{ csrf_token() }}'
-                                                                                            })">
+                                                                                                    repositories: @js($repositories),
+                                                                                                    generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                                                    csrfToken: '{{ csrf_token() }}'
+                                                                                                })">
 
         <div class="flex items-start justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-slate-900">Create Distribution Package</h1>
-                <div x-data="{test: 123}">
-                    <p>testing: <span x-text="test" class="text-black"></span></p>
-                </div>
             </div>
 
             <div class="text-sm text-slate-400 font-medium">

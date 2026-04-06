@@ -42,3 +42,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/deployments/progress/{name}', [DeploymentPackageController::class, 'progress'])
         ->name('deployments.progress');
 });
+
+// User download package route
+Route::get('/download-archive', [DeploymentPackageController::class, 'downloadArchive'])->name('download.archive');

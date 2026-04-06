@@ -29,12 +29,29 @@
                     class="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-amber-50 text-3xl shadow-sm">
                     📦
                 </div>
-                <span class="text-xs font-medium tracking-wide text-slate-400 uppercase">ZIP Package</span>
+                <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"
+                    x-text="selectedFormat ? selectedFormat.toUpperCase() + ' Package' : 'Package'"></span>
             </div>
 
             <!-- Download Button -->
             <div class="pt-2">
                 <button type="button"
+                    @click="
+                        const base = '{{ route('download.archive') }}';
+                        const folder = encodeURIComponent(packagingResult?.folder_name);
+                        if (selectedFormat === 'both') {
+                            window.location.href = base + '?folder=' + folder + '&format=.zip';
+                            setTimeout(() => {
+                                const iframe = document.createElement('iframe');
+                                iframe.style.display = 'none';
+                                iframe.src = base + '?folder=' + folder + '&format=.tar.gz';
+                                document.body.appendChild(iframe);
+                                setTimeout(() => iframe.remove(), 10000);
+                            }, 1000);
+                        } else {
+                            window.location.href = base + '?folder=' + folder + '&format=' + encodeURIComponent(selectedFormat);
+                        }
+                    "
                     class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="1.8">
@@ -44,9 +61,8 @@
 
                     <span>Download Package</span>
 
-                    <span class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                        Check
-                    </span>
+                    <span class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                        x-text="selectedFormat || 'Select format'"></span>
                 </button>
             </div>
         </div>
