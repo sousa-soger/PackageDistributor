@@ -167,4 +167,3 @@
     Navigation is locked while packaging is running .
 </p>
 --}}
-</div>

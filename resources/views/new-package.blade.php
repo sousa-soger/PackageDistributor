@@ -12,6 +12,9 @@
         <div class="flex items-start justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-slate-900">Create Distribution Package</h1>
+                <div x-data="{test: 123}">
+                    <p>testing: <span x-text="test" class="text-black"></span></p>
+                </div>
             </div>
 
             <div class="text-sm text-slate-400 font-medium">
@@ -70,7 +73,7 @@
 
         </div>
 
-        <div x-show="currentStep === 1" x-cloa k>
+        <div x-show="currentStep === 1" x-cloak>
             @include('components.step-card-new-package.1')
         </div>
 
@@ -109,7 +112,7 @@
                 <p>Filtered Base Versions: <span x-text="filteredVersionsBase.length" class="text-black"></span></p>
                 <p>Filtered Head Versions: <span x-text="filteredVersionsHead.length" class="text-black"></span></p>
                 <p>Repo Data: <span x-text="repoData ? 'Loaded' : 'Not Loaded'" class="text-black"></span></p>
-                <p>Branches: <span x-text="repoBranches.length" class="text-black   "></span></p>
+                <p>Package folder location: <span x-text="packagingResult?.package_root" class="text-black"></span></p>
                 <p>GitHub API Limit: <template x-if="rateLimit">
                         <span class="text-black"
                             x-text="`${rateLimit.resources.core.remaining} / ${rateLimit.resources.core.limit} (Resets ${new Date(rateLimit.resources.core.reset * 1000).toLocaleTimeString()})`"></span>
@@ -210,6 +213,7 @@
                     try {
                         const response = await fetch('/github/rate-limit');
                         this.rateLimit = await response.json();
+                        console.log(response);
                     } catch (e) {
                         console.error('Rate limit fetch failed', e);
                     }
