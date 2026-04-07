@@ -4,10 +4,10 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                                                                    repositories: @js($repositories),
-                                                                                                    generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                                                    csrfToken: '{{ csrf_token() }}'
-                                                                                                })">
+                                                                                                                repositories: @js($repositories),
+                                                                                                                generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                                                                csrfToken: '{{ csrf_token() }}'
+                                                                                                            })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -397,19 +397,19 @@
                         return;
                     }
 
-                    this.isPackaging          = true;
-                    this.abortController      = new AbortController();
-                    this.packagingError       = '';
-                    this.packagingResult      = null;
+                    this.isPackaging = true;
+                    this.abortController = new AbortController();
+                    this.packagingError = '';
+                    this.packagingResult = null;
 
                     // Reset all stage progress
-                    this.packagingProgress    = 0;
+                    this.packagingProgress = 0;
                     this.fileDownloadProgress = 0;
-                    this.headFileExtraction   = 0;
-                    this.baseFileExtraction   = 0;
+                    this.headFileExtraction = 0;
+                    this.baseFileExtraction = 0;
                     this.compareFilesProgress = 0;
-                    this.packageGenProgress   = 0;
-                    this.compressionProgress  = 0;
+                    this.packageGenProgress = 0;
+                    this.compressionProgress = 0;
 
                     // Snapshot the package name NOW so the 60-second updateName()
                     // interval cannot change it mid-run and break the polling URL.
@@ -425,27 +425,35 @@
 
                     const pollProgress = setInterval(async () => {
                         try {
-                            const res = await fetch(`/deployments/progress/${encodeURIComponent(frozenPackageName)}`);
+                            const res = await fetch(`/deployments/progress/${encodeURIComponent(frozenPackageName)}?t=${Date.now()}`, {
+                                cache: 'no-store',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Cache-Control': 'no-cache',
+                                    'Pragma': 'no-cache',
+                                },
+                            });
                             if (res.ok) {
                                 const prog = await res.json();
+                                console.log('progress payload', prog);
                                 if (this.isPackaging && !this.packagingResult) {
                                     // Overall packaging progress – trust backend weighted value
-                                    if (prog.packagingProgress !== undefined && prog.packagingProgress > this.packagingProgress)
-                                        this.packagingProgress = prog.packagingProgress;
+                                    if (prog.packagingProgress !== undefined && Number(prog.packagingProgress) > this.packagingProgress)
+                                        this.packagingProgress = Number(prog.packagingProgress);
 
                                     // Stage fields – only advance, never retreat
-                                    if (prog.fileDownloadProgress !== undefined && prog.fileDownloadProgress > this.fileDownloadProgress)
-                                        this.fileDownloadProgress = prog.fileDownloadProgress;
-                                    if (prog.headFileExtraction !== undefined && prog.headFileExtraction > this.headFileExtraction)
-                                        this.headFileExtraction = prog.headFileExtraction;
-                                    if (prog.baseFileExtraction !== undefined && prog.baseFileExtraction > this.baseFileExtraction)
-                                        this.baseFileExtraction = prog.baseFileExtraction;
-                                    if (prog.compareFilesProgress !== undefined && prog.compareFilesProgress > this.compareFilesProgress)
-                                        this.compareFilesProgress = prog.compareFilesProgress;
-                                    if (prog.packageGenProgress !== undefined && prog.packageGenProgress > this.packageGenProgress)
-                                        this.packageGenProgress = prog.packageGenProgress;
-                                    if (prog.compressionProgress !== undefined && prog.compressionProgress > this.compressionProgress)
-                                        this.compressionProgress = prog.compressionProgress;
+                                    if (prog.fileDownloadProgress !== undefined && Number(prog.fileDownloadProgress) > this.fileDownloadProgress)
+                                        this.fileDownloadProgress = Number(prog.fileDownloadProgress);
+                                    if (prog.headFileExtraction !== undefined && Number(prog.headFileExtraction) > this.headFileExtraction)
+                                        this.headFileExtraction = Number(prog.headFileExtraction);
+                                    if (prog.baseFileExtraction !== undefined && Number(prog.baseFileExtraction) > this.baseFileExtraction)
+                                        this.baseFileExtraction = Number(prog.baseFileExtraction);
+                                    if (prog.compareFilesProgress !== undefined && Number(prog.compareFilesProgress) > this.compareFilesProgress)
+                                        this.compareFilesProgress = Number(prog.compareFilesProgress);
+                                    if (prog.packageGenProgress !== undefined && Number(prog.packageGenProgress) > this.packageGenProgress)
+                                        this.packageGenProgress = Number(prog.packageGenProgress);
+                                    if (prog.compressionProgress !== undefined && Number(prog.compressionProgress) > this.compressionProgress)
+                                        this.compressionProgress = Number(prog.compressionProgress);
 
                                     if (prog.packagingMessage) this.packagingMessage = prog.packagingMessage;
                                 }
@@ -473,11 +481,11 @@
                                 'Accept': 'application/json',
                             },
                             body: JSON.stringify({
-                                environment:  this.selectedEnvironment,
+                                environment: this.selectedEnvironment,
                                 project_name: this.selectedRepositoryLabel,
                                 base_version: base_ref,
                                 head_version: head_ref,
-                                repo:         this.selectedRepository,
+                                repo: this.selectedRepository,
                                 package_name: frozenPackageName,
                             }),
                         });
@@ -489,23 +497,23 @@
                         }
 
                         // Mark all stages complete
-                        this.packagingProgress    = 100;
+                        this.packagingProgress = 100;
                         this.fileDownloadProgress = 100;
-                        this.headFileExtraction   = 100;
-                        this.baseFileExtraction   = 100;
+                        this.headFileExtraction = 100;
+                        this.baseFileExtraction = 100;
                         this.compareFilesProgress = 100;
-                        this.packageGenProgress   = 100;
-                        this.compressionProgress  = 100;
+                        this.packageGenProgress = 100;
+                        this.compressionProgress = 100;
                         this.packagingMessage = 'Package created successfully.';
-                        this.packagingResult  = data;
+                        this.packagingResult = data;
                     } catch (error) {
                         this.packagingProgress = 0;
                         if (error.name === 'AbortError') {
                             this.packagingMessage = 'Packaging stopped manually.';
-                            this.packagingError   = 'Operation was aborted by the user.';
+                            this.packagingError = 'Operation was aborted by the user.';
                         } else {
                             this.packagingMessage = 'Packaging stopped.';
-                            this.packagingError   = error.message || 'Unexpected error during packaging.';
+                            this.packagingError = error.message || 'Unexpected error during packaging.';
                         }
                     } finally {
                         clearInterval(pollProgress);
