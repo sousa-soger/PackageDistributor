@@ -39,7 +39,10 @@ Route::get('/github/rate-limit', [GitHubController::class, 'rateLimit'])->name('
 Route::middleware('auth')->group(function () {
     Route::post('/deployments/generate-delta', [DeploymentPackageController::class, 'generate'])
         ->name('deployments.generate-delta');
+    // {name} may contain dots (e.g. "v1.1.2") – without ->where() Laravel's
+    // router can strip the suffix, resulting in a silent 404 on every poll.
     Route::get('/deployments/progress/{name}', [DeploymentPackageController::class, 'progress'])
+        ->where('name', '[^/]+')
         ->name('deployments.progress');
 });
 

@@ -23,18 +23,40 @@ class GenerateDeltaPackage extends Command
 
     protected string $workingDir;
 
+
     private function updateProgress(string $folderName, array $data)
     {
         $cacheKey = "packaging_progress_{$folderName}";
-        $current = Cache::get($cacheKey, [
-            'fileDownloadProgress' => 0,
-            'baseFileExtraction' => 0,
-            'headFileExtraction' => 0,
-            'packagingProgress' => 25,
-            'packagingMessage' => 'Initializing...',
+        $current  = Cache::get($cacheKey, [
+            'fileDownloadProgress'   => 0,
+            'baseFileExtraction'     => 0,
+            'headFileExtraction'     => 0,
+            'compareFilesProgress'   => 0,
+            'packageGenProgress'     => 0,
+            'compressionProgress'    => 0,
+            'packagingProgress'      => 0,
+            'packagingMessage'       => 'Initializing...',
         ]);
-        Cache::put($cacheKey, array_merge($current, $data), 600);
+        $merged = array_merge($current, $data);
+
+        // Derive overall packagingProgress from weighted stage values
+        $weighted = (int) round(
+            ($merged['fileDownloadProgress']   / 100) * 10 +
+            ($merged['headFileExtraction']     / 100) * 20 +
+            ($merged['baseFileExtraction']     / 100) * 20 +
+            ($merged['compareFilesProgress']   / 100) * 10 +
+            ($merged['packageGenProgress']     / 100) * 20 +
+            ($merged['compressionProgress']    / 100) * 20
+        );
+
+        // Allow explicit overrides (e.g. setting 100 on done, or 0 on error)
+        if (!isset($data['packagingProgress'])) {
+            $merged['packagingProgress'] = $weighted;
+        }
+
+        Cache::put($cacheKey, $merged, 600);
     }
+
 
     // Give admin permission to the folder
     private function grantWindowsPermissions(string $path)
@@ -83,57 +105,84 @@ class GenerateDeltaPackage extends Command
                 $baseZipPath = $tempBasePath . DIRECTORY_SEPARATOR . 'base.zip';
                 
                 $this->line("Downloading base version ({$base}) to {$baseZipPath}...");
-                $this->updateProgress($folderName, ['packagingMessage' => "Downloading base version...", 'packagingProgress' => 30, 'fileDownloadProgress' => 25]);
-                if (!$githubService->downloadZip($owner, $repoName, $base, $baseZipPath)) {
+                $this->updateProgress($folderName, ['packagingMessage' => "Downloading base version..."]);
+
+                $self = $this;
+                $downloaded = ['base' => 0, 'head' => 0];
+
+                if (!$githubService->downloadZip($owner, $repoName, $base, $baseZipPath, function (int $dlNow, int $dlTotal) use ($self, $folderName, &$downloaded) {
+                    $downloaded['base'] = $dlTotal > 0 ? (int) round(($dlNow / $dlTotal) * 100) : 0;
+                    // Combined download: base contributes 50%, head contributes 50%
+                    $combined = (int) round(($downloaded['base'] + $downloaded['head']) / 2);
+                    $self->updateProgress($folderName, [
+                        'packagingMessage'     => 'Downloading base version...',
+                        'fileDownloadProgress' => $combined,
+                    ]);
+                })) {
                     throw new \Exception("Failed to download base version {$base}. Please check repository access or limits.");
                 }
+                $downloaded['base'] = 100;
                 
+
                 $headZipPath = $tempBasePath . DIRECTORY_SEPARATOR . 'head.zip';
                 $this->line("Downloading head version ({$head}) to {$headZipPath}...");
-                $this->updateProgress($folderName, ['packagingMessage' => "Downloading head version...", 'packagingProgress' => 35, 'fileDownloadProgress' => 100]);
-                if (!$githubService->downloadZip($owner, $repoName, $head, $headZipPath)) {
+                $this->updateProgress($folderName, ['packagingMessage' => "Downloading head version..."]);
+
+                if (!$githubService->downloadZip($owner, $repoName, $head, $headZipPath, function (int $dlNow, int $dlTotal) use ($self, $folderName, &$downloaded) {
+                    $downloaded['head'] = $dlTotal > 0 ? (int) round(($dlNow / $dlTotal) * 100) : 0;
+                    $combined = (int) round(($downloaded['base'] + $downloaded['head']) / 2);
+                    $self->updateProgress($folderName, [
+                        'packagingMessage'     => 'Downloading head version...',
+                        'fileDownloadProgress' => $combined,
+                    ]);
+                })) {
                     throw new \Exception("Failed to download head version {$head}. Please check repository access or limits.");
                 }
+                $downloaded['head'] = 100;
+                $this->updateProgress($folderName, ['fileDownloadProgress' => 100]);
 
                 $this->grantWindowsPermissions($baseZipPath);
                 $this->grantWindowsPermissions($headZipPath);
 
                 $baseExtractPath = $tempBasePath . DIRECTORY_SEPARATOR . 'base_extract';
                 $this->line("Extracting base version ({$base}) to {$baseExtractPath}...");
-                $this->updateProgress($folderName, ['packagingMessage' => "Extracting base version...", 'packagingProgress' => 45, 'baseFileExtraction' => 50]);
-                $this->extractZip($baseZipPath, $baseExtractPath);
+                $this->updateProgress($folderName, ['packagingMessage' => "Extracting base version..."]);
+                $this->extractZipWithProgress($baseZipPath, $baseExtractPath, $folderName, 'baseFileExtraction');
                 $this->grantWindowsPermissions($baseExtractPath);
-                $this->updateProgress($folderName, ['baseFileExtraction' => 100]);
-                
+
                 $headExtractPath = $tempBasePath . DIRECTORY_SEPARATOR . 'head_extract';
                 $this->line("Extracting head version ({$head}) to {$headExtractPath}...");
-                $this->updateProgress($folderName, ['packagingMessage' => "Extracting head version...", 'packagingProgress' => 55, 'headFileExtraction' => 50]);
-                $this->extractZip($headZipPath, $headExtractPath);
+                $this->updateProgress($folderName, ['packagingMessage' => "Extracting head version..."]);
+                $this->extractZipWithProgress($headZipPath, $headExtractPath, $folderName, 'headFileExtraction');
                 $this->grantWindowsPermissions($headExtractPath);
-                $this->updateProgress($folderName, ['headFileExtraction' => 100]);
+
                 
                 $this->line("Comparing zip manifests...");
-                $this->updateProgress($folderName, ['packagingMessage' => "Computing delta packages...", 'packagingProgress' => 75]);
-                
-                $diffData = $this->compareFileSize($baseZipPath, $headZipPath);
-                $changedFiles = $diffData['changed'];
-                $totalChanges = count($changedFiles);
+                $this->updateProgress($folderName, ['packagingMessage' => "Comparing files..."]);
+
+                $diffData = $this->compareFileSizeWithProgress($baseZipPath, $headZipPath, $folderName);
+                $changedFiles  = $diffData['changed'];
+                $totalChanges  = count($changedFiles);
                 $this->line("Found {$totalChanges} changes.");
-                
+
                 $this->versionFileDifferenceTxt($packageRoot, $diffData['modifiedFiles'], $diffData['deletedFiles'], $diffData['addedFiles'], $base, $head);
 
                 $this->line("Generating packages for update and rollback...");
-                $this->updateProgress($folderName, ['packagingMessage' => "Creating package directories..."]);
-                $this->generatePackages($packageRoot, $baseExtractPath, $headExtractPath, $diffData);
+                $this->updateProgress($folderName, ['packagingMessage' => "Generating update and rollback packages..."]);
+                $this->generatePackagesWithProgress($packageRoot, $baseExtractPath, $headExtractPath, $diffData, $folderName);
+
             }
 
-            $this->updateProgress($folderName, ['packagingMessage' => "Creating ZIP archive...", 'packagingProgress' => 90]);
-            $zipPath = $this->buildZip($packageRoot, $folderName);
+            $this->updateProgress($folderName, ['packagingMessage' => "Creating ZIP archive..."]);
+            $zipPath = $this->buildZipWithProgress($packageRoot, $folderName);
 
-            $this->updateProgress($folderName, ['packagingMessage' => "Creating TAR.GZ archive...", 'packagingProgress' => 95]);
+            $this->updateProgress($folderName, ['packagingMessage' => "Creating TAR.GZ archive..."]);
             $tarGzPath = $this->buildTarGz($packageRoot, $folderName);
 
-            $this->updateProgress($folderName, ['packagingMessage' => "Done.", 'packagingProgress' => 100]);
+            $this->updateProgress($folderName, ['packagingMessage' => "Done.", 'packagingProgress' => 100,
+                'fileDownloadProgress' => 100, 'headFileExtraction' => 100, 'baseFileExtraction' => 100,
+                'compareFilesProgress' => 100, 'packageGenProgress' => 100, 'compressionProgress' => 100]);
+
 
             $sha256 = $zipPath && file_exists($zipPath) ? hash_file('sha256', $zipPath) : null;
 
@@ -192,6 +241,47 @@ class GenerateDeltaPackage extends Command
             $zip->extractTo($destinationPath);
             $zip->close();
         }
+    }
+
+    /**
+     * Extract a ZIP file while reporting per-file progress to the cache.
+     */
+    private function extractZipWithProgress(string $zipPath, string $destinationPath, string $folderName, string $field): void
+    {
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath) !== true) {
+            return;
+        }
+
+        $total   = $zip->numFiles;
+        $done    = 0;
+        $lastPct = -1;
+
+        for ($i = 0; $i < $total; $i++) {
+            $name = $zip->getNameIndex($i);
+            // Create directory entries inline
+            if (substr($name, -1) === '/') {
+                $dir = $destinationPath . DIRECTORY_SEPARATOR . $name;
+                if (!is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+            } else {
+                // Extract single file
+                $zip->extractTo($destinationPath, $name);
+            }
+            $done++;
+            $pct = $total > 0 ? (int) round(($done / $total) * 100) : 0;
+            if ($pct !== $lastPct) {
+                $lastPct = $pct;
+                $this->updateProgress($folderName, [
+                    $field             => $pct,
+                    'packagingMessage' => ucfirst(str_replace(['FileExtraction', 'File'], [' file extraction', ' file'], $field)) . " ({$done}/{$total})",
+                ]);
+            }
+        }
+
+        $zip->close();
+        $this->updateProgress($folderName, [$field => 100]);
     }
 
     private function compareZipFiles(string $baseZipPath, string $headZipPath): array
@@ -266,63 +356,94 @@ class GenerateDeltaPackage extends Command
 
     private function compareFileSize(string $baseZipPath, string $headZipPath): array
     {
+        return $this->compareFileSizeWithProgress($baseZipPath, $headZipPath, null);
+    }
+
+    /**
+     * Compare two ZIP manifests and report progress to cache during iteration.
+     */
+    private function compareFileSizeWithProgress(string $baseZipPath, string $headZipPath, ?string $folderName): array
+    {
         $baseFiles = $this->getZipManifest($baseZipPath);
         $headFiles = $this->getZipManifest($headZipPath);
 
-        $changed = [];
-        $addedFiles = [];
+        $changed       = [];
+        $addedFiles    = [];
         $modifiedFiles = [];
-        $deletedFiles = [];
+        $deletedFiles  = [];
+
+        $total   = count($headFiles) + count($baseFiles);
+        $done    = 0;
+        $lastPct = -1;
+
+        $maybeUpdate = function (string $msg) use ($folderName, $total, &$done, &$lastPct) {
+            $done++;
+            if ($folderName === null || $total === 0) return;
+            $pct = (int) round(($done / $total) * 100);
+            if ($pct !== $lastPct) {
+                $lastPct = $pct;
+                $this->updateProgress($folderName, [
+                    'compareFilesProgress' => $pct,
+                    'packagingMessage'     => $msg,
+                ]);
+            }
+        };
 
         // Identify Added and Modified
         foreach ($headFiles as $path => $headInfo) {
             if (!isset($baseFiles[$path])) {
                 $change = [
-                    'filename' => $path,
-                    'status' => 'added',
-                    'old_size' => 0,
-                    'new_size' => $headInfo['size'],
-                    'size_diff' => $headInfo['size'],
+                    'filename'          => $path,
+                    'status'            => 'added',
+                    'old_size'          => 0,
+                    'new_size'          => $headInfo['size'],
+                    'size_diff'         => $headInfo['size'],
                     'head_internal_path' => $headInfo['internal_path'],
                 ];
-                $changed[] = $change;
+                $changed[]    = $change;
                 $addedFiles[] = $change;
             } elseif ($baseFiles[$path]['crc'] !== $headInfo['crc'] || $baseFiles[$path]['size'] !== $headInfo['size']) {
                 $change = [
-                    'filename' => $path,
-                    'status' => 'modified',
-                    'old_size' => $baseFiles[$path]['size'],
-                    'new_size' => $headInfo['size'],
-                    'size_diff' => $headInfo['size'] - $baseFiles[$path]['size'],
+                    'filename'           => $path,
+                    'status'             => 'modified',
+                    'old_size'           => $baseFiles[$path]['size'],
+                    'new_size'           => $headInfo['size'],
+                    'size_diff'          => $headInfo['size'] - $baseFiles[$path]['size'],
                     'base_internal_path' => $baseFiles[$path]['internal_path'],
                     'head_internal_path' => $headInfo['internal_path'],
                 ];
-                $changed[] = $change;
+                $changed[]       = $change;
                 $modifiedFiles[] = $change;
             }
+            $maybeUpdate("Comparing files ({$done}/{$total})");
         }
 
         // Identify Deleted
         foreach ($baseFiles as $path => $baseInfo) {
             if (!isset($headFiles[$path])) {
                 $change = [
-                    'filename' => $path,
-                    'status' => 'deleted',
-                    'old_size' => $baseInfo['size'],
-                    'new_size' => 0,
-                    'size_diff' => -$baseInfo['size'],
+                    'filename'           => $path,
+                    'status'             => 'deleted',
+                    'old_size'           => $baseInfo['size'],
+                    'new_size'           => 0,
+                    'size_diff'          => -$baseInfo['size'],
                     'base_internal_path' => $baseInfo['internal_path'],
                 ];
-                $changed[] = $change;
+                $changed[]      = $change;
                 $deletedFiles[] = $change;
             }
+            $maybeUpdate("Comparing files ({$done}/{$total})");
+        }
+
+        if ($folderName !== null) {
+            $this->updateProgress($folderName, ['compareFilesProgress' => 100]);
         }
 
         return [
-            'changed' => $changed,
-            'addedFiles' => $addedFiles,
+            'changed'       => $changed,
+            'addedFiles'    => $addedFiles,
             'modifiedFiles' => $modifiedFiles,
-            'deletedFiles' => $deletedFiles,
+            'deletedFiles'  => $deletedFiles,
         ];
     }
 
@@ -356,72 +477,149 @@ class GenerateDeltaPackage extends Command
 
     private function generatePackages(string $packageRoot, string $baseExtractPath, string $headExtractPath, array $diffData): void
     {
-        $updatePath = $packageRoot . DIRECTORY_SEPARATOR . 'update';
+        $this->generatePackagesWithProgress($packageRoot, $baseExtractPath, $headExtractPath, $diffData, null);
+    }
+
+    /**
+     * Copy changed files into update/rollback directories, reporting progress.
+     */
+    private function generatePackagesWithProgress(
+        string $packageRoot,
+        string $baseExtractPath,
+        string $headExtractPath,
+        array $diffData,
+        ?string $folderName
+    ): void {
+        $updatePath   = $packageRoot . DIRECTORY_SEPARATOR . 'update';
         $rollbackPath = $packageRoot . DIRECTORY_SEPARATOR . 'rollback';
 
         File::ensureDirectoryExists($updatePath);
         File::ensureDirectoryExists($rollbackPath);
 
-        // Populate updateRaw (Base -> Head)
+        // Total operations: update (added + modified) + rollback (deleted + modified)
+        $totalOps = count($diffData['addedFiles']) + count($diffData['modifiedFiles']) * 2 + count($diffData['deletedFiles']);
+        $done     = 0;
+        $lastPct  = -1;
+
+        $maybeUpdate = function () use ($folderName, $totalOps, &$done, &$lastPct) {
+            $done++;
+            if ($folderName === null || $totalOps === 0) return;
+            $pct = (int) round(($done / $totalOps) * 100);
+            if ($pct !== $lastPct) {
+                $lastPct = $pct;
+                $this->updateProgress($folderName, [
+                    'packageGenProgress' => $pct,
+                    'packagingMessage'   => "Generating packages ({$done}/{$totalOps})",
+                ]);
+            }
+        };
+
+        // Populate update (Base -> Head)
         foreach ($diffData['addedFiles'] as $file) {
-            $src = $headExtractPath . DIRECTORY_SEPARATOR . $file['head_internal_path'];
+            $src  = $headExtractPath . DIRECTORY_SEPARATOR . $file['head_internal_path'];
             $dest = $updatePath . DIRECTORY_SEPARATOR . $file['filename'];
             File::ensureDirectoryExists(dirname($dest));
             File::copy($src, $dest);
+            $maybeUpdate();
         }
         foreach ($diffData['modifiedFiles'] as $file) {
-            $src = $headExtractPath . DIRECTORY_SEPARATOR . $file['head_internal_path'];
+            $src  = $headExtractPath . DIRECTORY_SEPARATOR . $file['head_internal_path'];
             $dest = $updatePath . DIRECTORY_SEPARATOR . $file['filename'];
             File::ensureDirectoryExists(dirname($dest));
             File::copy($src, $dest);
+            $maybeUpdate();
         }
 
-        // Populate rollbackRaw (Head -> Base)
+        // Populate rollback (Head -> Base)
         foreach ($diffData['deletedFiles'] as $file) {
-            $src = $baseExtractPath . DIRECTORY_SEPARATOR . $file['base_internal_path'];
+            $src  = $baseExtractPath . DIRECTORY_SEPARATOR . $file['base_internal_path'];
             $dest = $rollbackPath . DIRECTORY_SEPARATOR . $file['filename'];
             File::ensureDirectoryExists(dirname($dest));
             File::copy($src, $dest);
+            $maybeUpdate();
         }
         foreach ($diffData['modifiedFiles'] as $file) {
-            $src = $baseExtractPath . DIRECTORY_SEPARATOR . $file['base_internal_path'];
+            $src  = $baseExtractPath . DIRECTORY_SEPARATOR . $file['base_internal_path'];
             $dest = $rollbackPath . DIRECTORY_SEPARATOR . $file['filename'];
             File::ensureDirectoryExists(dirname($dest));
             File::copy($src, $dest);
+            $maybeUpdate();
+        }
+
+        if ($folderName !== null) {
+            $this->updateProgress($folderName, ['packageGenProgress' => 100]);
         }
     }
 
 
     /**
-     * Build a .zip archive from the package directory (idempotent).
+     * Build a .zip archive from the package directory (idempotent). No progress tracking.
      */
     private function buildZip(string $packageRoot, string $folderName): ?string
+    {
+        return $this->buildZipWithProgress($packageRoot, null);
+    }
+
+    /**
+     * Build a .zip archive while optionally reporting per-file compression progress.
+     * Pass a non-null $folderName to enable cache progress updates.
+     */
+    private function buildZipWithProgress(string $packageRoot, ?string $folderName): ?string
     {
         $zipPath = $packageRoot . '.zip';
 
         if (file_exists($zipPath)) {
+            if ($folderName !== null) {
+                $this->updateProgress($folderName, ['compressionProgress' => 100]);
+            }
             return $zipPath;
         }
 
         $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-            $files = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($packageRoot, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::LEAVES_ONLY
-            );
-            foreach ($files as $file) {
-                if (!$file->isDir()) {
-                    $filePath     = $file->getRealPath();
-                    $relativePath = substr($filePath, strlen($packageRoot) + 1);
-                    $relativePath = str_replace('\\', '/', $relativePath);
-                    $zip->addFile($filePath, $relativePath);
-                }
-            }
-            $zip->close();
-            return $zipPath;
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return null;
         }
 
-        return null;
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($packageRoot, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        $allFiles = [];
+        foreach ($files as $file) {
+            if (!$file->isDir()) {
+                $allFiles[] = $file->getRealPath();
+            }
+        }
+
+        $total   = count($allFiles);
+        $done    = 0;
+        $lastPct = -1;
+
+        foreach ($allFiles as $filePath) {
+            $relativePath = substr($filePath, strlen($packageRoot) + 1);
+            $relativePath = str_replace('\\', '/', $relativePath);
+            $zip->addFile($filePath, $relativePath);
+            $done++;
+            if ($folderName !== null) {
+                $pct = $total > 0 ? (int) round(($done / $total) * 100) : 0;
+                if ($pct !== $lastPct) {
+                    $lastPct = $pct;
+                    $this->updateProgress($folderName, [
+                        'compressionProgress' => $pct,
+                        'packagingMessage'    => "Compressing archive ({$done}/{$total})",
+                    ]);
+                }
+            }
+        }
+
+        $zip->close();
+
+        if ($folderName !== null) {
+            $this->updateProgress($folderName, ['compressionProgress' => 100]);
+        }
+
+        return $zipPath;
     }
 
     /**

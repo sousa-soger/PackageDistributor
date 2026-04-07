@@ -86,21 +86,91 @@ class GitHubService
         return $this->client()->get("{$this->baseUrl}/rate_limit");
     }
 
-    public function downloadZip(string $owner, string $repo, string $ref, string $destinationZipPath): bool
-    {
+    /**
+     * Download a repository ZIP. If a $progressCallback is provided it will be
+     * called with (bytesDownloaded, totalBytes) approximately every 512 KB so
+     * that callers can report real download progress to the cache.
+     *
+     * @param  callable|null  $progressCallback  fn(int $downloaded, int $total): void
+     */
+    public function downloadZip(
+        string $owner,
+        string $repo,
+        string $ref,
+        string $destinationZipPath,
+        ?callable $progressCallback = null
+    ): bool {
         $parentDir = dirname($destinationZipPath);
         if (!is_dir($parentDir)) {
             mkdir($parentDir, 0755, true);
         }
 
-        $response = $this->client()->withOptions(['sink' => $destinationZipPath])
-            ->get("{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}");
+        $token   = config('services.github.token');
+        $url     = "{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}";
 
-        if (! $response->successful()) {
+        $fh = fopen($destinationZipPath, 'wb');
+        if (!$fh) {
+            return false;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 10,
+            CURLOPT_TIMEOUT        => 600,
+            CURLOPT_FILE           => $fh,
+            CURLOPT_HTTPHEADER     => array_filter([
+                'Accept: application/vnd.github+json',
+                'X-GitHub-Api-Version: 2022-11-28',
+                'User-Agent: Laravel-App',
+                $token ? "Authorization: Bearer {$token}" : null,
+            ]),
+            CURLOPT_NOPROGRESS     => $progressCallback === null,
+        ]);
+
+        $lastNotify   = 0;
+        $notifyEvery  = 512 * 1024; // 512 KB
+
+        if ($progressCallback !== null) {
+            curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (
+                $resource,
+                $dlTotal,
+                $dlNow,
+                $ulTotal,
+                $ulNow
+            ) use ($progressCallback, &$lastNotify, $notifyEvery) {
+                $dlTotal = (int) $dlTotal;
+                $dlNow   = (int) $dlNow;
+
+                if ($dlTotal <= 0 || $dlNow <= 0) {
+                    return;
+                }
+
+                // Use abs() to handle the dlNow counter resetting after redirects
+                // (which would make the raw difference negative and mute all updates).
+                if (abs($dlNow - $lastNotify) >= $notifyEvery || $lastNotify === 0) {
+                    $lastNotify = $dlNow;
+                    ($progressCallback)($dlNow, $dlTotal);
+                }
+            });
+        }
+
+        $ok       = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        fclose($fh);
+
+        if (!$ok || $httpCode < 200 || $httpCode >= 300) {
             if (file_exists($destinationZipPath)) {
                 unlink($destinationZipPath);
             }
             return false;
+        }
+
+        // Final notification at 100 %
+        if ($progressCallback !== null) {
+            $size = filesize($destinationZipPath);
+            ($progressCallback)($size, $size);
         }
 
         return true;

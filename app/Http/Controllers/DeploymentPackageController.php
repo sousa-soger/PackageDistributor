@@ -14,6 +14,10 @@ class DeploymentPackageController extends Controller
         // Prevent PHP from crashing if the download/extraction takes longer than 60s
         set_time_limit(600);
 
+        // Release the session write-lock immediately so concurrent polling requests
+        // to /deployments/progress/{name} are not blocked while Artisan::call() runs.
+        session()->save();
+
         $validated = $request->validate([
             'environment'  => ['required', 'string', 'max:20'],
             'project_name' => ['required', 'string', 'max:100'],
@@ -70,12 +74,19 @@ class DeploymentPackageController extends Controller
 
     public function progress($name)
     {
+        // Release session lock immediately — this endpoint is read-only and
+        // must not be blocked by the session lock held during generate().
+        session()->save();
+
         $progress = Cache::get("packaging_progress_{$name}", [
             'fileDownloadProgress' => 0,
-            'baseFileExtraction' => 0,
-            'headFileExtraction' => 0,
-            'packagingProgress' => 0,
-            'packagingMessage' => 'Starting...',
+            'headFileExtraction'   => 0,
+            'baseFileExtraction'   => 0,
+            'compareFilesProgress' => 0,
+            'packageGenProgress'   => 0,
+            'compressionProgress'  => 0,
+            'packagingProgress'    => 0,
+            'packagingMessage'     => 'Starting...',
         ]);
 
         return response()->json($progress);
@@ -180,3 +191,4 @@ class DeploymentPackageController extends Controller
         }
     }
 }
+

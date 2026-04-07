@@ -167,10 +167,18 @@
                 confirmation: false,
                 hovered: false,
                 abortController: null,
+
+                // Overall derived progress (comes from backend weighted computation)
                 packagingProgress: 0,
+
+                // Stage-level progress fields
                 fileDownloadProgress: 0,
-                baseFileExtraction: 0,
                 headFileExtraction: 0,
+                baseFileExtraction: 0,
+                compareFilesProgress: 0,
+                packageGenProgress: 0,
+                compressionProgress: 0,
+
                 packagingMessage: 'Ready to generate package.',
                 packagingError: '',
                 packagingResult: null,
@@ -389,32 +397,56 @@
                         return;
                     }
 
-                    this.isPackaging = true;
-                    this.abortController = new AbortController();
-                    this.packagingError = '';
-                    this.packagingResult = null;
-                    this.packagingProgress = 10;
+                    this.isPackaging          = true;
+                    this.abortController      = new AbortController();
+                    this.packagingError       = '';
+                    this.packagingResult      = null;
+
+                    // Reset all stage progress
+                    this.packagingProgress    = 0;
                     this.fileDownloadProgress = 0;
-                    this.baseFileExtraction = 0;
-                    this.headFileExtraction = 0;
+                    this.headFileExtraction   = 0;
+                    this.baseFileExtraction   = 0;
+                    this.compareFilesProgress = 0;
+                    this.packageGenProgress   = 0;
+                    this.compressionProgress  = 0;
+
+                    // Snapshot the package name NOW so the 60-second updateName()
+                    // interval cannot change it mid-run and break the polling URL.
+                    const frozenPackageName = this.packageName;
+
                     this.packagingMessage = 'Validating selected versions...';
 
                     let timeoutId = setTimeout(() => {
                         if (this.isPackaging) {
                             this.packagingMessage = 'It is taking longer than usual... Please wait.';
                         }
-                    }, 60000); // 1 minute
+                    }, 60000);
 
                     const pollProgress = setInterval(async () => {
                         try {
-                            const res = await fetch(`/deployments/progress/${this.packageName}`);
+                            const res = await fetch(`/deployments/progress/${encodeURIComponent(frozenPackageName)}`);
                             if (res.ok) {
                                 const prog = await res.json();
                                 if (this.isPackaging && !this.packagingResult) {
-                                    if (prog.packagingProgress !== undefined && prog.packagingProgress > this.packagingProgress) this.packagingProgress = prog.packagingProgress;
-                                    if (prog.fileDownloadProgress !== undefined && prog.fileDownloadProgress > this.fileDownloadProgress) this.fileDownloadProgress = prog.fileDownloadProgress;
-                                    if (prog.baseFileExtraction !== undefined && prog.baseFileExtraction > this.baseFileExtraction) this.baseFileExtraction = prog.baseFileExtraction;
-                                    if (prog.headFileExtraction !== undefined && prog.headFileExtraction > this.headFileExtraction) this.headFileExtraction = prog.headFileExtraction;
+                                    // Overall packaging progress – trust backend weighted value
+                                    if (prog.packagingProgress !== undefined && prog.packagingProgress > this.packagingProgress)
+                                        this.packagingProgress = prog.packagingProgress;
+
+                                    // Stage fields – only advance, never retreat
+                                    if (prog.fileDownloadProgress !== undefined && prog.fileDownloadProgress > this.fileDownloadProgress)
+                                        this.fileDownloadProgress = prog.fileDownloadProgress;
+                                    if (prog.headFileExtraction !== undefined && prog.headFileExtraction > this.headFileExtraction)
+                                        this.headFileExtraction = prog.headFileExtraction;
+                                    if (prog.baseFileExtraction !== undefined && prog.baseFileExtraction > this.baseFileExtraction)
+                                        this.baseFileExtraction = prog.baseFileExtraction;
+                                    if (prog.compareFilesProgress !== undefined && prog.compareFilesProgress > this.compareFilesProgress)
+                                        this.compareFilesProgress = prog.compareFilesProgress;
+                                    if (prog.packageGenProgress !== undefined && prog.packageGenProgress > this.packageGenProgress)
+                                        this.packageGenProgress = prog.packageGenProgress;
+                                    if (prog.compressionProgress !== undefined && prog.compressionProgress > this.compressionProgress)
+                                        this.compressionProgress = prog.compressionProgress;
+
                                     if (prog.packagingMessage) this.packagingMessage = prog.packagingMessage;
                                 }
                             }
@@ -424,13 +456,11 @@
                     }, 1000);
 
                     try {
-                        this.packagingProgress = 25;
                         this.packagingMessage = 'Reading Git differences and preparing package folders...';
 
                         const base_obj = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionBase);
                         const head_obj = this.allRepoVersions.find(x => x.unique_key === this.selectedVersionHead);
 
-                        // Use the actual 'ref' (like branch or tag name) instead of splitting the ID
                         const base_ref = base_obj ? base_obj.ref : this.selectedVersionBase.split(':').slice(1).join(':');
                         const head_ref = head_obj ? head_obj.ref : this.selectedVersionHead.split(':').slice(1).join(':');
 
@@ -443,17 +473,14 @@
                                 'Accept': 'application/json',
                             },
                             body: JSON.stringify({
-                                environment: this.selectedEnvironment,
+                                environment:  this.selectedEnvironment,
                                 project_name: this.selectedRepositoryLabel,
                                 base_version: base_ref,
                                 head_version: head_ref,
-                                repo: this.selectedRepository,
-                                package_name: this.packageName,
+                                repo:         this.selectedRepository,
+                                package_name: frozenPackageName,
                             }),
                         });
-
-                        this.packagingProgress = 85;
-                        this.packagingMessage = 'Finalizing update and rollback packages...';
 
                         const data = await response.json();
 
@@ -461,20 +488,24 @@
                             throw new Error(data.message || 'Packaging failed.');
                         }
 
-                        this.packagingProgress = 100;
+                        // Mark all stages complete
+                        this.packagingProgress    = 100;
                         this.fileDownloadProgress = 100;
-                        this.baseFileExtraction = 100;
-                        this.headFileExtraction = 100;
+                        this.headFileExtraction   = 100;
+                        this.baseFileExtraction   = 100;
+                        this.compareFilesProgress = 100;
+                        this.packageGenProgress   = 100;
+                        this.compressionProgress  = 100;
                         this.packagingMessage = 'Package created successfully.';
-                        this.packagingResult = data;
+                        this.packagingResult  = data;
                     } catch (error) {
                         this.packagingProgress = 0;
                         if (error.name === 'AbortError') {
                             this.packagingMessage = 'Packaging stopped manually.';
-                            this.packagingError = 'Operation was aborted by the user.';
+                            this.packagingError   = 'Operation was aborted by the user.';
                         } else {
                             this.packagingMessage = 'Packaging stopped.';
-                            this.packagingError = error.message || 'Unexpected error during packaging.';
+                            this.packagingError   = error.message || 'Unexpected error during packaging.';
                         }
                     } finally {
                         clearInterval(pollProgress);

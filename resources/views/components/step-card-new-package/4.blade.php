@@ -1,5 +1,6 @@
 <div x-show="currentStep === 4" x-cloak class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
+    {{-- Stop confirmation modal --}}
     <div x-show="confirmation" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="mb-6">
@@ -54,60 +55,70 @@
         </div>
     </div>
 
-    <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+    {{-- ─── Progress Section ──────────────────────────────────────────── --}}
+    <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
 
+        {{-- Overall packaging progress --}}
         <div>
-            <div class="mb-2 flex items-center justify-between">
-                <span class="text-sm font-semibold text-slate-700">Packaging Progress</span>
+            <div class="mb-1.5 flex items-center justify-between">
+                <span class="text-sm font-semibold"
+                    :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
+                    Packaging Progress
+                    <span x-show="packagingProgress === 100" class="text-green-600">✓</span>
+                </span>
                 <span class="text-sm font-medium text-slate-600" x-text="packagingProgress + '%'"></span>
             </div>
-
-            <div class="mb-2 h-3 overflow-hidden rounded-full bg-slate-200">
+            <div class="h-3 overflow-hidden rounded-full bg-slate-200">
                 <div class="h-full rounded-full bg-blue-500 transition-all duration-500"
                     :style="`width: ${packagingProgress}%`"></div>
             </div>
         </div>
 
-        <div>
-            <div class="mb-2 flex items-center justify-between">
-                <span class="text-sm font-semibold text-slate-700">Downloading base and head repoistory</span>
-                <span class="text-sm font-medium text-slate-600" x-text="fileDownloadProgress + '%'"></span>
-            </div>
+        <hr class="border-slate-200">
 
-            <div class="mb-2 h-3 overflow-hidden rounded-full bg-slate-200">
-                <div class="h-full rounded-full bg-blue-500 transition-all duration-500"
-                    :style="`width: ${fileDownloadProgress}%`"></div>
-            </div>
+        {{-- Stage 1 – Download (10 %) --}}
+        @include('components.step-card-new-package.partials.progress-bar', [
+            'field'   => 'fileDownloadProgress',
+            'label'   => 'Downloading base and head repository',
+            'weight'  => '10%',
+        ])
+
+        {{-- Stage 2 & 3 – Extraction (20 % each) --}}
+        <div class="grid grid-cols-2 gap-3">
+            @include('components.step-card-new-package.partials.progress-bar', [
+                'field'  => 'headFileExtraction',
+                'label'  => 'Head File Extraction',
+                'weight' => '20%',
+            ])
+            @include('components.step-card-new-package.partials.progress-bar', [
+                'field'  => 'baseFileExtraction',
+                'label'  => 'Base File Extraction',
+                'weight' => '20%',
+            ])
         </div>
 
-        <div class="flex gap-1">
-            <div class="flex-1">
-                <div class="mb-2 flex items-center justify-between">
-                    <span class="text-sm font-semibold text-slate-700">Head File Extraction</span>
-                    <span class="text-sm font-medium text-slate-600 pr-4" x-text="headFileExtraction + '%'"></span>
-                </div>
-                <div class="flex-1 h-3 overflow-hidden rounded-full bg-slate-200">
-                    <div class="h-full rounded-full bg-blue-500 transition-all duration-500"
-                        :style="`width: ${headFileExtraction}%`">
-                    </div>
-                </div>
-            </div>
+        {{-- Stage 4 – Compare (10 %) --}}
+        @include('components.step-card-new-package.partials.progress-bar', [
+            'field'  => 'compareFilesProgress',
+            'label'  => 'Comparing Files',
+            'weight' => '10%',
+        ])
 
-            <div class="flex-1">
-                <div class="mb-2 flex items-center justify-between">
-                    <span class="text-sm font-semibold text-slate-700">Base File Extraction</span>
-                    <span class="text-sm font-medium text-slate-600 pr-4" x-text="baseFileExtraction + '%'"></span>
-                </div>
-                <div class=" h-3 overflow-hidden rounded-full bg-slate-200">
-                    <div class="h-full rounded-full bg-blue-500 transition-all duration-500"
-                        :style="`width: ${baseFileExtraction}%`">
-                    </div>
-                </div>
-            </div>
+        {{-- Stage 5 & 6 – Generate + Compress (20 % each) --}}
+        <div class="grid grid-cols-2 gap-3">
+            @include('components.step-card-new-package.partials.progress-bar', [
+                'field'  => 'packageGenProgress',
+                'label'  => 'Generating Update and Rollback Packages',
+                'weight' => '20%',
+            ])
+            @include('components.step-card-new-package.partials.progress-bar', [
+                'field'  => 'compressionProgress',
+                'label'  => 'Compressing Update and Rollback Packages',
+                'weight' => '20%',
+            ])
         </div>
 
     </div>
-
 
     <p class="mt-3 text-sm text-slate-500" x-text="packagingMessage"></p>
 
@@ -141,7 +152,7 @@
 
         <div class="flex items-center gap-3">
             <button type="button"
-                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 "
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                 x-show="!isPackaging && !packagingResult" @click="runPackaging()">
                 Start Packaging
             </button>
@@ -162,8 +173,3 @@
     </div>
 
 </div>
-{{--
-<p class="mt-4 text-xs text-slate-400">
-    Navigation is locked while packaging is running .
-</p>
---}}
