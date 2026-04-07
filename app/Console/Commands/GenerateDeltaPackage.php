@@ -127,25 +127,16 @@ class GenerateDeltaPackage extends Command
                 $this->generatePackages($packageRoot, $baseExtractPath, $headExtractPath, $diffData);
             }
 
-            $this->updateProgress($folderName, ['packagingMessage' => "Creating ZIP archive...", 'packagingProgress' => 90]);
-            $zipPath = $this->buildZip($packageRoot, $folderName);
-
-            $this->updateProgress($folderName, ['packagingMessage' => "Creating TAR.GZ archive...", 'packagingProgress' => 95]);
-            $tarGzPath = $this->buildTarGz($packageRoot, $folderName);
-
-            $this->updateProgress($folderName, ['packagingMessage' => "Done.", 'packagingProgress' => 100]);
-
-            $sha256 = $zipPath && file_exists($zipPath) ? hash_file('sha256', $zipPath) : null;
+            $this->updateProgress($folderName, ['packagingMessage' => "Finalizing...", 'packagingProgress' => 95]);
 
             $result = [
                 'status' => 'success',
                 'folder_name' => $folderName,
                 'package_root' => $packageRoot,
                 'temp_path' => isset($tempBasePath) ? $tempBasePath : null,
-                'message' => 'Package created successfully.',
+                'message' => 'Created package folder successfully without packaging.',
                 'changed_files' => $changedFiles,
                 'file_size' => $this->getDirectorySize($packageRoot),
-                'sha256' => $sha256,
                 'summary' => [
                     'total_changes' => $totalChanges,
                     'update_delete_count' => 0,
@@ -392,60 +383,4 @@ class GenerateDeltaPackage extends Command
     }
 
 
-    /**
-     * Build a .zip archive from the package directory (idempotent).
-     */
-    private function buildZip(string $packageRoot, string $folderName): ?string
-    {
-        $zipPath = $packageRoot . '.zip';
-
-        if (file_exists($zipPath)) {
-            return $zipPath;
-        }
-
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-            $files = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($packageRoot, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::LEAVES_ONLY
-            );
-            foreach ($files as $file) {
-                if (!$file->isDir()) {
-                    $filePath     = $file->getRealPath();
-                    $relativePath = substr($filePath, strlen($packageRoot) + 1);
-                    $relativePath = str_replace('\\', '/', $relativePath);
-                    $zip->addFile($filePath, $relativePath);
-                }
-            }
-            $zip->close();
-            return $zipPath;
-        }
-
-        return null;
-    }
-
-    /**
-     * Build a .tar.gz archive from the package directory (idempotent).
-     */
-    private function buildTarGz(string $packageRoot, string $folderName): ?string
-    {
-        $tarGzPath = $packageRoot . '.tar.gz';
-
-        if (file_exists($tarGzPath)) {
-            return $tarGzPath;
-        }
-
-        try {
-            $tarPath = $packageRoot . '.tar';
-            $tar = new \PharData($tarPath);
-            $tar->buildFromDirectory($packageRoot);
-            $tar->compress(\Phar::GZ);
-            if (file_exists($tarPath)) {
-                unlink($tarPath);
-            }
-            return $tarGzPath;
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }
 }
