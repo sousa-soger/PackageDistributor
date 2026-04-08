@@ -106,36 +106,65 @@
                         class="max-h-[min(420px,55vh)] overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 bg-white">
                         <template x-for="version in filteredVersionsBase" :key="'base-' + version.unique_key">
                             <label
-                                class="flex cursor-pointer items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 hover:bg-slate-50"
-                                :class="selectedVersionBase === version.unique_key ? 'border border-blue-500 bg-blue-50' : ''">
-                                <div class="flex min-w-0 items-start gap-3">
-                                    <input type="radio" name="selected_version_base"
-                                        class="mt-0.5 h-4 w-4 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500"
-                                        :value="version.unique_key" x-model="selectedVersionBase">
-                                    <div class="min-w-0 space-y-0.5">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <h3 class="text-sm font-semibold text-slate-900" x-text="version.name"></h3>
-                                            <span
-                                                class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600"
-                                                x-text="version.type"></span>
-                                            <span
-                                                x-show="version.type === 'branch' && version.name === repoData?.default_branch"
-                                                class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">DEFAULT</span>
-                                            <span x-show="version.type === 'release'"
-                                                class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-700">Release</span>
-                                            <span x-show="version.type === 'release' && version.is_prerelease"
-                                                class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">PRERELEASE</span>
-                                            <span x-show="version.type === 'release' && version.is_draft"
-                                                class="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">DRAFT</span>
-                                        </div>
-                                        <p class="text-xs text-slate-600" x-text="version.subtitle"></p>
-                                        <p x-show="version.type === 'release' && version.asset_count !== null"
-                                            class="text-xs text-slate-500">
-                                            Assets: <span x-text="version.asset_count"></span>
-                                        </p>
-                                    </div>
+                                class="relative flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 transition overflow-hidden"
+                                :class="{
+                                    'border border-blue-500 bg-rose-100 z-10': selectedVersionBase === version.unique_key,
+                                    'cursor-pointer hover:bg-rose-50': selectedVersionHead !== version.unique_key
+                                }">
+
+                                {{-- "Blocked" Overlay for versions selected in Head (HEAD label) --}}
+                                <div x-show="selectedVersionHead === version.unique_key"
+                                    class="absolute inset-0 z-20 flex items-center justify-center bg-slate-50/5 pointer-events-none"
+                                    style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(66, 66, 66, 0.1) 10px, rgba(66, 66, 66, 0.1) 20px);">
+                                    <span
+                                        class="text-4xl font-black uppercase tracking-tighter text-slate-600 opacity-30 rotate-12 select-none">HEAD</span>
                                 </div>
-                                <div class="shrink-0 pt-0.5 text-xs text-slate-500" x-text="version.date || ''"></div>
+
+                                <div x-show="selectedVersionBase === version.unique_key"
+                                    class="absolute inset-0 z-20 flex items-center justify-center bg-rose-50/5 pointer-events-none"
+                                    style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(244, 63, 94, 0.15) 10px, rgba(244, 63, 94, 0.15) 20px);">
+                                    <span
+                                        class="text-4xl font-black uppercase tracking-tighter text-rose-600 opacity-30 rotate-12 select-none">BASE</span>
+                                </div>
+
+                                {{-- Content: Wrapped in z-30 to appear in front of overlay --}}
+                                <div class="relative z-30 flex w-full items-start justify-between gap-3"
+                                    :class="selectedVersionHead === version.unique_key ? 'cursor-not-allowed' : ''">
+                                    <div class="flex min-w-0 items-start gap-3">
+                                        <input type="radio" name="selected_version_base"
+                                            class="mt-0.5 h-4 w-4 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            :class="selectedVersionHead === version.unique_key ? 'opacity-0' : ''"
+                                            :value="version.unique_key" x-model="selectedVersionBase"
+                                            :disabled="selectedVersionHead === version.unique_key">
+                                        <div class="min-w-0 space-y-0.5"
+                                            :class="selectedVersionHead === version.unique_key ? 'opacity-80' : ''">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <h3 class="text-sm font-semibold text-slate-900" x-text="version.name">
+                                                </h3>
+                                                <span
+                                                    class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600"
+                                                    x-text="version.type"></span>
+
+                                                <span
+                                                    x-show="version.type === 'branch' && version.name === repoData?.default_branch"
+                                                    class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">DEFAULT</span>
+                                                <span x-show="version.type === 'release'"
+                                                    class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-700">Release</span>
+                                                <span x-show="version.type === 'release' && version.is_prerelease"
+                                                    class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">PRERELEASE</span>
+                                                <span x-show="version.type === 'release' && version.is_draft"
+                                                    class="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">DRAFT</span>
+                                            </div>
+                                            <p class="text-xs text-slate-600" x-text="version.subtitle"></p>
+                                            <p x-show="version.type === 'release' && version.asset_count !== null"
+                                                class="text-xs text-slate-500">
+                                                Assets: <span x-text="version.asset_count"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="shrink-0 pt-0.5 text-xs text-slate-500" x-text="version.date || ''"
+                                        :class="selectedVersionHead === version.unique_key ? 'opacity-80' : ''"></div>
+                                </div>
                             </label>
                         </template>
                         <div x-show="filteredVersionsBase.length === 0" class="px-4 py-8 text-sm text-slate-500">
@@ -170,36 +199,65 @@
                         class="max-h-[min(420px,55vh)] overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 bg-white">
                         <template x-for="version in filteredVersionsHead" :key="'head-' + version.unique_key">
                             <label
-                                class="flex cursor-pointer items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 hover:bg-slate-50"
-                                :class="selectedVersionHead === version.unique_key ? 'border border-blue-500 bg-blue-50' : ''">
-                                <div class="flex min-w-0 items-start gap-3">
-                                    <input type="radio" name="selected_version_head"
-                                        class="mt-0.5 h-4 w-4 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500"
-                                        :value="version.unique_key" x-model="selectedVersionHead">
-                                    <div class="min-w-0 space-y-0.5">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <h3 class="text-sm font-semibold text-slate-900" x-text="version.name"></h3>
-                                            <span
-                                                class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600"
-                                                x-text="version.type"></span>
-                                            <span
-                                                x-show="version.type === 'branch' && version.name === repoData?.default_branch"
-                                                class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">DEFAULT</span>
-                                            <span x-show="version.type === 'release'"
-                                                class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-700">Release</span>
-                                            <span x-show="version.type === 'release' && version.is_prerelease"
-                                                class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">PRERELEASE</span>
-                                            <span x-show="version.type === 'release' && version.is_draft"
-                                                class="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">DRAFT</span>
-                                        </div>
-                                        <p class="text-xs text-slate-600" x-text="version.subtitle"></p>
-                                        <p x-show="version.type === 'release' && version.asset_count !== null"
-                                            class="text-xs text-slate-500">
-                                            Assets: <span x-text="version.asset_count"></span>
-                                        </p>
-                                    </div>
+                                class="relative flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 transition overflow-hidden"
+                                :class="{
+                                    'border border-blue-500 bg-emerald-100 z-10': selectedVersionHead === version.unique_key,
+                                    'cursor-pointer hover:bg-emerald-50': selectedVersionBase !== version.unique_key
+                                }">
+
+                                {{-- "Blocked" Overlay for versions selected in Base (BASE label) --}}
+                                <div x-show="selectedVersionBase === version.unique_key"
+                                    class="absolute inset-0 z-20 flex items-center justify-center bg-slate-50/5 pointer-events-none"
+                                    style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(66, 66, 66, 0.1) 10px, rgba(66, 66, 66, 0.1) 20px);">
+                                    <span
+                                        class="text-4xl font-black uppercase tracking-tighter text-slate-600 opacity-30 rotate-12 select-none">BASE</span>
                                 </div>
-                                <div class="shrink-0 pt-0.5 text-xs text-slate-500" x-text="version.date || ''"></div>
+
+                                <div x-show="selectedVersionHead === version.unique_key"
+                                    class="absolute inset-0 z-20 flex items-center justify-center bg-emerald-50/5 pointer-events-none"
+                                    style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(16, 185, 129, 0.15) 10px, rgba(16, 185, 129, 0.15) 20px);">
+                                    <span
+                                        class="text-4xl font-black uppercase tracking-tighter text-emerald-600 opacity-30 rotate-12 select-none">HEAD</span>
+                                </div>
+
+                                {{-- Content: Wrapped in z-30 to appear in front of overlay --}}
+                                <div class="relative z-30 flex w-full items-start justify-between gap-3"
+                                    :class="selectedVersionBase === version.unique_key ? 'cursor-not-allowed' : ''">
+                                    <div class="flex min-w-0 items-start gap-3">
+                                        <input type="radio" name="selected_version_head"
+                                            class="mt-0.5 h-4 w-4 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            :class="selectedVersionBase === version.unique_key ? 'opacity-0' : ''"
+                                            :value="version.unique_key" x-model="selectedVersionHead"
+                                            :disabled="selectedVersionBase === version.unique_key">
+                                        <div class="min-w-0 space-y-0.5"
+                                            :class="selectedVersionBase === version.unique_key ? 'opacity-80' : ''">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <h3 class="text-sm font-semibold text-slate-900" x-text="version.name">
+                                                </h3>
+                                                <span
+                                                    class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600"
+                                                    x-text="version.type"></span>
+
+                                                <span
+                                                    x-show="version.type === 'branch' && version.name === repoData?.default_branch"
+                                                    class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">DEFAULT</span>
+                                                <span x-show="version.type === 'release'"
+                                                    class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-700">Release</span>
+                                                <span x-show="version.type === 'release' && version.is_prerelease"
+                                                    class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">PRERELEASE</span>
+                                                <span x-show="version.type === 'release' && version.is_draft"
+                                                    class="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">DRAFT</span>
+                                            </div>
+                                            <p class="text-xs text-slate-600" x-text="version.subtitle"></p>
+                                            <p x-show="version.type === 'release' && version.asset_count !== null"
+                                                class="text-xs text-slate-500">
+                                                Assets: <span x-text="version.asset_count"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="shrink-0 pt-0.5 text-xs text-slate-500" x-text="version.date || ''"
+                                        :class="selectedVersionBase === version.unique_key ? 'opacity-80' : ''"></div>
+                                </div>
                             </label>
                         </template>
                         <div x-show="filteredVersionsHead.length === 0" class="px-4 py-8 text-sm text-slate-500">
@@ -210,15 +268,19 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-stretch gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            <x-ui.clear-button type="button" class="order-2 sm:order-1" @click="currentStep = 1">
+        <div class="mt-6 flex items-center justify-between">
+            <button type="button"
+                class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                @click="currentStep = 1">
                 Back
-            </x-ui.clear-button>
+            </button>
 
-            <div class="order-1 flex justify-center sm:order-2 sm:flex-1">
-                <x-ui.primary-button type="button" class="min-w-56" @click="if (comparisonReady) currentStep = 3">
+            <div class="flex items-center gap-3">
+                <button type="button"
+                    class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    @click="if (comparisonReady) currentStep = 3" :disabled="!comparisonReady">
                     Create Patch Package
-                </x-ui.primary-button>
+                </button>
             </div>
         </div>
     </div>

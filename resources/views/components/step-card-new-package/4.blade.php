@@ -56,10 +56,10 @@
     </div>
 
     {{-- ─── Progress Section ──────────────────────────────────────────── --}}
-    <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+    <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
 
         {{-- Overall packaging progress --}}
-        <div>
+        <div class="mb-4">
             <div class="mb-1.5 flex items-center justify-between">
                 <span class="text-sm font-semibold"
                     :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
@@ -74,48 +74,54 @@
             </div>
         </div>
 
-        <hr class="border-slate-200">
+        <hr class="border-slate-200 mb-4">
 
-        {{-- Stage 1 – Download (10 %) --}}
-        @include('components.step-card-new-package.partials.progress-bar', [
-            'field'   => 'fileDownloadProgress',
-            'label'   => 'Downloading base and head repository',
-            'weight'  => '10%',
-        ])
+        <div class="flex flex-col">
+            {{-- Stage 1 – Download (10 %) --}}
+            <div :class="fileDownloadProgress === 100 ? 'mb-1' : 'mb-4'">
+                @include('components.step-card-new-package.partials.progress-bar', [
+                    'field'   => 'fileDownloadProgress',
+                    'label'   => 'Downloading base and head repository',
+                    'weight'  => '10%',
+                ])
+            </div>
 
-        {{-- Stage 2 & 3 – Extraction (20 % each) --}}
-        <div :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-3'">
-            @include('components.step-card-new-package.partials.progress-bar', [
-                'field'  => 'baseFileExtraction',
-                'label'  => 'Base File Extraction',
-                'weight' => '20%',
-            ])
-            @include('components.step-card-new-package.partials.progress-bar', [
-                'field'  => 'headFileExtraction',
-                'label'  => 'Head File Extraction',
-                'weight' => '20%',
-            ])
-        </div>
+            {{-- Stage 2 & 3 – Extraction (20 % each) --}}
+            <div :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'mb-1 flex flex-col gap-1' : 'mb-4 grid grid-cols-2 gap-4'">
+                @include('components.step-card-new-package.partials.progress-bar', [
+                    'field'  => 'baseFileExtraction',
+                    'label'  => 'Base File Extraction',
+                    'weight' => '20%',
+                ])
+                @include('components.step-card-new-package.partials.progress-bar', [
+                    'field'  => 'headFileExtraction',
+                    'label'  => 'Head File Extraction',
+                    'weight' => '20%',
+                ])
+            </div>
 
-        {{-- Stage 4 – Compare (10 %) --}}
-        @include('components.step-card-new-package.partials.progress-bar', [
-            'field'  => 'compareFilesProgress',
-            'label'  => 'Comparing Files',
-            'weight' => '10%',
-        ])
+            {{-- Stage 4 – Compare (10 %) --}}
+            <div :class="compareFilesProgress === 100 ? 'mb-1' : 'mb-4'">
+                @include('components.step-card-new-package.partials.progress-bar', [
+                    'field'  => 'compareFilesProgress',
+                    'label'  => 'Comparing Files',
+                    'weight' => '10%',
+                ])
+            </div>
 
-        {{-- Stage 5 & 6 – Generate + Compress (20 % each) --}}
-        <div :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-3'" >
-            @include('components.step-card-new-package.partials.progress-bar', [
-                'field'  => 'packageGenProgress',
-                'label'  => 'Generating Update and Rollback Packages',
-                'weight' => '20%',
-            ])
-            @include('components.step-card-new-package.partials.progress-bar', [
-                'field'  => 'compressionProgress',
-                'label'  => 'Compressing Update and Rollback Packages',
-                'weight' => '20%',
-            ])
+            {{-- Stage 5 & 6 – Generate + Compress (20 % each) --}}
+            <div :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-4'" >
+                @include('components.step-card-new-package.partials.progress-bar', [
+                    'field'  => 'packageGenProgress',
+                    'label'  => 'Generating Update and Rollback Packages',
+                    'weight' => '20%',
+                ])
+                @include('components.step-card-new-package.partials.progress-bar', [
+                    'field'  => 'compressionProgress',
+                    'label'  => 'Compressing Update and Rollback Packages',
+                    'weight' => '20%',
+                ])
+            </div>
         </div>
 
     </div>

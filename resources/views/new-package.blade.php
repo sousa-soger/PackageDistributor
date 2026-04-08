@@ -3,11 +3,12 @@
 @section('title', 'New Package')
 
 @section('content')
-    <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
-                                                                                                                repositories: @js($repositories),
-                                                                                                                generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                                                                csrfToken: '{{ csrf_token() }}'
-                                                                                                            })">
+    <div class="max-w-6xl mx-auto space-y-8 pt-4"
+        x-data="newPackageWizard({
+                                                                                                                                                                                                    repositories: @js($repositories),
+                                                                                                                                                                                                    generateUrl: '{{ route('deployments.generate-delta') }}',
+                                                                                                                                                                                                    csrfToken: '{{ csrf_token() }}'
+                                                                                                                                                                                                })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -24,41 +25,48 @@
             <div x-show="currentStep === 1">
                 <x-ui.step-item number="1" label="Project Selection" :active="true" />
             </div>
-            <button x-show="currentStep > 1" @click="currentStep = 1">
+            <button type="button" x-show="currentStep > 1" @click="currentStep = 1" :disabled="!!packagingResult"
+                class="disabled:opacity-50 ">
                 <x-ui.step-item number="✓" label="Project Selection" :completed="true" />
             </button>
 
-            <div x-show="currentStep < 2">
+            <button type="button" x-show="currentStep < 2" @click="currentStep = 2"
+                :disabled="!selectedRepository || !!packagingResult" class="disabled:opacity-50 ">
                 <x-ui.step-item number="2" label="Version Selection" />
-            </div>
+            </button>
             <div x-show="currentStep === 2">
                 <x-ui.step-item number="2" label="Version Selection" :active="true" />
             </div>
-            <button x-show="currentStep > 2" @click="currentStep = 2">
+            <button type="button" x-show="currentStep > 2" @click="currentStep = 2" :disabled="!!packagingResult"
+                class="disabled:opacity-50 ">
                 <x-ui.step-item number="✓" label="Version Selection" :completed="true" />
             </button>
-            {{-- Make sure to remove this button when done --}}
-            <div x-show="currentStep < 3">
+
+            <button type="button" x-show="currentStep < 3" @click="currentStep = 3"
+                :disabled="!selectedVersionBase || !selectedVersionHead || !!packagingResult" class="disabled:opacity-50 ">
                 <x-ui.step-item number="3" label="Packaging Options" />
-            </div>
+            </button>
             <div x-show="currentStep === 3">
                 <x-ui.step-item number="3" label="Packaging Options" :active="true" />
             </div>
-            <button x-show="currentStep > 3" @click="currentStep = 3">
+            <button type="button" x-show="currentStep > 3" @click="currentStep = 3" :disabled="!!packagingResult"
+                class="disabled:opacity-50 ">
                 <x-ui.step-item number="✓" label="Packaging Options" :completed="true" />
             </button>
-            {{-- Make sure to remove this button when done --}}
-            <div x-show="currentStep < 4">
+
+            <button type="button" x-show="currentStep < 4" @click="currentStep = 4"
+                :disabled="!selectedEnvironment || !selectedFormat || !!packagingResult" class="disabled:opacity-50 ">
                 <x-ui.step-item number="4" label="Packaging" />
-            </div>
+            </button>
             <div x-show="currentStep === 4">
                 <x-ui.step-item number="4" label="Packaging" :active="true" />
             </div>
-            <button x-show="currentStep > 4" @click="currentStep = 4">
+            <button type="button" x-show="currentStep > 4" @click="currentStep = 4" class="disabled:opacity-50 ">
                 <x-ui.step-item number="✓" label="Packaging" :completed="true" />
             </button>
-            {{-- Make sure to remove this button when done --}}
-            <button x-show="currentStep < 5" @click="currentStep = 5">
+
+            <button type="button" x-show="currentStep < 5" @click="currentStep = 5" :disabled="!packagingResult"
+                class="disabled:opacity-50 ">
                 <x-ui.step-item number="5" label="Download" :last="true" />
             </button>
             <div x-show="currentStep === 5">
@@ -108,8 +116,11 @@
                 <p>Selected Head Label: <span x-text="selectedHeadLabel" class="text-black"></span></p>
                 <p>Filtered Base Versions: <span x-text="filteredVersionsBase.length" class="text-black"></span></p>
                 <p>Filtered Head Versions: <span x-text="filteredVersionsHead.length" class="text-black"></span></p>
+                <p>Package name: <span x-text="packageName" class="text-black"></span></p>
+                <p>custom Package name: <span x-text="customNaming" class="text-black"></span></p>
                 <p>Repo Data: <span x-text="repoData ? 'Loaded' : 'Not Loaded'" class="text-black"></span></p>
                 <p>Package folder location: <span x-text="packagingResult?.package_root" class="text-black"></span></p>
+                <p>packing result: <span x-text="packagingResult" class="text-black"></span></p>
                 <p>GitHub API Limit: <template x-if="rateLimit">
                         <span class="text-black"
                             x-text="`${rateLimit.resources.core.remaining} / ${rateLimit.resources.core.limit} (Resets ${new Date(rateLimit.resources.core.reset * 1000).toLocaleTimeString()})`"></span>
@@ -187,7 +198,7 @@
                 packageName: '',
 
                 get generatedName() {
-                    const env = this.selectedEnvironment || '[Env]';
+                    const env = this.selectedEnvironment || '';
                     const proj = this.selectedRepositoryLabel || '[Project]';
                     const base = this.selectedBaseLabel || '[Base]';
                     const head = this.selectedHeadLabel || '[Head]';

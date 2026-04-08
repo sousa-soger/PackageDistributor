@@ -75,9 +75,20 @@
             </div>
         </div>
         --}}
-        <div class="flex items-center justify-end gap-3 pt-2">
-            <x-ui.clear-button type="button" @click="currentStep = 2">Back</x-ui.clear-button>
-            <x-ui.primary-button type="button" @click="currentStep = 4">Continue</x-ui.primary-button>
+    <div class="mt-6 flex items-center justify-between">
+        <button type="button"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            @click="currentStep = 2">
+            Back
+        </button>
+
+        <div class="flex items-center gap-3">
+            <button type="button"
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="currentStep = 4" :disabled="!selectedEnvironment || !selectedFormat">
+                Continue
+            </button>
         </div>
+    </div>
     </div>
 </x-ui.card>
