@@ -1,19 +1,23 @@
 <aside
-    x-data="{ collapsed: false }"
-    :class="collapsed ? 'w-22' : 'w-60'"
+    x-data="{ 
+        collapsed: localStorage.getItem('sidebar_collapsed') === 'true',
+        init() {
+            $watch('collapsed', val => localStorage.setItem('sidebar_collapsed', val))
+        }
+    }"
+    :class="collapsed ? 'w-24' : 'w-72'"
     class="sticky top-0 h-screen bg-white border-r border-slate-200 transition-all duration-300 ease-in-out overflow-hidden"
 >
     <div class="flex h-full flex-col">
         <div class="px-4 py-3 border-b border-slate-200">
-            <div class="flex items-start gap-3">
-                <div class="flex items-start gap-3 w-full" :class="collapsed ? 'justify-center' : ''">
-                    <div x-show="!collapsed" x-transition.opacity>
-                        <h1 class="text-[22px] leading-8 font-bold text-slate-900 whitespace-nowrap">CybixDeployer</h1>
-                        <p class="text-[14px] text-slate-500 mt-1 whitespace-nowrap">Package Distribution</p>
-                    </div>
+            <div class="flex items-center gap-3 w-full" :class="collapsed ? 'justify-center' : ''">
+                <div x-show="!collapsed" x-transition.opacity class="flex-1">
+                    <h1 class="text-[22px] leading-8 font-bold text-slate-900 whitespace-nowrap">CybixDeployer</h1>
+                    <p class="text-[14px] text-slate-500 mt-1 whitespace-nowrap">Package Distribution</p>
+                </div>
 
-                    <div class="ml-auto p-1" :class="collapsed ? 'ml-0' : 'ml-auto'">
-                        <button
+                <div class="p-1 shrink-0" :class="collapsed ? '' : 'ml-auto'">
+                    <button
                             type="button"
                             @click="collapsed = !collapsed"
                             class="p-2 rounded-lg hover:bg-slate-100 transition"
@@ -28,8 +32,6 @@
                                 stroke-width="2"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                class="transition-transform duration-300"
-                                :class="collapsed ? 'rotate-180' : ''"
                             >
                                 <rect x="3" y="3" width="16" height="16" rx="2" ry="2" />
                                 <line x1="9" y1="3" x2="9" y2="19" />
@@ -37,7 +39,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
         </div>
 
         <!-- Nav-link -->
@@ -46,32 +47,28 @@
             <!-- Home nav-link -->
             <nav class="px-4 py-3 space-y-2">
                 <x-ui.nav-link
-                :href="route('home')"
-                :active="request()->routeIs('home')"
-                class="flex items-center"
-                ::class="collapsed ? 'justify-center px-2' : ''"
-            >
-                <span class="shrink-0" :class="collapsed ? '' : 'mr-3 pl-2'">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
-                        <path d="M3 10.5L12 3l9 7.5"/>
-                        <path d="M5 9.5V21h14V9.5"/>
-                        <path d="M9 21v-6h6v6"/>
-                    </svg>
-                </span>
-                <span x-show="!collapsed" x-transition.opacity class="whitespace-nowrap">
-                    Home
-                </span>
-            </x-ui.nav-link>
+                    :href="route('home')"
+                    :active="request()->routeIs('home')"
+                >
+                    <div class="icon-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true">
+                            <path d="M3 10.5L12 3l9 7.5"/>
+                            <path d="M5 9.5V21h14V9.5"/>
+                            <path d="M9 21v-6h6v6"/>
+                        </svg>
+                    </div>
+                    <span x-show="!collapsed" x-transition.opacity class="nav-text">
+                        Home
+                    </span>
+                </x-ui.nav-link>
 
             <!-- New Package nav-link -->
             <x-ui.nav-link
                 :href="route('new-package')"
                 :active="request()->routeIs('new-package')"
-                class="flex items-center"
-                ::class="collapsed ? 'justify-center px-2' : ''"
             >
-                <span class="shrink-0" :class="collapsed ? '' : 'mr-3 pl-2'">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true">
                         <path d="M2 8h4"/>
                         <path d="M0 12h6"/>
                         <path d="M3 16h3"/>
@@ -80,8 +77,8 @@
                         <path d="M12 11v10"/>
                         <path d="M8.5 5.2 16.5 9"/>
                     </svg>
-                </span>
-                <span x-show="!collapsed" x-transition.opacity class="whitespace-nowrap">
+                </div>
+                <span x-show="!collapsed" x-transition.opacity class="nav-text">
                     New Package
                 </span>
             </x-ui.nav-link>
@@ -90,15 +87,13 @@
             <x-ui.nav-link
                 :href="route('settings')"
                 :active="request()->routeIs('settings')"
-                class="flex items-center"
-                ::class="collapsed ? 'justify-center px-2' : ''"
             >
-                <span class="shrink-0" :class="collapsed ? '' : 'mr-3 pl-2'">
-                    <svg width="18" height="18" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="#000000">
+                <div class="icon-container">
+                    <svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
                         <path d="M9.1 4.4L8.6 2H7.4l-.5 2.4-.7.3-2-1.3-.9.8 1.3 2-.2.7-2.4.5v1.2l2.4.5.3.8-1.3 2 .8.8 2-1.3.8.3.4 2.3h1.2l.5-2.4.8-.3 2 1.3.8-.8-1.3-2 .3-.8 2.3-.4V7.4l-2.4-.5-.3-.8 1.3-2-.8-.8-2 1.3-.7-.2zM9.4 1l.5 2.4L12 2.1l2 2-1.4 2.1 2.4.4v2.8l-2.4.5L14 12l-2 2-2.1-1.4-.5 2.4H6.6l-.5-2.4L4 13.9l-2-2 1.4-2.1L1 9.4V6.6l2.4-.5L2.1 4l2-2 2.1 1.4.4-2.4h2.8zm.6 7c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zM8 9c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1z"/>
                     </svg>
-                </span>
-                <span x-show="!collapsed" x-transition.opacity class="whitespace-nowrap">
+                </div>
+                <span x-show="!collapsed" x-transition.opacity class="nav-text">
                     Settings
                 </span>
             </x-ui.nav-link>
