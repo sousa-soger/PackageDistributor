@@ -28,7 +28,7 @@
             {{-- Search row: FROM | arrow | TO --}}
             <div class="grid grid-cols-1 items-end gap-3 lg:grid-cols-[1fr_auto_1fr]">
                 <div class="min-w-0 space-y-2">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">From (Base)</p>
+                    <p class="text-ms font-semibold uppercase tracking-wide text-slate-700 text-center">From (Base)</p>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div class="relative min-w-0 flex-1">
                             <span
@@ -65,7 +65,7 @@
                 </div>
 
                 <div class="min-w-0 space-y-2">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">To (Head)</p>
+                    <p class="text-ms font-semibold uppercase tracking-wide text-slate-700 text-center">To (Head)</p>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div class="relative min-w-0 flex-1">
                             <span
