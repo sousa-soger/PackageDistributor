@@ -66,7 +66,7 @@
                     </span>
                 </x-ui.nav-link>
 
-                <!-- New Package nav-link -->
+                <!-- New PackageV2 nav-link -->
                 <x-ui.nav-link :href="route('new-packageV2')" :active="request()->routeIs('new-packageV2')">
                     <div class="icon-container">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -83,6 +83,26 @@
                     </div>
                     <span x-show="!collapsed" x-transition.opacity class="nav-text">
                         New PackageV2
+                    </span>
+                </x-ui.nav-link>
+
+                <!-- New PackageV3 nav-link -->
+                <x-ui.nav-link :href="route('new-packageV3')" :active="request()->routeIs('new-packageV3')">
+                    <div class="icon-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"
+                            aria-hidden="true">
+                            <path d="M2 8h4" />
+                            <path d="M0 12h6" />
+                            <path d="M3 16h3" />
+                            <path d="M12 3 5 7v10l7 4 7-4V7l-7-4Z" />
+                            <path d="M5 7l7 4 7-4" />
+                            <path d="M12 11v10" />
+                            <path d="M8.5 5.2 16.5 9" />
+                        </svg>
+                    </div>
+                    <span x-show="!collapsed" x-transition.opacity class="nav-text">
+                        New PackageV3
                     </span>
                 </x-ui.nav-link>
 

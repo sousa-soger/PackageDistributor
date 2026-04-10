@@ -31,4 +31,18 @@ class PackageController extends Controller
 
         return view('new-packageV2', compact('repositories'));
     }
+
+    public function indexV3()
+    {
+        $repositories = array_map(static function (array $item) {
+            return [
+                'id' => $item['id'],
+                'label' => $item['label'],
+                'owner' => $item['owner'],
+                'repo' => $item['repo'],
+            ];
+        }, config('github-repos'));
+
+        return view('new-packageV3', compact('repositories'));
+    }
 }

@@ -13,6 +13,7 @@ Route::middleware('auth')->group(function () {
     Route::view('/', 'home')->name('home');
     Route::get('/new-package', [PackageController::class, 'index'])->name('new-package');
     Route::get('/new-packageV2', [PackageController::class, 'indexV2'])->name('new-packageV2');
+    Route::get('/new-packageV3', [PackageController::class, 'indexV3'])->name('new-packageV3');
     Route::view('/settings', 'settings')->name('settings');
 });
 
