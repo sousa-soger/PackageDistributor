@@ -3,12 +3,11 @@
 @section('title', 'New Package V2')
 
 @section('content')
-    <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12"
-        x-data="newPackageWizard({
-            repositories: @js($repositories),
-            generateUrl: '{{ route('deployments.generate-delta') }}',
-            csrfToken: '{{ csrf_token() }}'
-        })">
+    <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
+                        repositories: @js($repositories),
+                        generateUrl: '{{ route('deployments.generate-delta') }}',
+                        csrfToken: '{{ csrf_token() }}'
+                    })">
 
         <div class="flex items-start justify-between">
             <div>
@@ -33,49 +32,64 @@
         <div class="mt-8" x-cloak>
             <x-ui.card class="w-full relative overflow-hidden transition-all duration-700 ease-in-out">
                 <div class="flex flex-col lg:flex-row min-h-[400px] transition-all duration-700 ease-in-out">
-                    
+
                     <!-- Left Side: Step 4 Content -->
-                    <div class="p-8 transition-all duration-700 ease-in-out flex flex-col justify-between" 
-                         :class="packagingResult ? 'w-full lg:w-[45%] lg:border-r border-slate-200' : 'w-full lg:w-full'">
-                        
+                    <div class="p-8 transition-all duration-700 ease-in-out flex flex-col justify-between"
+                        :class="packagingResult ? 'w-full lg:w-[45%] lg:border-r border-slate-200' : 'w-full lg:w-full'">
+
                         <div>
                             <div class="mb-6">
                                 <h2 class="text-xl font-semibold text-slate-800">Distribution Package Lifecycle</h2>
                                 <p class="mt-2 text-sm text-slate-500">
-                                    The system will generate an update package and a rollback package based on the selected Git versions.
+                                    The system will generate an update package and a rollback package based on the selected
+                                    Git versions.
                                 </p>
                             </div>
 
-                            <div class="grid gap-4 md:grid-cols-2 mb-6" :class="packagingResult ? 'opacity-0 h-0 hidden' : 'opacity-100'">
+                            <div class="grid gap-4 md:grid-cols-2 mb-6"
+                                :class="packagingResult ? 'opacity-0 h-0 hidden' : 'opacity-100'">
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Target Environment</div>
-                                    <span x-text="selectedEnvironment || '-'" class="mt-1 block text-sm font-medium text-slate-800"></span>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Target
+                                        Environment</div>
+                                    <span x-text="selectedEnvironment || '-'"
+                                        class="mt-1 block text-sm font-medium text-slate-800"></span>
                                 </div>
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Project Name</div>
-                                    <span x-text="selectedRepositoryLabel || '-'" class="mt-1 block text-sm font-medium text-slate-800"></span>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Project Name
+                                    </div>
+                                    <span x-text="selectedRepositoryLabel || '-'"
+                                        class="mt-1 block text-sm font-medium text-slate-800"></span>
                                 </div>
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Base Version</div>
-                                    <span x-text="selectedBaseLabel || '-'" class="mt-1 block text-sm font-medium text-slate-800"></span>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Base Version
+                                    </div>
+                                    <span x-text="selectedBaseLabel || '-'"
+                                        class="mt-1 block text-sm font-medium text-slate-800"></span>
                                 </div>
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Head Version</div>
-                                    <span x-text="selectedHeadLabel || '-'" class="mt-1 block text-sm font-medium text-slate-800"></span>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Head Version
+                                    </div>
+                                    <span x-text="selectedHeadLabel || '-'"
+                                        class="mt-1 block text-sm font-medium text-slate-800"></span>
                                 </div>
                             </div>
 
                             <!-- Progress Section -->
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4" x-show="isPackaging || packagingProgress > 0 || packagingResult">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                                x-show="isPackaging || packagingProgress > 0 || packagingResult">
                                 <div class="mb-4">
                                     <div class="mb-1.5 flex items-center justify-between">
-                                        <span class="text-sm font-semibold" :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
-                                            Packaging Progress <span x-show="packagingProgress === 100" class="text-green-600">✓</span>
+                                        <span class="text-sm font-semibold"
+                                            :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
+                                            Packaging Progress <span x-show="packagingProgress === 100"
+                                                class="text-green-600">✓</span>
                                         </span>
-                                        <span class="text-sm font-medium text-slate-600" x-text="packagingProgress + '%'"></span>
+                                        <span class="text-sm font-medium text-slate-600"
+                                            x-text="packagingProgress + '%'"></span>
                                     </div>
                                     <div class="h-3 overflow-hidden rounded-full bg-slate-200">
-                                        <div class="h-full rounded-full bg-blue-500 transition-all duration-500" :style="`width: ${packagingProgress}%`"></div>
+                                        <div class="h-full rounded-full bg-blue-500 transition-all duration-500"
+                                            :style="`width: ${packagingProgress}%`"></div>
                                     </div>
                                 </div>
                                 <hr class="border-slate-200 mb-4">
@@ -83,36 +97,45 @@
                                     <div :class="fileDownloadProgress === 100 ? 'mb-1' : 'mb-4'">
                                         @include('components.step-card-new-package.partials.progress-bar', ['field' => 'fileDownloadProgress', 'label' => 'Downloading base and head repository', 'weight' => '10%'])
                                     </div>
-                                    <div :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'mb-1 flex flex-col gap-1' : 'mb-4 grid grid-cols-2 gap-4'">
+                                    <div
+                                        :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'mb-1 flex flex-col gap-1' : 'mb-4 grid grid-cols-2 gap-4'">
                                         @include('components.step-card-new-package.partials.progress-bar', ['field' => 'baseFileExtraction', 'label' => 'Base File Extraction', 'weight' => '20%'])
                                         @include('components.step-card-new-package.partials.progress-bar', ['field' => 'headFileExtraction', 'label' => 'Head File Extraction', 'weight' => '20%'])
                                     </div>
                                     <div :class="compareFilesProgress === 100 ? 'mb-1' : 'mb-4'">
                                         @include('components.step-card-new-package.partials.progress-bar', ['field' => 'compareFilesProgress', 'label' => 'Comparing Files', 'weight' => '10%'])
                                     </div>
-                                    <div :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-4'">
+                                    <div
+                                        :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-4'">
                                         @include('components.step-card-new-package.partials.progress-bar', ['field' => 'packageGenProgress', 'label' => 'Generating Update and Rollback Packages', 'weight' => '20%'])
                                         @include('components.step-card-new-package.partials.progress-bar', ['field' => 'compressionProgress', 'label' => 'Compressing Update and Rollback Packages', 'weight' => '20%'])
                                     </div>
                                 </div>
                             </div>
-                            <p class="mt-3 text-sm text-slate-500" x-show="isPackaging || packagingResult" x-text="packagingMessage"></p>
-                            
-                            <div x-show="packagingError" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            <p class="mt-3 text-sm text-slate-500" x-show="isPackaging || packagingResult"
+                                x-text="packagingMessage"></p>
+
+                            <div x-show="packagingError"
+                                class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                 <div class="font-semibold">Packaging failed</div>
                                 <div class="mt-1" x-text="packagingError"></div>
                             </div>
-                            
-                            <div x-show="packagingResult" x-cloak class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 transition-all">
+
+                            <div x-show="packagingResult" x-cloak
+                                class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 transition-all">
                                 <div class="text-sm font-semibold text-emerald-800">Package created successfully</div>
                                 <div class="mt-3 grid gap-3 grid-cols-1">
                                     <div>
-                                        <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Folder</div>
-                                        <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.folder_name || '-'"></div>
+                                        <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Folder
+                                        </div>
+                                        <div class="mt-1 break-all text-sm text-slate-700"
+                                            x-text="packagingResult?.folder_name || '-'"></div>
                                     </div>
                                     <div>
-                                        <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Package Root</div>
-                                        <div class="mt-1 break-all text-sm text-slate-700" x-text="packagingResult?.package_root || '-'"></div>
+                                        <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Package
+                                            Root</div>
+                                        <div class="mt-1 break-all text-sm text-slate-700"
+                                            x-text="packagingResult?.package_root || '-'"></div>
                                     </div>
                                 </div>
                             </div>
@@ -122,10 +145,15 @@
                         <!-- Action Buttons Left -->
                         <div class="mt-6 flex items-center justify-end" x-show="!packagingResult">
                             <div class="flex items-center gap-3">
-                                <button type="button" class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50" x-show="!isPackaging && !packagingResult" @click="runPackaging()" :disabled="!selectedEnvironment || !selectedVersionBase || !selectedVersionHead || !selectedFormat">
+                                <button type="button"
+                                    class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                                    x-show="!isPackaging && !packagingResult" @click="runPackaging()"
+                                    :disabled="!selectedEnvironment || !selectedVersionBase || !selectedVersionHead || !selectedFormat">
                                     Start Packaging
                                 </button>
-                                <button type="button" @mouseover="hovered = true" @mouseleave="hovered = false" class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800" x-show="isPackaging && !packagingResult" @click="confirmation = true">
+                                <button type="button" @mouseover="hovered = true" @mouseleave="hovered = false"
+                                    class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+                                    x-show="isPackaging && !packagingResult" @click="confirmation = true">
                                     <span x-show="!hovered">Packaging...</span>
                                     <span x-show="hovered">Stop Packaging</span>
                                 </button>
@@ -135,12 +163,11 @@
                     </div>
 
                     <!-- Right Side: Step 5 Content (Dynamicly Shown) -->
-                    <div x-show="packagingResult" 
-                         x-transition:enter="transition-all ease-out duration-700 delay-300" 
-                         x-transition:enter-start="opacity-0 translate-x-12" 
-                         x-transition:enter-end="opacity-100 translate-x-0"
-                         class="p-8 w-full lg:w-[55%] flex flex-col bg-white">
-                         
+                    <div x-show="packagingResult" x-transition:enter="transition-all ease-out duration-700 delay-300"
+                        x-transition:enter-start="opacity-0 translate-x-12"
+                        x-transition:enter-end="opacity-100 translate-x-0"
+                        class="p-8 w-full lg:w-[55%] flex flex-col bg-white">
+
                         <div>
                             <h3 class="text-2xl font-bold text-slate-900">
                                 Package: <span x-text="packagingResult?.folder_name"></span>
@@ -160,40 +187,50 @@
                                     <p class="text-sm text-slate-500">Download the file directly to your computer.</p>
                                 </div>
                                 <div class="flex flex-col items-center justify-center gap-3 pt-2">
-                                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-amber-50 text-3xl shadow-sm">📦</div>
-                                    <span class="text-xs font-medium tracking-wide text-slate-400 uppercase" x-text="selectedFormat ? selectedFormat.toUpperCase() + ' Package' : 'Package'"></span>
+                                    <div
+                                        class="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-amber-50 text-3xl shadow-sm">
+                                        📦</div>
+                                    <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"
+                                        x-text="selectedFormat ? selectedFormat.toUpperCase() + ' Package' : 'Package'"></span>
                                 </div>
                                 <div class="pt-2">
                                     <button type="button" @click="
-                                            const base = '{{ route('download.archive') }}';
-                                            const folder = encodeURIComponent(packagingResult?.folder_name);
-                                            if (selectedFormat === 'both') {
-                                                window.location.href = base + '?folder=' + folder + '&format=.zip';
-                                                setTimeout(() => {
-                                                    const iframe = document.createElement('iframe');
-                                                    iframe.style.display = 'none';
-                                                    iframe.src = base + '?folder=' + folder + '&format=.tar.gz';
-                                                    document.body.appendChild(iframe);
-                                                    setTimeout(() => iframe.remove(), 10000);
-                                                }, 1000);
-                                            } else {
-                                                window.location.href = base + '?folder=' + folder + '&format=' + encodeURIComponent(selectedFormat);
-                                            }
-                                        " class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" />
+                                                        const base = '{{ route('download.archive') }}';
+                                                        const folder = encodeURIComponent(packagingResult?.folder_name);
+                                                        if (selectedFormat === 'both') {
+                                                            window.location.href = base + '?folder=' + folder + '&format=.zip';
+                                                            setTimeout(() => {
+                                                                const iframe = document.createElement('iframe');
+                                                                iframe.style.display = 'none';
+                                                                iframe.src = base + '?folder=' + folder + '&format=.tar.gz';
+                                                                document.body.appendChild(iframe);
+                                                                setTimeout(() => iframe.remove(), 10000);
+                                                            }, 1000);
+                                                        } else {
+                                                            window.location.href = base + '?folder=' + folder + '&format=' + encodeURIComponent(selectedFormat);
+                                                        }
+                                                    "
+                                        class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" />
                                         </svg>
                                         <span>Download Package</span>
-                                        <span class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700" x-text="selectedFormat || 'Select format'"></span>
+                                        <span
+                                            class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                                            x-text="selectedFormat || 'Select format'"></span>
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <!-- Divider with OR -->
                             <div class="relative hidden h-full items-center xl:flex">
                                 <div class="h-full w-px bg-slate-200"></div>
                                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                    <div class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">OR</div>
+                                    <div
+                                        class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">
+                                        OR</div>
                                 </div>
                             </div>
 
@@ -205,7 +242,8 @@
                                 <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_auto] xl:items-start">
                                     <div class="space-y-2">
                                         <label class="block text-sm font-semibold text-slate-800">Server Type</label>
-                                        <select class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+                                        <select
+                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
                                             <option selected disabled>Select a server profile...</option>
                                             <option>Production (Apache)</option>
                                         </select>
@@ -213,36 +251,60 @@
                                     <div class="space-y-2">
                                         <label class="block text-sm font-semibold text-slate-800">Server Check</label>
                                         <div class="flex items-center gap-2 pt-1">
-                                            <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm inline-flex">
-                                                <svg class="h-5 w-5 animate-spin text-blue-600 hidden" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" class="opacity-20"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                                            <div
+                                                class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
+                                                <svg class="h-5 w-5 animate-spin text-blue-600 hidden" viewBox="0 0 24 24"
+                                                    fill="none">
+                                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5"
+                                                        class="opacity-20" />
+                                                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5"
+                                                        stroke-linecap="round" />
+                                                </svg>
                                                 <div class="h-2 w-2 rounded-full bg-slate-300"></div>
                                             </div>
-                                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-sm">
-                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+                                            <div
+                                                class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-sm">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    stroke-width="2.2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="m5 13 4 4L19 7" />
+                                                </svg>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="space-y-1 text-sm">
-                                    <p class="text-slate-700">Server Status: <span class="font-medium text-emerald-600">Online</span></p>
-                                    <p class="text-slate-700">Authentication: <span class="font-medium text-emerald-600">Verified</span></p>
+                                    <p class="text-slate-700">Server Status: <span
+                                            class="font-medium text-emerald-600">Online</span></p>
+                                    <p class="text-slate-700">Authentication: <span
+                                            class="font-medium text-emerald-600">Verified</span></p>
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="block text-sm font-semibold text-slate-800">Deployment Path <span class="font-normal text-slate-400">(optional)</span></label>
-                                    <input type="text" value="/var/www/html/cybix/current" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+                                    <label class="block text-sm font-semibold text-slate-800">Deployment Path <span
+                                            class="font-normal text-slate-400">(optional)</span></label>
+                                    <input type="text" value="/var/www/html/cybix/current"
+                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
                                 </div>
                                 <div>
-                                    <button type="button" class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17h16M7 17V7h10v10M9 7V5h6v2"/></svg>
+                                    <button type="button"
+                                        class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M4 17h16M7 17V7h10v10M9 7V5h6v2" />
+                                        </svg>
                                         <span>Deploy Now</span>
-                                        <span class="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">Ready</span>
+                                        <span
+                                            class="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">Ready</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-8 flex items-center justify-end">
-                            <button type="button" class="rounded-xl bg-emerald-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700" @click="window.location.href = '/'">
+                            <button type="button"
+                                class="rounded-xl bg-emerald-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                                @click="window.location.href = '/'">
                                 Finish
                             </button>
                         </div>
@@ -264,8 +326,12 @@
                 </p>
             </div>
             <div class="flex items-center justify-end gap-3 pt-2">
-                <button type="button" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50" @click="confirmation = false">Cancel</button>
-                <button type="button" class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700" @click="stopPackaging(); confirmation = false">Stop Packaging</button>
+                <button type="button"
+                    class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    @click="confirmation = false">Cancel</button>
+                <button type="button"
+                    class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                    @click="stopPackaging(); confirmation = false">Stop Packaging</button>
             </div>
         </div>
     </div>
