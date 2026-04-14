@@ -4,14 +4,14 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
-                            repositories: @js($repositories),
-                            queueUrl: '{{ route('deployments.queue-job') }}',
-                            jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                            downloadUrl: '{{ route('download.archive') }}',
-                            csrfToken: '{{ csrf_token() }}'
-                        })">
+                                repositories: @js($repositories),
+                                queueUrl: '{{ route('deployments.queue-job') }}',
+                                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                                downloadUrl: '{{ route('download.archive') }}',
+                                csrfToken: '{{ csrf_token() }}'
+                            })">
         {{-- ================================================================ --}}
-        {{-- CARD 1 — Repository selection + multi-row version picker          --}}
+        {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}
         <x-ui.card class="p-8 w-full">
             <div class="space-y-6">
@@ -62,10 +62,10 @@
 
                         <!-- Relative container for continuous vertical lines -->
                         <div class="relative pt-2 pb-2">
-                            <div class="absolute top-[-1.5rem] bottom-0 left-[20%] w-px bg-slate-200"></div>
-                            <div class="absolute top-[-1.5rem] bottom-0 left-[40%] w-px bg-slate-200"></div>
-                            <div class="absolute top-[-1.5rem] bottom-0 left-[52%] w-px bg-slate-200"></div>
-                            <div class="absolute top-[-1.5rem] bottom-0 left-[62%] w-px bg-slate-200"></div>
+                            <div class="absolute -top-6 bottom-0 left-[20%] w-px bg-slate-200"></div>
+                            <div class="absolute -top-6 bottom-0 left-[40%] w-px bg-slate-200"></div>
+                            <div class="absolute -top-6 bottom-0 left-[52%] w-px bg-slate-200"></div>
+                            <div class="absolute -top-6 bottom-0 left-[62%] w-px bg-slate-200"></div>
 
                             <!-- Rows -->
                             <div class="space-y-4">
@@ -183,17 +183,17 @@
 
                     <div class="mt-6 flex items-center gap-4">
                         <!-- Process Queue button -->
-                        <button type="button"
-                            id="btn-process-queue"
-                            @click="startPackaging()"
+                        <button type="button" id="btn-process-queue" @click="startPackaging()"
                             :disabled="!canStartQueue || isQueuing || isRunning"
                             class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition disabled:bg-slate-300 disabled:cursor-not-allowed shadow-sm hover:bg-blue-700">
                             <span x-show="!isQueuing && !isRunning">Process Queue</span>
                             <span x-show="isQueuing" x-cloak>Submitting...</span>
                             <span x-show="isRunning && !isQueuing" x-cloak class="flex items-center gap-2">
                                 <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" class="opacity-20"/>
-                                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5"
+                                        class="opacity-20" />
+                                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5"
+                                        stroke-linecap="round" />
                                 </svg>
                                 Running...
                             </span>
@@ -201,21 +201,20 @@
 
                         <!-- Queued job badge -->
                         <div x-show="currentJobId && jobStatus" x-cloak
-                            class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border"
-                            :class="{
-                                'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
-                                'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
-                                'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
-                                'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
-                            }">
-                            <span class="inline-block h-1.5 w-1.5 rounded-full"
-                                :class="{
-                                    'bg-amber-400': jobStatus === 'queued',
-                                    'bg-blue-500 animate-pulse': jobStatus === 'running',
-                                    'bg-emerald-500': jobStatus === 'completed',
-                                    'bg-red-500': jobStatus === 'failed',
-                                }"></span>
-                            <span x-text="'Job #' + currentJobId + ' — ' + (jobStatus ? jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1) : '')"></span>
+                            class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border" :class="{
+                                    'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
+                                    'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
+                                    'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
+                                    'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
+                                }">
+                            <span class="inline-block h-1.5 w-1.5 rounded-full" :class="{
+                                        'bg-amber-400': jobStatus === 'queued',
+                                        'bg-blue-500 animate-pulse': jobStatus === 'running',
+                                        'bg-emerald-500': jobStatus === 'completed',
+                                        'bg-red-500': jobStatus === 'failed',
+                                    }"></span>
+                            <span
+                                x-text="'Job #' + currentJobId + ' — ' + (jobStatus ? jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1) : '')"></span>
                         </div>
                     </div>
                 </div>
@@ -260,12 +259,10 @@
         {{-- ============================================================ --}}
 
         {{-- ================================================================ --}}
-        {{-- CARD 2 — Progress + Result (shown once a job is submitted)        --}}
+        {{-- CARD 2 — Progress + Result (shown once a job is submitted) --}}
         {{-- ================================================================ --}}
-        <div x-show="currentJobId" x-cloak
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-2"
-            x-transition:enter-end="opacity-100 translate-y-0">
+        <div x-show="currentJobId" x-cloak x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
             <x-ui.card class="w-full relative overflow-hidden">
                 <div class="flex flex-col lg:flex-row min-h-[400px]">
 
@@ -291,7 +288,8 @@
                                     x-text="activeRow?.environment || ''"></span>
                                 <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
                                     x-text="activeRow?.format || ''"></span>
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 truncate max-w-[280px]"
+                                <span
+                                    class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 truncate max-w-[280px]"
                                     x-text="activeRow?.name || ''"></span>
                             </div>
 
@@ -326,12 +324,16 @@
                                     <div>
                                         <div class="flex items-center justify-between mb-1">
                                             <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                <span x-show="fileDownloadProgress === 100" class="text-emerald-500">✓</span>
-                                                <span x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0" class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                <span x-show="fileDownloadProgress === 0" class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                <span x-show="fileDownloadProgress === 100"
+                                                    class="text-emerald-500">✓</span>
+                                                <span x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0"
+                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                                <span x-show="fileDownloadProgress === 0"
+                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                                                 Downloading repositories
                                             </span>
-                                            <span class="text-xs text-slate-400" x-text="fileDownloadProgress + '% · 10%'"></span>
+                                            <span class="text-xs text-slate-400"
+                                                x-text="fileDownloadProgress + '% · 10%'"></span>
                                         </div>
                                         <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                             <div class="h-full rounded-full transition-all duration-500"
@@ -341,16 +343,21 @@
                                     </div>
 
                                     <!-- Extraction (base + head side by side until both done) -->
-                                    <div :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'">
+                                    <div
+                                        :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'">
                                         <div>
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="baseFileExtraction === 100" class="text-emerald-500">✓</span>
-                                                    <span x-show="baseFileExtraction < 100 && baseFileExtraction > 0" class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="baseFileExtraction === 0" class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                    <span x-show="baseFileExtraction === 100"
+                                                        class="text-emerald-500">✓</span>
+                                                    <span x-show="baseFileExtraction < 100 && baseFileExtraction > 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                                    <span x-show="baseFileExtraction === 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                                                     Base Extraction
                                                 </span>
-                                                <span class="text-xs text-slate-400" x-text="baseFileExtraction + '% · 20%'"></span>
+                                                <span class="text-xs text-slate-400"
+                                                    x-text="baseFileExtraction + '% · 20%'"></span>
                                             </div>
                                             <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                 <div class="h-full rounded-full transition-all duration-500"
@@ -361,12 +368,16 @@
                                         <div>
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="headFileExtraction === 100" class="text-emerald-500">✓</span>
-                                                    <span x-show="headFileExtraction < 100 && headFileExtraction > 0" class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="headFileExtraction === 0" class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                    <span x-show="headFileExtraction === 100"
+                                                        class="text-emerald-500">✓</span>
+                                                    <span x-show="headFileExtraction < 100 && headFileExtraction > 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                                    <span x-show="headFileExtraction === 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                                                     Head Extraction
                                                 </span>
-                                                <span class="text-xs text-slate-400" x-text="headFileExtraction + '% · 20%'"></span>
+                                                <span class="text-xs text-slate-400"
+                                                    x-text="headFileExtraction + '% · 20%'"></span>
                                             </div>
                                             <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                 <div class="h-full rounded-full transition-all duration-500"
@@ -380,12 +391,16 @@
                                     <div>
                                         <div class="flex items-center justify-between mb-1">
                                             <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                <span x-show="compareFilesProgress === 100" class="text-emerald-500">✓</span>
-                                                <span x-show="compareFilesProgress < 100 && compareFilesProgress > 0" class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                <span x-show="compareFilesProgress === 0" class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                <span x-show="compareFilesProgress === 100"
+                                                    class="text-emerald-500">✓</span>
+                                                <span x-show="compareFilesProgress < 100 && compareFilesProgress > 0"
+                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                                <span x-show="compareFilesProgress === 0"
+                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                                                 Comparing Files
                                             </span>
-                                            <span class="text-xs text-slate-400" x-text="compareFilesProgress + '% · 10%'"></span>
+                                            <span class="text-xs text-slate-400"
+                                                x-text="compareFilesProgress + '% · 10%'"></span>
                                         </div>
                                         <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                             <div class="h-full rounded-full transition-all duration-500"
@@ -395,16 +410,21 @@
                                     </div>
 
                                     <!-- Gen + Compress -->
-                                    <div :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'">
+                                    <div
+                                        :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'">
                                         <div>
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="packageGenProgress === 100" class="text-emerald-500">✓</span>
-                                                    <span x-show="packageGenProgress < 100 && packageGenProgress > 0" class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="packageGenProgress === 0" class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                    <span x-show="packageGenProgress === 100"
+                                                        class="text-emerald-500">✓</span>
+                                                    <span x-show="packageGenProgress < 100 && packageGenProgress > 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                                    <span x-show="packageGenProgress === 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                                                     Generating Packages
                                                 </span>
-                                                <span class="text-xs text-slate-400" x-text="packageGenProgress + '% · 20%'"></span>
+                                                <span class="text-xs text-slate-400"
+                                                    x-text="packageGenProgress + '% · 20%'"></span>
                                             </div>
                                             <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                 <div class="h-full rounded-full transition-all duration-500"
@@ -415,12 +435,16 @@
                                         <div>
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="compressionProgress === 100" class="text-emerald-500">✓</span>
-                                                    <span x-show="compressionProgress < 100 && compressionProgress > 0" class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="compressionProgress === 0" class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                    <span x-show="compressionProgress === 100"
+                                                        class="text-emerald-500">✓</span>
+                                                    <span x-show="compressionProgress < 100 && compressionProgress > 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                                    <span x-show="compressionProgress === 0"
+                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                                                     Compressing Archives
                                                 </span>
-                                                <span class="text-xs text-slate-400" x-text="compressionProgress + '% · 20%'"></span>
+                                                <span class="text-xs text-slate-400"
+                                                    x-text="compressionProgress + '% · 20%'"></span>
                                             </div>
                                             <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                 <div class="h-full rounded-full transition-all duration-500"
@@ -435,8 +459,7 @@
 
                             <!-- Status message -->
                             <p class="mt-3 text-sm text-slate-500 min-h-[1.25rem]"
-                                x-show="isRunning || packagingResult || packagingError"
-                                x-text="packagingMessage"></p>
+                                x-show="isRunning || packagingResult || packagingError" x-text="packagingMessage"></p>
 
                             <!-- Error panel -->
                             <div x-show="packagingError" x-cloak
@@ -494,7 +517,8 @@
                                     <p class="text-sm text-slate-500">Download directly to your computer.</p>
                                 </div>
                                 <div class="flex flex-col items-center justify-center gap-3 pt-2">
-                                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-amber-50 text-3xl shadow-sm">
+                                    <div
+                                        class="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-amber-50 text-3xl shadow-sm">
                                         📦
                                     </div>
                                     <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"
@@ -509,7 +533,8 @@
                                                 d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" />
                                         </svg>
                                         <span>Download</span>
-                                        <span class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                                        <span
+                                            class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
                                             x-text="activeRow?.format || '.zip'"></span>
                                     </button>
                                 </div>
@@ -519,7 +544,9 @@
                             <div class="relative hidden h-full items-center xl:flex">
                                 <div class="h-full w-px bg-slate-200"></div>
                                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                    <div class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">OR</div>
+                                    <div
+                                        class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">
+                                        OR</div>
                                 </div>
                             </div>
 
@@ -530,7 +557,8 @@
                                 </div>
                                 <div class="space-y-3">
                                     <label class="block text-sm font-semibold text-slate-800">Server Type</label>
-                                    <select class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+                                    <select
+                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
                                         <option selected disabled>Select a server profile...</option>
                                         <option>Production (Apache)</option>
                                     </select>
@@ -543,11 +571,14 @@
                                 <div>
                                     <button type="button"
                                         class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 17h16M7 17V7h10v10M9 7V5h6v2"/>
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M4 17h16M7 17V7h10v10M9 7V5h6v2" />
                                         </svg>
                                         <span>Deploy Now</span>
-                                        <span class="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">Ready</span>
+                                        <span
+                                            class="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">Ready</span>
                                     </button>
                                 </div>
                             </div>
@@ -723,13 +754,13 @@
 
                 updateRowNames() {
                     const proj = this.selectedRepositoryLabel || '[Project]';
-                    const now  = new Date();
-                    const pad  = n => String(n).padStart(2, '0');
-                    const ts   = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+                    const now = new Date();
+                    const pad = n => String(n).padStart(2, '0');
+                    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
 
                     this.packageRows.forEach(row => {
                         if (!row.customName && (row.base || row.head)) {
-                            const env  = row.environment || '';
+                            const env = row.environment || '';
                             const bObj = this.allRepoVersions.find(v => v.unique_key === row.base);
                             const hObj = this.allRepoVersions.find(v => v.unique_key === row.head);
                             const bLbl = bObj ? bObj.name : '[Base]';
@@ -750,10 +781,10 @@
                     }
                     const r = btn.getBoundingClientRect();
                     this.floatDd.style = `position:fixed;z-index:99999;top:${r.bottom + 6}px;left:${r.left}px;width:${Math.max(r.width, 240)}px`;
-                    this.floatDd.rowIndex   = rowIndex;
-                    this.floatDd.field      = field;
+                    this.floatDd.rowIndex = rowIndex;
+                    this.floatDd.field = field;
                     this.floatDd.typeFilter = '';
-                    this.floatDd.open       = true;
+                    this.floatDd.open = true;
                 },
 
                 selectFloatVersion(versionKey) {
@@ -776,15 +807,15 @@
                     if (!this.canStartQueue || rows.length === 0) return;
 
                     // Reset all state for a fresh multi-job run
-                    this.isQueuing        = true;
-                    this.isRunning        = false;
-                    this.packagingResult  = null;
-                    this.packagingError   = '';
-                    this.currentJobId     = null;
-                    this.jobStatus        = '';
-                    this.jobQueue         = [];
-                    this.jobQueueIndex    = 0;
-                    this.jobResults       = [];
+                    this.isQueuing = true;
+                    this.isRunning = false;
+                    this.packagingResult = null;
+                    this.packagingError = '';
+                    this.currentJobId = null;
+                    this.jobStatus = '';
+                    this.jobQueue = [];
+                    this.jobQueueIndex = 0;
+                    this.jobResults = [];
                     this.packagingMessage = `Submitting ${rows.length} job(s) to queue...`;
 
                     // ── Submit ALL complete rows to the backend at once ──────
@@ -803,13 +834,13 @@
                                     'Accept': 'application/json',
                                 },
                                 body: JSON.stringify({
-                                    environment:  row.environment,
+                                    environment: row.environment,
                                     project_name: this.selectedRepositoryLabel,
                                     base_version: baseRef,
                                     head_version: headRef,
-                                    repo:         this.selectedRepository,
+                                    repo: this.selectedRepository,
                                     package_name: row.name,
-                                    format:       row.format,
+                                    format: row.format,
                                 }),
                             });
 
@@ -821,7 +852,7 @@
                             this.jobQueue.push({ row: { ...row }, jobId: data.job_id, status: data.status });
                         }
                     } catch (err) {
-                        this.packagingError   = err.message || 'Unknown error submitting jobs.';
+                        this.packagingError = err.message || 'Unknown error submitting jobs.';
                         this.packagingMessage = 'Failed to queue jobs.';
                         this.isQueuing = false;
                         return;
@@ -838,26 +869,26 @@
                 async processNextJob() {
                     if (this.jobQueueIndex >= this.jobQueue.length) {
                         // All done
-                        this.isRunning        = false;
+                        this.isRunning = false;
                         this.packagingMessage = `All ${this.jobQueue.length} package(s) completed.`;
                         return;
                     }
 
                     const entry = this.jobQueue[this.jobQueueIndex];
-                    this.activeRow     = entry.row;
-                    this.currentJobId  = entry.jobId;
-                    this.jobStatus     = entry.status;
+                    this.activeRow = entry.row;
+                    this.currentJobId = entry.jobId;
+                    this.jobStatus = entry.status;
 
                     // Reset per-job progress bars
-                    this.packagingProgress    = 0;
+                    this.packagingProgress = 0;
                     this.fileDownloadProgress = 0;
-                    this.headFileExtraction   = 0;
-                    this.baseFileExtraction   = 0;
+                    this.headFileExtraction = 0;
+                    this.baseFileExtraction = 0;
                     this.compareFilesProgress = 0;
-                    this.packageGenProgress   = 0;
-                    this.compressionProgress  = 0;
-                    this.packagingResult      = null;
-                    this.packagingError       = '';
+                    this.packageGenProgress = 0;
+                    this.compressionProgress = 0;
+                    this.packagingResult = null;
+                    this.packagingError = '';
 
                     const label = this.jobQueueLabel ? ` ${this.jobQueueLabel}` : '';
                     this.packagingMessage = `Job #${this.currentJobId}${label} queued — waiting for worker...`;
@@ -883,7 +914,7 @@
                             if (!res.ok) return;
 
                             const payload = await res.json();
-                            const prog    = payload.progress || {};
+                            const prog = payload.progress || {};
 
                             this.jobStatus = payload.status;
 
@@ -891,24 +922,24 @@
                             const adv = (key, val) => {
                                 if (val !== undefined && Number(val) > this[key]) this[key] = Number(val);
                             };
-                            adv('packagingProgress',   prog.packagingProgress);
+                            adv('packagingProgress', prog.packagingProgress);
                             adv('fileDownloadProgress', prog.fileDownloadProgress);
-                            adv('headFileExtraction',   prog.headFileExtraction);
-                            adv('baseFileExtraction',   prog.baseFileExtraction);
+                            adv('headFileExtraction', prog.headFileExtraction);
+                            adv('baseFileExtraction', prog.baseFileExtraction);
                             adv('compareFilesProgress', prog.compareFilesProgress);
-                            adv('packageGenProgress',   prog.packageGenProgress);
-                            adv('compressionProgress',  prog.compressionProgress);
-                            if (prog.packagingMessage)  this.packagingMessage = prog.packagingMessage;
+                            adv('packageGenProgress', prog.packageGenProgress);
+                            adv('compressionProgress', prog.compressionProgress);
+                            if (prog.packagingMessage) this.packagingMessage = prog.packagingMessage;
 
                             // Terminal states
                             if (payload.status === 'completed') {
                                 this.stopPolling();
                                 // Force all bars to 100
-                                this.packagingProgress  = 100;
+                                this.packagingProgress = 100;
                                 this.fileDownloadProgress = this.headFileExtraction = this.baseFileExtraction =
-                                this.compareFilesProgress = this.packageGenProgress = this.compressionProgress = 100;
+                                    this.compareFilesProgress = this.packageGenProgress = this.compressionProgress = 100;
                                 this.packagingMessage = 'Package created successfully.';
-                                this.packagingResult  = payload.result;
+                                this.packagingResult = payload.result;
 
                                 // Record result and advance to next job
                                 this.jobResults.push({ row: this.activeRow, result: payload.result, error: null });
@@ -925,7 +956,7 @@
 
                             if (payload.status === 'failed') {
                                 this.stopPolling();
-                                this.packagingError  = payload.error || 'Job failed.';
+                                this.packagingError = payload.error || 'Job failed.';
                                 this.packagingMessage = 'Packaging failed.';
 
                                 // Record failure and stop (don't auto-advance on error)
@@ -948,30 +979,30 @@
 
                 resetJob() {
                     this.stopPolling();
-                    this.currentJobId       = null;
-                    this.jobStatus          = '';
-                    this.isQueuing          = false;
-                    this.isRunning          = false;
-                    this.packagingResult    = null;
-                    this.packagingError     = '';
-                    this.packagingProgress  = 0;
+                    this.currentJobId = null;
+                    this.jobStatus = '';
+                    this.isQueuing = false;
+                    this.isRunning = false;
+                    this.packagingResult = null;
+                    this.packagingError = '';
+                    this.packagingProgress = 0;
                     this.fileDownloadProgress = 0;
-                    this.headFileExtraction   = 0;
-                    this.baseFileExtraction   = 0;
+                    this.headFileExtraction = 0;
+                    this.baseFileExtraction = 0;
                     this.compareFilesProgress = 0;
-                    this.packageGenProgress   = 0;
-                    this.compressionProgress  = 0;
-                    this.packagingMessage   = '';
-                    this.activeRow          = null;
-                    this.jobQueue           = [];
-                    this.jobQueueIndex      = 0;
-                    this.jobResults         = [];
+                    this.packageGenProgress = 0;
+                    this.compressionProgress = 0;
+                    this.packagingMessage = '';
+                    this.activeRow = null;
+                    this.jobQueue = [];
+                    this.jobQueueIndex = 0;
+                    this.jobResults = [];
                 },
 
                 downloadPackage() {
                     if (!this.packagingResult) return;
                     const folder = encodeURIComponent(this.packagingResult.folder_name);
-                    const fmt    = this.activeRow?.format || '.zip';
+                    const fmt = this.activeRow?.format || '.zip';
 
                     if (fmt === 'both') {
                         window.location.href = `${downloadUrl}?folder=${folder}&format=.zip`;
@@ -992,7 +1023,7 @@
                 async fetchRateLimit() {
                     try {
                         this.rateLimit = await (await fetch('/github/rate-limit')).json();
-                    } catch (e) {}
+                    } catch (e) { }
                 },
 
                 async fetchRepoData() {
@@ -1010,11 +1041,11 @@
                     }
                     this.isLoadingVersions = true;
                     try {
-                        const res  = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
+                        const res = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
                         const data = res.ok ? await res.json() : {};
-                        this.repoBranches  = data.branches || [];
-                        this.repoTags      = data.tags     || [];
-                        this.repoReleases  = data.releases || [];
+                        this.repoBranches = data.branches || [];
+                        this.repoTags = data.tags || [];
+                        this.repoReleases = data.releases || [];
                     } catch {
                         this.repoBranches = this.repoTags = this.repoReleases = [];
                     } finally {
