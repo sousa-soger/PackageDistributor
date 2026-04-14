@@ -5,12 +5,13 @@
 @section('content')
     <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12"
         x-data="newPackageWizard({
-                                                                                                                                                                                        repositories: @js($repositories),
-                                                                                                                                                                                        queueUrl: '{{ route('deployments.queue-job') }}',
-                                                                                                                                                                                        jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                                                                                                                                                                                        downloadUrl: '{{ route('download.archive') }}',
-                                                                                                                                                                                        csrfToken: '{{ csrf_token() }}'
-                                                                                                                                                                                    })">
+                repositories: @js($repositories),
+                queueUrl: '{{ route('deployments.queue-job') }}',
+                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                downloadUrl: '{{ route('download.archive') }}',
+                csrfToken: '{{ csrf_token() }}',
+                dbQueuedPackages: @js($queuedPackages)
+            })">
         {{-- ================================================================ --}}
         {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}
@@ -52,13 +53,11 @@
                 <div class="mt-8 overflow-visible" x-show="selectedRepository && !isLoadingVersions" x-cloak>
                     <div class="min-w-[900px]">
 
-                        <!-- Header Row -->
                         <div class="flex text-sm font-semibold text-slate-800 pb-4">
                             <div class="w-[20%] text-center">BASE</div>
                             <div class="w-[20%] text-center">HEAD</div>
                             <div class="w-[12%] text-center">Environment</div>
-                            <div class="w-[10%] text-center">Format</div>
-                            <div class="w-[38%] text-left pl-6">Package Folder Name</div>
+                            <div class="w-[48%] text-left pl-6">Package Folder Name</div>
                         </div>
 
                         <!-- Relative container for continuous vertical lines -->
@@ -66,7 +65,6 @@
                             <div class="absolute -top-6 bottom-0 left-[20%] w-px bg-slate-200"></div>
                             <div class="absolute -top-6 bottom-0 left-[40%] w-px bg-slate-200"></div>
                             <div class="absolute -top-6 bottom-0 left-[52%] w-px bg-slate-200"></div>
-                            <div class="absolute -top-6 bottom-0 left-[62%] w-px bg-slate-200"></div>
 
                             <!-- Rows -->
                             <div class="space-y-4">
@@ -125,18 +123,8 @@
                                             </select>
                                         </div>
 
-                                        <!-- Format -->
-                                        <div class="w-[10%] px-4 flex justify-center">
-                                            <select x-model="row.format" @change="handleRowInteract(index)"
-                                                class="w-full max-w-[90px] rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                                <option value=".zip">.zip</option>
-                                                <option value=".tar.gz">.tar.gz</option>
-                                                <option value="both">both</option>
-                                            </select>
-                                        </div>
-
                                         <!-- Package Folder Name -->
-                                        <div class="w-[38%] pl-6 pr-2 flex items-center gap-3">
+                                        <div class="w-[48%] pl-6 pr-2 flex items-center gap-3">
                                             <input type="text" x-model="row.name"
                                                 @input="row.customName = true; handleRowInteract(index)"
                                                 :readonly="!row.customName || !isRowReadyForName(row)"
@@ -204,18 +192,18 @@
                         <div x-show="currentJobId && jobStatus" x-cloak
                             class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border"
                             :class="{
-                                                                                                                                                                                            'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
-                                                                                                                                                                                            'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
-                                                                                                                                                                                            'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
-                                                                                                                                                                                            'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
-                                                                                                                                                                                        }">
+                                                                                                                                                                                                                            'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
+                                                                                                                                                                                                                            'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
+                                                                                                                                                                                                                            'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
+                                                                                                                                                                                                                            'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
+                                                                                                                                                                                                                        }">
                             <span class="inline-block h-1.5 w-1.5 rounded-full"
                                 :class="{
-                                                                                                                                                                                                'bg-amber-400': jobStatus === 'queued',
-                                                                                                                                                                                                'bg-blue-500 animate-pulse': jobStatus === 'running',
-                                                                                                                                                                                                'bg-emerald-500': jobStatus === 'completed',
-                                                                                                                                                                                                'bg-red-500': jobStatus === 'failed',
-                                                                                                                                                                                            }"></span>
+                                                                                                                                                                                                                                'bg-amber-400': jobStatus === 'queued',
+                                                                                                                                                                                                                                'bg-blue-500 animate-pulse': jobStatus === 'running',
+                                                                                                                                                                                                                                'bg-emerald-500': jobStatus === 'completed',
+                                                                                                                                                                                                                                'bg-red-500': jobStatus === 'failed',
+                                                                                                                                                                                                                            }"></span>
                             <span
                                 x-text="'Job #' + currentJobId + ' — ' + (jobStatus ? jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1) : '')"></span>
                         </div>
@@ -262,344 +250,255 @@
         {{-- ============================================================ --}}
 
         {{-- ================================================================ --}}
-        {{-- CARD 2 — Progress + Result (shown once a job is submitted) --}}
+        {{-- new CARD 2 — Queue + Progress + Result --}}
         {{-- ================================================================ --}}
-        <div x-show="currentJobId" x-cloak x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
-            <x-ui.card class="w-full relative overflow-hidden">
-                <div class="flex flex-col lg:flex-row min-h-[400px]">
-
-                    {{-- ── Left: Progress panel ─────────────────────────── --}}
-                    <div class="p-8 flex flex-col justify-between transition-all duration-700"
-                        :class="packagingResult ? 'w-full lg:w-[45%] lg:border-r border-slate-200' : 'w-full'">
-
-                        <div>
-                            <div class="mb-6">
-                                <div class="flex items-center gap-3">
-                                    <h2 class="text-xl font-semibold text-slate-800">Package Generation</h2>
-                                    <span x-show="totalJobs > 1" x-cloak
-                                        class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700"
-                                        x-text="jobQueueLabel"></span>
-                                </div>
-                                <p class="mt-1 text-sm text-slate-500"
-                                    x-text="activeRowLabel || 'Processing queued job...'"></p>
-                            </div>
-
-                            <!-- Job meta chips -->
-                            <div class="flex flex-wrap gap-2 mb-6" x-show="activeRow">
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
-                                    x-text="activeRow?.environment || ''"></span>
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
-                                    x-text="activeRow?.format || ''"></span>
-                                <span
-                                    class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 truncate max-w-[280px]"
-                                    x-text="activeRow?.name || ''"></span>
-                            </div>
-
-                            <!-- Progress bars -->
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                                x-show="isRunning || packagingProgress > 0 || packagingResult || packagingError">
-
-                                <!-- Overall -->
-                                <div class="mb-4">
-                                    <div class="mb-1.5 flex items-center justify-between">
-                                        <span class="text-sm font-semibold"
-                                            :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
-                                            Overall Progress
-                                            <span x-show="packagingProgress === 100" class="text-green-600"> ✓</span>
-                                        </span>
-                                        <span class="text-sm font-medium text-slate-600"
-                                            x-text="packagingProgress + '%'"></span>
-                                    </div>
-                                    <div class="h-3 overflow-hidden rounded-full bg-slate-200">
-                                        <div class="h-full rounded-full bg-blue-500 transition-all duration-500"
-                                            :class="packagingProgress === 100 ? 'bg-emerald-500' : 'bg-blue-500'"
-                                            :style="`width: ${packagingProgress}%`"></div>
-                                    </div>
-                                </div>
-
-                                <hr class="border-slate-200 mb-4">
-
-                                <!-- Stage bars -->
-                                <div class="flex flex-col gap-3">
-
-                                    <!-- Download -->
-                                    <div>
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                <span x-show="fileDownloadProgress === 100"
-                                                    class="text-emerald-500">✓</span>
-                                                <span x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0"
-                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                <span x-show="fileDownloadProgress === 0"
-                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
-                                                Downloading repositories
+        <div x-show="unifiedQueue.length > 0" x-cloak x-transition:enter="transition ease-out duration-300">
+            <x-ui.card class="p-8 w-full">
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Pending Jobs</h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            Jobs that are queued and not in completion
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Env</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Project</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Package</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Created</th>
+                                </tr>
+                            </thead>
+                            <template x-for="job in unifiedQueue" :key="job.jobId">
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr class="transition-colors hover:bg-slate-50">
+                                        <td class="px-4 py-3 text-sm text-slate-800" x-text="job.row.environment"></td>
+                                        <td class="px-4 py-3 text-sm flex gap-2">
+                                            <span class="font-medium text-slate-800" x-text="job.row.project_name"></span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-slate-800">
+                                            <div class="flex flex-col gap-1">
+                                                <span class="font-medium text-slate-600 truncate max-w-sm" x-text="job.row.name"></span>
+                                                <div class="text-xs">
+                                                    From <span class="text-rose-700 font-medium" x-text="job.row.base"></span>
+                                                    to <span class="text-green-600 font-medium" x-text="job.row.head"></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                                                :class="{
+                                                    'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
+                                                    'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
+                                                    'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
+                                                    'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
+                                                }">
+                                                <span class="inline-block h-1.5 w-1.5 rounded-full mr-1.5"
+                                                    :class="{
+                                                        'bg-amber-400': job.status === 'pending' || job.status === 'queued',
+                                                        'bg-blue-500 animate-pulse': job.status === 'running',
+                                                        'bg-emerald-500': job.status === 'completed',
+                                                        'bg-red-500': job.status === 'failed',
+                                                    }"></span>
+                                                <span x-text="job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : 'Pending'"></span>
                                             </span>
-                                            <span class="text-xs text-slate-400"
-                                                x-text="fileDownloadProgress + '% · 10%'"></span>
-                                        </div>
-                                        <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                            <div class="h-full rounded-full transition-all duration-500"
-                                                :class="fileDownloadProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
-                                                :style="`width: ${fileDownloadProgress}%`"></div>
-                                        </div>
-                                    </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-slate-500 whitespace-nowrap" x-text="new Date(job.created_at).toLocaleString()"></td>
+                                    </tr>
+                                    <tr x-show="job.jobId === currentJobId" x-cloak x-transition.origin.top class="bg-indigo-50/30 border-t border-indigo-100/50 shadow-inner">
+                                        <td colspan="5" class="px-6 py-5">
+                                            <!-- Progress bars -->
+                                            <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5"
+                                                x-show="isRunning || packagingProgress > 0 || packagingResult || packagingError">
 
-                                    <!-- Extraction (base + head side by side until both done) -->
-                                    <div
-                                        :class="baseFileExtraction === 100 && headFileExtraction === 100 ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'">
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="baseFileExtraction === 100"
-                                                        class="text-emerald-500">✓</span>
-                                                    <span x-show="baseFileExtraction < 100 && baseFileExtraction > 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="baseFileExtraction === 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
-                                                    Base Extraction
-                                                </span>
-                                                <span class="text-xs text-slate-400"
-                                                    x-text="baseFileExtraction + '% · 20%'"></span>
-                                            </div>
-                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                                <div class="h-full rounded-full transition-all duration-500"
-                                                    :class="baseFileExtraction === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
-                                                    :style="`width: ${baseFileExtraction}%`"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="headFileExtraction === 100"
-                                                        class="text-emerald-500">✓</span>
-                                                    <span x-show="headFileExtraction < 100 && headFileExtraction > 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="headFileExtraction === 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
-                                                    Head Extraction
-                                                </span>
-                                                <span class="text-xs text-slate-400"
-                                                    x-text="headFileExtraction + '% · 20%'"></span>
-                                            </div>
-                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                                <div class="h-full rounded-full transition-all duration-500"
-                                                    :class="headFileExtraction === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
-                                                    :style="`width: ${headFileExtraction}%`"></div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                                <!-- Overall -->
+                                                <div class="mb-5">
+                                                    <div class="mb-2 flex items-center justify-between">
+                                                        <span class="text-sm font-semibold"
+                                                            :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
+                                                            Overall Progress
+                                                            <span x-show="packagingProgress === 100" class="text-green-600 ml-1"> <i class="fa fa-check-circle"></i> ✓ Complete</span>
+                                                        </span>
+                                                        <span class="text-sm font-bold text-blue-600"
+                                                            x-text="packagingProgress + '%'"></span>
+                                                    </div>
+                                                    <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
+                                                        <div class="h-full rounded-full transition-all duration-500 shadow-sm"
+                                                            :class="{
+                                                                'bg-emerald-500': packagingProgress === 100, 
+                                                                'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
+                                                                'bg-red-500': packagingError !== ''
+                                                            }"
+                                                            :style="`width: ${packagingProgress}%`"></div>
+                                                    </div>
+                                                </div>
 
-                                    <!-- Compare -->
-                                    <div>
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                <span x-show="compareFilesProgress === 100"
-                                                    class="text-emerald-500">✓</span>
-                                                <span x-show="compareFilesProgress < 100 && compareFilesProgress > 0"
-                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                <span x-show="compareFilesProgress === 0"
-                                                    class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
-                                                Comparing Files
-                                            </span>
-                                            <span class="text-xs text-slate-400"
-                                                x-text="compareFilesProgress + '% · 10%'"></span>
-                                        </div>
-                                        <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                            <div class="h-full rounded-full transition-all duration-500"
-                                                :class="compareFilesProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
-                                                :style="`width: ${compareFilesProgress}%`"></div>
-                                        </div>
-                                    </div>
+                                                <hr class="border-slate-100 mb-5">
 
-                                    <!-- Gen + Compress -->
-                                    <div
-                                        :class="packageGenProgress === 100 && compressionProgress === 100 ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'">
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="packageGenProgress === 100"
-                                                        class="text-emerald-500">✓</span>
-                                                    <span x-show="packageGenProgress < 100 && packageGenProgress > 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="packageGenProgress === 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
-                                                    Generating Packages
-                                                </span>
-                                                <span class="text-xs text-slate-400"
-                                                    x-text="packageGenProgress + '% · 20%'"></span>
+                                                <!-- Stage bars -->
+                                                <div class="flex flex-col gap-4 bg-slate-50 border border-slate-100 rounded-lg p-4">
+
+                                                    <!-- Download -->
+                                                    <div>
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                <span x-show="fileDownloadProgress === 100"
+                                                                    class="text-emerald-500 text-sm">✓</span>
+                                                                <span x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0"
+                                                                    class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                                                <span x-show="fileDownloadProgress === 0"
+                                                                    class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
+                                                                Downloading Repositories
+                                                            </span>
+                                                            <span class="text-xs font-medium text-slate-400"
+                                                                x-text="fileDownloadProgress + '%'"></span>
+                                                        </div>
+                                                        <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                                            <div class="h-full rounded-full transition-all duration-500"
+                                                                :class="fileDownloadProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                                                                :style="`width: ${fileDownloadProgress}%`"></div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Extraction (base + head side by side until both done) -->
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                    <span x-show="baseFileExtraction === 100"
+                                                                        class="text-emerald-500 text-sm">✓</span>
+                                                                    <span x-show="baseFileExtraction < 100 && baseFileExtraction > 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                                                    <span x-show="baseFileExtraction === 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
+                                                                    Base Extraction
+                                                                </span>
+                                                                <span class="text-xs font-medium text-slate-400"
+                                                                    x-text="baseFileExtraction + '%'"></span>
+                                                            </div>
+                                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                                                <div class="h-full rounded-full transition-all duration-500"
+                                                                    :class="baseFileExtraction === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                                                                    :style="`width: ${baseFileExtraction}%`"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                    <span x-show="headFileExtraction === 100"
+                                                                        class="text-emerald-500 text-sm">✓</span>
+                                                                    <span x-show="headFileExtraction < 100 && headFileExtraction > 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                                                    <span x-show="headFileExtraction === 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
+                                                                    Head Extraction
+                                                                </span>
+                                                                <span class="text-xs font-medium text-slate-400"
+                                                                    x-text="headFileExtraction + '%'"></span>
+                                                            </div>
+                                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                                                <div class="h-full rounded-full transition-all duration-500"
+                                                                    :class="headFileExtraction === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                                                                    :style="`width: ${headFileExtraction}%`"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Compare -->
+                                                    <div>
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                <span x-show="compareFilesProgress === 100"
+                                                                    class="text-emerald-500 text-sm">✓</span>
+                                                                <span x-show="compareFilesProgress < 100 && compareFilesProgress > 0"
+                                                                    class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                                                <span x-show="compareFilesProgress === 0"
+                                                                    class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
+                                                                Comparing Diffs
+                                                            </span>
+                                                            <span class="text-xs font-medium text-slate-400"
+                                                                x-text="compareFilesProgress + '%'"></span>
+                                                        </div>
+                                                        <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                                            <div class="h-full rounded-full transition-all duration-500"
+                                                                :class="compareFilesProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                                                                :style="`width: ${compareFilesProgress}%`"></div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Gen + Compress -->
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                    <span x-show="packageGenProgress === 100"
+                                                                        class="text-emerald-500 text-sm">✓</span>
+                                                                    <span x-show="packageGenProgress < 100 && packageGenProgress > 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                                                    <span x-show="packageGenProgress === 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
+                                                                    Packaging Directory
+                                                                </span>
+                                                                <span class="text-xs font-medium text-slate-400"
+                                                                    x-text="packageGenProgress + '%'"></span>
+                                                            </div>
+                                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                                                <div class="h-full rounded-full transition-all duration-500"
+                                                                    :class="packageGenProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                                                                    :style="`width: ${packageGenProgress}%`"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                    <span x-show="compressionProgress === 100"
+                                                                        class="text-emerald-500 text-sm">✓</span>
+                                                                    <span x-show="compressionProgress < 100 && compressionProgress > 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                                                    <span x-show="compressionProgress === 0"
+                                                                        class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
+                                                                    Zipping Archive
+                                                                </span>
+                                                                <span class="text-xs font-medium text-slate-400"
+                                                                    x-text="compressionProgress + '%'"></span>
+                                                            </div>
+                                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                                                <div class="h-full rounded-full transition-all duration-500"
+                                                                    :class="compressionProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                                                                    :style="`width: ${compressionProgress}%`"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                                
+                                                <div x-show="packagingError" x-cloak class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg shadow-sm">
+                                                    <span class="text-sm font-semibold text-red-600">Error:</span>
+                                                    <span class="text-sm text-red-700" x-text="packagingError"></span>
+                                                </div>
                                             </div>
-                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                                <div class="h-full rounded-full transition-all duration-500"
-                                                    :class="packageGenProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
-                                                    :style="`width: ${packageGenProgress}%`"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                                                    <span x-show="compressionProgress === 100"
-                                                        class="text-emerald-500">✓</span>
-                                                    <span x-show="compressionProgress < 100 && compressionProgress > 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                                    <span x-show="compressionProgress === 0"
-                                                        class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
-                                                    Compressing Archives
-                                                </span>
-                                                <span class="text-xs text-slate-400"
-                                                    x-text="compressionProgress + '% · 20%'"></span>
-                                            </div>
-                                            <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                                <div class="h-full rounded-full transition-all duration-500"
-                                                    :class="compressionProgress === 100 ? 'bg-emerald-400' : 'bg-blue-400'"
-                                                    :style="`width: ${compressionProgress}%`"></div>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                </div>
-                            </div>
-
-                            <!-- Status message -->
-                            <p class="mt-3 text-sm text-slate-500 min-h-[1.25rem]"
-                                x-show="isRunning || packagingResult || packagingError" x-text="packagingMessage"></p>
-
-                            <!-- Error panel -->
-                            <div x-show="packagingError" x-cloak
-                                class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                                <div class="font-semibold">Package generation failed</div>
-                                <div class="mt-1" x-text="packagingError"></div>
-                                <button type="button" @click="resetJob()"
-                                    class="mt-3 text-xs font-semibold text-red-700 underline hover:text-red-900">
-                                    Try again
-                                </button>
-                            </div>
-
-                            <!-- Success summary (before download panel slides in) -->
-                            <div x-show="packagingResult && !packagingError" x-cloak
-                                class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                                <div class="text-sm font-semibold text-emerald-800">Package created successfully ✓</div>
-                                <div class="mt-2 text-sm text-slate-600 break-all"
-                                    x-text="packagingResult?.folder_name || ''"></div>
-                            </div>
-                        </div>
-
-                        <!-- Bottom action: try again after completion -->
-                        <div class="mt-6" x-show="jobStatus === 'completed' || jobStatus === 'failed'">
-                            <button type="button" @click="resetJob()"
-                                class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                                ← New Package
-                            </button>
+                                            <!-- Status message -->
+                                            <p class="mt-3 text-sm font-medium flex items-center gap-2 h-6"
+                                                :class="packagingError ? 'text-red-500' : 'text-slate-500'">
+                                                <span x-show="isRunning" class="rotate-anim inline-block opacity-70">⟳</span>
+                                                <span x-text="packagingMessage || ''"></span>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </template>
+                            </table>
                         </div>
                     </div>
-
-                    {{-- ── Right: Download / deploy panel (slides in on complete) ─ --}}
-                    <div x-show="packagingResult" x-cloak
-                        x-transition:enter="transition-all ease-out duration-700 delay-200"
-                        x-transition:enter-start="opacity-0 translate-x-12"
-                        x-transition:enter-end="opacity-100 translate-x-0"
-                        class="p-8 w-full lg:w-[55%] flex flex-col bg-white">
-
-                        <div>
-                            <h3 class="text-2xl font-bold text-slate-900">
-                                Package: <span x-text="packagingResult?.folder_name" class="break-all"></span>
-                            </h3>
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 mt-2">
-                                <span>Size: <span x-text="packagingResult?.file_size"></span></span>
-                                <span class="text-slate-300">|</span>
-                                <span class="break-all">SHA256: <span x-text="packagingResult?.sha256"></span></span>
-                            </div>
-                        </div>
-
-                        <div class="pt-8 grid grid-cols-1 gap-10 xl:grid-cols-[1fr_auto_1fr] flex-1">
-
-                            <!-- Download -->
-                            <div class="space-y-6 flex flex-col justify-start">
-                                <div class="space-y-2">
-                                    <h3 class="text-xl font-semibold text-slate-900">Download Package</h3>
-                                    <p class="text-sm text-slate-500">Download directly to your computer.</p>
-                                </div>
-                                <div class="flex flex-col items-center justify-center gap-3 pt-2">
-                                    <div
-                                        class="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-amber-50 text-3xl shadow-sm">
-                                        📦
-                                    </div>
-                                    <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"
-                                        x-text="(activeRow?.format || '.zip').toUpperCase() + ' Package'"></span>
-                                </div>
-                                <div>
-                                    <button type="button" @click="downloadPackage()"
-                                        class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" />
-                                        </svg>
-                                        <span>Download</span>
-                                        <span
-                                            class="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-                                            x-text="activeRow?.format || '.zip'"></span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- OR divider -->
-                            <div class="relative hidden h-full items-center xl:flex">
-                                <div class="h-full w-px bg-slate-200"></div>
-                                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                    <div
-                                        class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">
-                                        OR</div>
-                                </div>
-                            </div>
-
-                            <!-- Deploy (placeholder, matching V2 design) -->
-                            <div class="space-y-6">
-                                <div class="space-y-2">
-                                    <h3 class="text-lg font-bold text-slate-900">Deploy to Hosting Server</h3>
-                                </div>
-                                <div class="space-y-3">
-                                    <label class="block text-sm font-semibold text-slate-800">Server Type</label>
-                                    <select
-                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
-                                        <option selected disabled>Select a server profile...</option>
-                                        <option>Production (Apache)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-800 mb-2">Deployment Path</label>
-                                    <input type="text" value="/var/www/html/cybix/current"
-                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
-                                </div>
-                                <div>
-                                    <button type="button"
-                                        class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                            stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M4 17h16M7 17V7h10v10M9 7V5h6v2" />
-                                        </svg>
-                                        <span>Deploy Now</span>
-                                        <span
-                                            class="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">Ready</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 flex items-center justify-end">
-                            <button type="button"
-                                class="rounded-xl bg-emerald-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                                @click="window.location.href = '/'">
-                                Finish
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </x-ui.card>
-        </div>
+                </x-ui.card>
+            </div>
+        
         {{-- ============================================================ --}}
+    
 
         {{-- ================================================================ --}}
         {{-- CARD 3 — View list of previously generated packages by the user --}}
@@ -655,9 +554,12 @@
                                                             d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z">
                                                         </path>
                                                     </svg>
-                                                    <a href="#" class="no-underline">
-                                                        <span class="text-sm text-blue-600 font-medium">Update package</span>
-                                                        <span class="text-sm text-blue-600 font-medium">(zip)</span>
+                                                    <a href="{{ route('download.archive', ['folder' => $package->package_name, 'format' => '.zip']) }}"
+                                                        class="no-underline group">
+                                                        <span class="text-sm text-blue-600 font-medium group-hover:underline">Update
+                                                            package</span>
+                                                        <span
+                                                            class="text-sm text-blue-600 font-medium group-hover:underline">(.zip)</span>
                                                     </a>
                                                 </div>
                                             </td>
@@ -669,9 +571,12 @@
                                                             d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z">
                                                         </path>
                                                     </svg>
-                                                    <a href="#" class="no-underline">
-                                                        <span class="text-sm text-blue-600 font-medium">Update package</span>
-                                                        <span class="text-sm text-blue-600 font-medium">(tar.gz)</span>
+                                                    <a href="{{ route('download.archive', ['folder' => $package->package_name, 'format' => '.tar.gz']) }}"
+                                                        class="no-underline group">
+                                                        <span class="text-sm text-blue-600 font-medium group-hover:underline">Update
+                                                            package</span>
+                                                        <span
+                                                            class="text-sm text-blue-600 font-medium group-hover:underline">(.tar.gz)</span>
                                                     </a>
                                                 </div>
                                             </td>
@@ -694,10 +599,18 @@
                                                                 class="font-bold">{{ $package->package_name }}</span>
                                                         </div>
                                                         <div class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
-                                                            <span>Size: {{ $package->result_json['size'] ?? '6.12 MB' }}</span>
+                                                            <span>zip :</span>
+                                                            <span>Size: {{ $package->zip_size ?? 'N/A' }}</span>
                                                             <span class="text-slate-300">|</span>
                                                             <span>SHA256:
-                                                                {{ $package->result_json['sha256'] ?? 'e77db8c0ce484be8b8c337a4c0c2c00d483ebafdcfcd8e7ca47018cf0adc1c3' }}</span>
+                                                                {{ $package->zip_sha256 ?? 'N/A' }}</span>
+                                                        </div>
+                                                        <div class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
+                                                            <span>tar.gz :</span>
+                                                            <span>Size: {{ $package->targz_size ?? 'N/A' }}</span>
+                                                            <span class="text-slate-300">|</span>
+                                                            <span>SHA256:
+                                                                {{ $package->targz_sha256 ?? 'N/A' }}</span>
                                                         </div>
                                                     </div>
 
@@ -751,17 +664,16 @@
                         </div>
                     @endif
                 </div>
+            </x-ui.card>
         </div>
-        </x-ui.card>
-    </div>
-    {{-- ============================================================ --}}
+        {{-- ============================================================ --}}
 
     </div>
 @endsection
 
 @push('scripts')
     <script>
-        function newPackageWizard({ repositories, queueUrl, jobProgressBaseUrl, downloadUrl, csrfToken }) {
+        function newPackageWizard({ repositories, queueUrl, jobProgressBaseUrl, downloadUrl, csrfToken, dbQueuedPackages }) {
             return {
                 // ── Repository & version state ───────────────────────────────
                 repositories,
@@ -788,6 +700,19 @@
                 },
 
                 // ── Queue / job state ────────────────────────────────────────
+                unifiedQueue: dbQueuedPackages.map(dbJob => ({
+                    jobId: dbJob.id,
+                    status: dbJob.status,
+                    created_at: dbJob.created_at,
+                    row: {
+                        environment: dbJob.environment,
+                        project_name: dbJob.project_name,
+                        base: dbJob.base_version,
+                        head: dbJob.head_version,
+                        name: dbJob.package_name,
+                    }
+                })),
+                
                 currentJobId: null,         // DB ID of the currently-running job
                 jobStatus: '',              // queued | running | completed | failed
                 isQueuing: false,           // true while POSTing to create jobs
@@ -877,7 +802,7 @@
                     this.$watch('selectedRepository', async () => {
                         this.floatDd.open = false;
                         this.packageRows = [
-                            { id: Date.now(), base: '', head: '', environment: 'PROD', format: '.zip', customName: false, name: '' }
+                            { id: Date.now(), base: '', head: '', environment: 'PROD', customName: false, name: '' }
                         ];
                         await this.fetchRepoData();
                         await this.fetchRepoVersions();
@@ -889,11 +814,11 @@
                 // ── Row helpers ───────────────────────────────────────────────
 
                 isRowComplete(row) {
-                    return !!(row.base && row.head && row.environment && row.format && row.name);
+                    return !!(row.base && row.head && row.environment && row.name);
                 },
 
                 isRowReadyForName(row) {
-                    return !!(row.base && row.head && row.environment && row.format);
+                    return !!(row.base && row.head && row.environment);
                 },
 
                 handleRowInteract(index) {
@@ -905,7 +830,6 @@
                             id: Date.now(),
                             base: '', head: '',
                             environment: prev.environment || 'PROD',
-                            format: prev.format || '.zip',
                             customName: false, name: ''
                         });
                     }
@@ -999,7 +923,6 @@
                                     head_version: headRef,
                                     repo: this.selectedRepository,
                                     package_name: row.name,
-                                    format: row.format,
                                 }),
                             });
 
@@ -1008,7 +931,11 @@
                                 throw new Error(data.message || `Failed to queue job for row: ${row.name}`);
                             }
 
-                            this.jobQueue.push({ row: { ...row }, jobId: data.job_id, status: data.status });
+                            const jobEntry = { row: { ...row }, jobId: data.job_id, status: data.status, created_at: new Date().toISOString() };
+                            this.jobQueue.push(jobEntry);
+                            // Unshift pushes it to the TOP of the unified display queue
+                            row.project_name = this.selectedRepositoryLabel;
+                            this.unifiedQueue.unshift(jobEntry);
                         }
                     } catch (err) {
                         this.packagingError = err.message || 'Unknown error submitting jobs.';
@@ -1076,6 +1003,10 @@
                             const prog = payload.progress || {};
 
                             this.jobStatus = payload.status;
+                            
+                            // Let's propagate the new status to the unified list to instantly show "running" tag
+                            const uq = this.unifiedQueue.find(q => q.jobId === this.currentJobId);
+                            if (uq) uq.status = this.jobStatus;
 
                             // Advance stage fields (only forward, never retreat)
                             const adv = (key, val) => {
@@ -1158,10 +1089,9 @@
                     this.jobResults = [];
                 },
 
-                downloadPackage() {
+                downloadPackage(fmt = '.zip') {
                     if (!this.packagingResult) return;
                     const folder = encodeURIComponent(this.packagingResult.folder_name);
-                    const fmt = this.activeRow?.format || '.zip';
 
                     if (fmt === 'both') {
                         window.location.href = `${downloadUrl}?folder=${folder}&format=.zip`;

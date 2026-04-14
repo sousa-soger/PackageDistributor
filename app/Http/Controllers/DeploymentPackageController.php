@@ -121,7 +121,6 @@ class DeploymentPackageController extends Controller
             'head_version' => ['required', 'string', 'max:100'],
             'repo'         => ['required', 'string', 'max:255'],
             'package_name' => ['nullable', 'string', 'max:255'],
-            'format'       => ['nullable', 'string', 'in:.zip,.tar.gz,both'],
         ]);
 
         // Derive the package name the same way the Artisan command did
@@ -142,7 +141,6 @@ class DeploymentPackageController extends Controller
             'environment'  => $validated['environment'],
             'base_version' => $validated['base_version'],
             'head_version' => $validated['head_version'],
-            'format'       => $validated['format'] ?? '.zip',
             'package_name' => $validated['package_name'],
             'status'       => 'queued',
         ]);
@@ -219,24 +217,27 @@ class DeploymentPackageController extends Controller
         }
 
         $packageRoot = storage_path("app/deployment-packages/{$folderName}");
+        $archivePath = $packageRoot . $format;
 
-        if (!File::exists($packageRoot) || !File::isDirectory($packageRoot)) {
-            return response('Package directory not found.', 404);
-        }
-
-        if ($format === '.tar.gz') {
-            $tarGzPath = $this->createTarGz($packageRoot, $folderName);
-            if (!$tarGzPath) {
-                return response('Could not generate tar.gz file.', 500);
+        // If the uncompressed directory still exists (e.g. legacy V1/V2 behavior), compile on demand
+        if (File::exists($packageRoot) && File::isDirectory($packageRoot)) {
+            if ($format === '.tar.gz') {
+                if (!$this->createTarGz($packageRoot, $folderName)) {
+                    return response('Could not generate tar.gz file.', 500);
+                }
+            } else {
+                if (!$this->createZip($packageRoot, $folderName)) {
+                    return response('Could not generate ZIP file.', 500);
+                }
             }
-            return response()->download($tarGzPath, "{$folderName}.tar.gz");
         }
 
-        $zipPath = $this->createZip($packageRoot, $folderName);
-        if (!$zipPath) {
-            return response('Could not generate ZIP file.', 500);
+        // At this point, the file must exist (either just built, or built previously by V3 queue worker)
+        if (!File::exists($archivePath) || File::isDirectory($archivePath)) {
+            return response('Package archive not found.', 404);
         }
-        return response()->download($zipPath, "{$folderName}.zip");
+
+        return response()->download($archivePath, "{$folderName}{$format}");
     }
 
     private function createZip(string $packageRoot, string $folderName): ?string

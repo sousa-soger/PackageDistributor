@@ -15,13 +15,16 @@ class DeploymentJob extends Model
         'environment',
         'base_version',
         'head_version',
-        'format',
         'package_name',
         'status',
         'queue_order',
         'progress',
         'message',
         'result_json',
+        'zip_size',
+        'zip_sha256',
+        'targz_size',
+        'targz_sha256',
         'error_message',
         'started_at',
         'finished_at',
@@ -57,12 +60,18 @@ class DeploymentJob extends Model
     public function markCompleted(array $result): void
     {
         $this->update([
-            'status'      => 'completed',
-            'result_json' => $result,
-            'finished_at' => now(),
-            'message'     => 'Done.',
-            'progress'    => $this->fullProgressArray(100),
+            'status'       => 'completed',
+            'result_json'  => $result,
+            'finished_at'  => now(),
+            'message'      => 'Done.',
+            'progress'     => $this->fullProgressArray(100),
+            'zip_size'     => $result['zip_size'] ?? null,
+            'zip_sha256'   => $result['zip_sha256'] ?? null,
+            'targz_size'   => $result['targz_size'] ?? null,
+            'targz_sha256' => $result['targz_sha256'] ?? null,
         ]);
+
+        Cache::forget($this->progressCacheKey());
     }
 
     public function markFailed(string $errorMessage): void

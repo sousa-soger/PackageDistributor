@@ -30,7 +30,6 @@ return new class extends Migration
             $table->string('environment', 20);
             $table->string('base_version', 100);
             $table->string('head_version', 100);
-            $table->string('format', 20)->default('.zip');
             $table->string('package_name');
             $table->enum('status', ['queued', 'running', 'completed', 'failed', 'cancelled'])
                   ->default('queued')->index();
@@ -38,6 +37,10 @@ return new class extends Migration
             $table->json('progress')->nullable();          // stage fields snapshot
             $table->string('message', 500)->nullable();    // last human-readable message
             $table->json('result_json')->nullable();       // success payload
+            $table->string('zip_size', 50)->nullable();
+            $table->string('zip_sha256', 64)->nullable();
+            $table->string('targz_size', 50)->nullable();
+            $table->string('targz_sha256', 64)->nullable();
             $table->text('error_message')->nullable();     // failure reason
             $table->timestamp('started_at')->nullable();
             $table->timestamp('finished_at')->nullable();

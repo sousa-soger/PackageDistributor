@@ -162,7 +162,20 @@ class DeploymentPackageService
             'packagingMessage'     => 'Done.',
         ], 'Done.');
 
-        $sha256 = ($zipPath && file_exists($zipPath)) ? hash_file('sha256', $zipPath) : null;
+        $zipSha256   = ($zipPath && file_exists($zipPath)) ? hash_file('sha256', $zipPath) : null;
+        $targzSha256 = ($tarGzPath && file_exists($tarGzPath)) ? hash_file('sha256', $tarGzPath) : null;
+
+        $zipSize   = ($zipPath && file_exists($zipPath)) ? $this->getFileSize($zipPath) : null;
+        $targzSize = ($tarGzPath && file_exists($tarGzPath)) ? $this->getFileSize($tarGzPath) : null;
+        $originalDirSize = $this->getDirectorySize($packageRoot);
+
+        // ── Cleanup original uncompressed folder ──────────────────────────
+        $progressCallback(['packagingMessage' => 'Cleaning up uncompressed files...'], 'Cleaning up uncompressed files...');
+        try {
+            if (File::exists($packageRoot)) {
+                File::deleteDirectory($packageRoot);
+            }
+        } catch (\Throwable $e) {}
 
         return [
             'status'        => 'success',
@@ -171,8 +184,11 @@ class DeploymentPackageService
             'temp_path'     => isset($tempBasePath) ? $tempBasePath : null,
             'message'       => 'Package created successfully.',
             'changed_files' => $changedFiles,
-            'file_size'     => $this->getDirectorySize($packageRoot),
-            'sha256'        => $sha256,
+            'file_size'     => $originalDirSize,
+            'zip_size'      => $zipSize,
+            'zip_sha256'    => $zipSha256,
+            'targz_size'    => $targzSize,
+            'targz_sha256'  => $targzSha256,
             'summary'       => [
                 'total_changes'        => $totalChanges,
                 'update_delete_count'  => 0,
@@ -535,6 +551,21 @@ class DeploymentPackageService
     }
 
     // ── Directory size helper ─────────────────────────────────────────────────
+
+    private function getFileSize(string $path): string
+    {
+        if (!file_exists($path)) {
+            return '0 B';
+        }
+        $size  = filesize($path);
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i     = 0;
+        while ($size >= 1024 && $i < 4) {
+            $size /= 1024;
+            $i++;
+        }
+        return round($size, 2) . ' ' . $units[$i];
+    }
 
     private function getDirectorySize(string $directory): string
     {
