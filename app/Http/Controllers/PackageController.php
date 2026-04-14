@@ -43,6 +43,20 @@ class PackageController extends Controller
             ];
         }, config('github-repos'));
 
-        return view('new-packageV3', compact('repositories'));
+        $packages = \App\Models\DeploymentJob::where('user_id', auth()->id())
+            ->where('status', 'completed')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('new-packageV3', compact('repositories', 'packages'));
+    }
+    public function donePackages()
+    {
+        $packages = DeploymentJob::where('user_id', auth()->id())
+            ->where('message', 'Done')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('packages.done', compact('packages'));
     }
 }

@@ -3,13 +3,14 @@
 @section('title', 'New Package V3 Lifecycle')
 
 @section('content')
-    <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
-                                repositories: @js($repositories),
-                                queueUrl: '{{ route('deployments.queue-job') }}',
-                                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                                downloadUrl: '{{ route('download.archive') }}',
-                                csrfToken: '{{ csrf_token() }}'
-                            })">
+    <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12"
+        x-data="newPackageWizard({
+                                                                                                                                                                                        repositories: @js($repositories),
+                                                                                                                                                                                        queueUrl: '{{ route('deployments.queue-job') }}',
+                                                                                                                                                                                        jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                                                                                                                                                                                        downloadUrl: '{{ route('download.archive') }}',
+                                                                                                                                                                                        csrfToken: '{{ csrf_token() }}'
+                                                                                                                                                                                    })">
         {{-- ================================================================ --}}
         {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}
@@ -201,18 +202,20 @@
 
                         <!-- Queued job badge -->
                         <div x-show="currentJobId && jobStatus" x-cloak
-                            class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border" :class="{
-                                    'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
-                                    'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
-                                    'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
-                                    'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
-                                }">
-                            <span class="inline-block h-1.5 w-1.5 rounded-full" :class="{
-                                        'bg-amber-400': jobStatus === 'queued',
-                                        'bg-blue-500 animate-pulse': jobStatus === 'running',
-                                        'bg-emerald-500': jobStatus === 'completed',
-                                        'bg-red-500': jobStatus === 'failed',
-                                    }"></span>
+                            class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border"
+                            :class="{
+                                                                                                                                                                                            'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
+                                                                                                                                                                                            'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
+                                                                                                                                                                                            'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
+                                                                                                                                                                                            'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
+                                                                                                                                                                                        }">
+                            <span class="inline-block h-1.5 w-1.5 rounded-full"
+                                :class="{
+                                                                                                                                                                                                'bg-amber-400': jobStatus === 'queued',
+                                                                                                                                                                                                'bg-blue-500 animate-pulse': jobStatus === 'running',
+                                                                                                                                                                                                'bg-emerald-500': jobStatus === 'completed',
+                                                                                                                                                                                                'bg-red-500': jobStatus === 'failed',
+                                                                                                                                                                                            }"></span>
                             <span
                                 x-text="'Job #' + currentJobId + ' — ' + (jobStatus ? jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1) : '')"></span>
                         </div>
@@ -596,6 +599,162 @@
                 </div>
             </x-ui.card>
         </div>
+        {{-- ============================================================ --}}
+
+        {{-- ================================================================ --}}
+        {{-- CARD 3 — View list of previously generated packages by the user --}}
+        {{-- ================================================================ --}}
+        <div>
+            <x-ui.card class="p-8 w-full">
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Previously Generated Packages</h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            View and download packages that have been generated previously.
+                        </p>
+                    </div>
+
+                    @if($packages->isEmpty())
+                        <div class="rounded-lg border border-slate-200 bg-white p-6 text-slate-600">
+                            No completed packages found.
+                        </div>
+                    @else
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Env</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Project</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Version</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Created</th>
+                                        <th class="px-4 py-3"></th>
+                                        <th class="px-4 py-3"></th>
+                                        <th class="px-4 py-3"></th>
+                                    </tr>
+                                </thead>
+                                @foreach($packages as $package)
+                                    <tbody x-data="{ expanded: false }" class="divide-y divide-slate-100">
+                                        <tr @click="expanded = !expanded"
+                                            class="cursor-pointer hover:bg-slate-50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-slate-800">{{ $package->environment }}</td>
+                                            <td class="px-4 py-3 text-sm text-slate-800">{{ $package->project_name }}</td>
+                                            <td class="px-4 py-3 text-sm text-slate-800">
+                                                From <span
+                                                    class="py-1 text-sm text-rose-700 font-medium">{{ $package->base_version }}</span>
+                                                to <span
+                                                    class="py-1 text-sm text-green-600 font-medium">{{ $package->head_version }}</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-slate-800 whitespace-nowrap">
+                                                {{ $package->created_at->format('d M Y, h:i A') }}
+                                            </td>
+                                            <td class="px-4 py-3" @click.stop>
+                                                <div class="flex items-center gap-2">
+                                                    <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16"
+                                                        class="octicon octicon-file-zip color-fg-muted flex-shrink-0">
+                                                        <path
+                                                            d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z">
+                                                        </path>
+                                                    </svg>
+                                                    <a href="#" class="no-underline">
+                                                        <span class="text-sm text-blue-600 font-medium">Update package</span>
+                                                        <span class="text-sm text-blue-600 font-medium">(zip)</span>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3" @click.stop>
+                                                <div class="flex items-center gap-2">
+                                                    <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16"
+                                                        class="octicon octicon-file-zip color-fg-muted flex-shrink-0">
+                                                        <path
+                                                            d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z">
+                                                        </path>
+                                                    </svg>
+                                                    <a href="#" class="no-underline">
+                                                        <span class="text-sm text-blue-600 font-medium">Update package</span>
+                                                        <span class="text-sm text-blue-600 font-medium">(tar.gz)</span>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                    class="h-5 w-5 inline-block shrink-0 text-slate-400 transition-transform duration-200"
+                                                    :class="expanded ? '' : 'rotate-90'" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </td>
+                                        </tr>
+                                        <tr x-show="expanded" x-cloak class="bg-slate-50 border-t border-slate-100">
+                                            <td colspan="7" class="px-6 py-5">
+                                                <div class="flex flex-col space-y-5 max-w-4xl">
+                                                    <!-- Package Name & Meta -->
+                                                    <div>
+                                                        <div class="text-base text-slate-800">
+                                                            <span class="font-bold">Package:</span> <span
+                                                                class="font-bold">{{ $package->package_name }}</span>
+                                                        </div>
+                                                        <div class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
+                                                            <span>Size: {{ $package->result_json['size'] ?? '6.12 MB' }}</span>
+                                                            <span class="text-slate-300">|</span>
+                                                            <span>SHA256:
+                                                                {{ $package->result_json['sha256'] ?? 'e77db8c0ce484be8b8c337a4c0c2c00d483ebafdcfcd8e7ca47018cf0adc1c3' }}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Deploy to Hosting Server -->
+                                                    <div>
+                                                        <h4 class="text-base font-bold text-slate-800 mb-3">Deploy to Hosting
+                                                            Server</h4>
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <!-- Server Type -->
+                                                            <div>
+                                                                <label
+                                                                    class="block text-sm font-semibold text-slate-700 mb-2">Server
+                                                                    Type</label>
+                                                                <select
+                                                                    class="block w-full rounded-md border border-slate-300 py-2 px-3 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200 bg-white">
+                                                                    <option value="">Select a server profile...</option>
+                                                                </select>
+                                                            </div>
+                                                            <!-- Deployment Path -->
+                                                            <div>
+                                                                <label
+                                                                    class="block text-sm font-semibold text-slate-700 mb-2">Deployment
+                                                                    Path</label>
+                                                                <input type="text"
+                                                                    class="block w-full rounded-md border border-slate-300 py-2 px-3 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200 bg-white"
+                                                                    value="">
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Deploy Button -->
+                                                        <div class="mt-5 flex justify-center">
+                                                            <button type="button"
+                                                                class="inline-flex items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-medium text-white shadow-sm transition hover:bg-blue-700">
+                                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                                                    stroke="currentColor" stroke-width="1.8">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        d="M4 17h16M7 17V7h10v10M9 7V5h6v2" />
+                                                                </svg>
+                                                                <span>Deploy Now</span>
+                                                                <span
+                                                                    class="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">Ready</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                @endforeach
+                            </table>
+                        </div>
+                    @endif
+                </div>
+        </div>
+        </x-ui.card>
+    </div>
+    {{-- ============================================================ --}}
 
     </div>
 @endsection
