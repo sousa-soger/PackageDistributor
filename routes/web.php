@@ -17,36 +17,37 @@ Route::middleware('auth')->group(function () {
     Route::view('/settings', 'settings')->name('settings');
 });
 
-// For trying only
-Route::post('/register', [AuthController::class, 'register'])->name('register.user');
-
 // ** Route for auth
+Route::post('/register', [AuthController::class, 'register'])->name('register.user');
 Route::post('/login', [AuthController::class, 'login'])->name('login.user');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout.user');
-
-// for testing only - dummy loader
-// Route::get('/dummy-package', function () {
-//     sleep(2); // simulate backend work
-
-//     return response()->json([
-//         'status' => 'success',
-//     ]);
-// });
 
 Route::get('/github/repo-info', [GitHubController::class, 'repoInfo'])->name('github.repo-info');
 Route::get('/github/repo-versions', [GitHubController::class, 'repoVersions'])->name('github.repo-versions');
 Route::get('/github/rate-limit', [GitHubController::class, 'rateLimit'])->name('github.rate-limit');
 
-// ** Route for generate delta package
 Route::middleware('auth')->group(function () {
+
+    // ── V1 / V2 — Synchronous (unchanged) ────────────────────────────────────
     Route::post('/deployments/generate-delta', [DeploymentPackageController::class, 'generate'])
         ->name('deployments.generate-delta');
-    // {name} may contain dots (e.g. "v1.1.2") – without ->where() Laravel's
-    // router can strip the suffix, resulting in a silent 404 on every poll.
+
+    // {name} may contain dots (e.g. "v1.1.2") – the where() prevents silent 404s.
     Route::get('/deployments/progress/{name}', [DeploymentPackageController::class, 'progress'])
         ->where('name', '[^/]+')
         ->name('deployments.progress');
+
+    // ── V3 — Queue-based ──────────────────────────────────────────────────────
+
+    // Submit a new queued deployment job (returns immediately with job_id)
+    Route::post('/deployments/queue-job', [DeploymentPackageController::class, 'queueJob'])
+        ->name('deployments.queue-job');
+
+    // Poll progress + status by job DB ID
+    Route::get('/deployments/jobs/{id}/progress', [DeploymentPackageController::class, 'jobProgress'])
+        ->where('id', '[0-9]+')
+        ->name('deployments.job-progress');
 });
 
-// User download package route
+// User download package route (no auth guard so direct link downloads still work)
 Route::get('/download-archive', [DeploymentPackageController::class, 'downloadArchive'])->name('download.archive');
