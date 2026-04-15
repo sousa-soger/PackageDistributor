@@ -3,12 +3,11 @@
 @section('title', 'New Package')
 
 @section('content')
-    <div class="max-w-6xl mx-auto space-y-8 pt-4"
-        x-data="newPackageWizard({
-                                                                                                                                                                                                    repositories: @js($repositories),
-                                                                                                                                                                                                    generateUrl: '{{ route('deployments.generate-delta') }}',
-                                                                                                                                                                                                    csrfToken: '{{ csrf_token() }}'
-                                                                                                                                                                                                })">
+    <div class="max-w-6xl mx-auto space-y-8 pt-4" x-data="newPackageWizard({
+                        repositories: @js($repositories),
+                        generateUrl: '{{ route('deployments.generate-delta') }}',
+                        csrfToken: '{{ csrf_token() }}'
+                    })">
 
         <div class="flex items-start justify-between">
             <div>
