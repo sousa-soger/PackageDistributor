@@ -1,17 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'New Package V3 Lifecycle')
+@section('title', 'New Package')
 
 @section('content')
-    <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12"
-        x-data="newPackageWizard({
-                repositories: @js($repositories),
-                queueUrl: '{{ route('deployments.queue-job') }}',
-                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                downloadUrl: '{{ route('download.archive') }}',
-                csrfToken: '{{ csrf_token() }}',
-                dbQueuedPackages: @js($queuedPackages)
-            })">
+    <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
+                        repositories: @js($repositories),
+                        queueUrl: '{{ route('deployments.queue-job') }}',
+                        jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                        downloadUrl: '{{ route('download.archive') }}',
+                        csrfToken: '{{ csrf_token() }}',
+                        dbQueuedPackages: @js($queuedPackages)
+                    })">
         {{-- ================================================================ --}}
         {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}
@@ -132,6 +131,7 @@
                                                 :class="(!row.customName || !isRowReadyForName(row)) ? 'bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-200'"
                                                 class="w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-slate-300 transition-colors"
                                                 placeholder="">
+                                            <!-- Pencil / Revert icon -->
                                             <button type="button"
                                                 @click="row.customName = !row.customName; if(row.customName) { $nextTick(() => { $el.previousElementSibling.focus() }) }; handleRowInteract(index)"
                                                 x-show="isRowReadyForName(row)" x-cloak
@@ -153,11 +153,35 @@
                                                         d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                                 </svg>
                                             </button>
+                                            <!-- Trash / Remove row icon (hidden on first row) -->
+                                            <button type="button" x-show="index > 0" x-cloak @click="removeRow(index)"
+                                                title="Remove this job"
+                                                class="shrink-0 text-red-500 hover:text-red-600 transition-colors focus:outline-none ">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </div>
                                 </template>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Add Job Button — shown when the last row is complete -->
+                    <div x-show="canAddRow" x-cloak x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" class="pt-3 flex justify-center">
+                        <button type="button" @click="addRow()"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-blue-600 shadow-none transition hover:border-blue-500 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Job
+                        </button>
                     </div>
                 </div>
 
@@ -192,18 +216,18 @@
                         <div x-show="currentJobId && jobStatus" x-cloak
                             class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border"
                             :class="{
-                                                                                                                                                                                                                            'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
-                                                                                                                                                                                                                            'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
-                                                                                                                                                                                                                            'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
-                                                                                                                                                                                                                            'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
-                                                                                                                                                                                                                        }">
+                                                                                                                                                                                                                                                                                                'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
+                                                                                                                                                                                                                                                                                                'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
+                                                                                                                                                                                                                                                                                                'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
+                                                                                                                                                                                                                                                                                                'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
+                                                                                                                                                                                                                                                                                            }">
                             <span class="inline-block h-1.5 w-1.5 rounded-full"
                                 :class="{
-                                                                                                                                                                                                                                'bg-amber-400': jobStatus === 'queued',
-                                                                                                                                                                                                                                'bg-blue-500 animate-pulse': jobStatus === 'running',
-                                                                                                                                                                                                                                'bg-emerald-500': jobStatus === 'completed',
-                                                                                                                                                                                                                                'bg-red-500': jobStatus === 'failed',
-                                                                                                                                                                                                                            }"></span>
+                                                                                                                                                                                                                                                                                                    'bg-amber-400': jobStatus === 'queued',
+                                                                                                                                                                                                                                                                                                    'bg-blue-500 animate-pulse': jobStatus === 'running',
+                                                                                                                                                                                                                                                                                                    'bg-emerald-500': jobStatus === 'completed',
+                                                                                                                                                                                                                                                                                                    'bg-red-500': jobStatus === 'failed',
+                                                                                                                                                                                                                                                                                                }"></span>
                             <span
                                 x-text="'Job #' + currentJobId + ' — ' + (jobStatus ? jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1) : '')"></span>
                         </div>
@@ -281,34 +305,41 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-slate-800">
                                             <div class="flex flex-col gap-1">
-                                                <span class="font-medium text-slate-600 truncate max-w-sm" x-text="job.row.name"></span>
+                                                <span class="font-medium text-slate-600 truncate max-w-sm"
+                                                    x-text="job.row.name"></span>
                                                 <div class="text-xs">
-                                                    From <span class="text-rose-700 font-medium" x-text="job.row.base"></span>
-                                                    to <span class="text-green-600 font-medium" x-text="job.row.head"></span>
+                                                    From <span class="text-rose-700 font-medium"
+                                                        x-text="job.row.base"></span>
+                                                    to <span class="text-green-600 font-medium"
+                                                        x-text="job.row.head"></span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                                            <span
+                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
                                                 :class="{
-                                                    'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
-                                                    'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
-                                                    'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
-                                                    'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
-                                                }">
+                                                                                                                        'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
+                                                                                                                        'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
+                                                                                                                        'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
+                                                                                                                        'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
+                                                                                                                    }">
                                                 <span class="inline-block h-1.5 w-1.5 rounded-full mr-1.5"
                                                     :class="{
-                                                        'bg-amber-400': job.status === 'pending' || job.status === 'queued',
-                                                        'bg-blue-500 animate-pulse': job.status === 'running',
-                                                        'bg-emerald-500': job.status === 'completed',
-                                                        'bg-red-500': job.status === 'failed',
-                                                    }"></span>
-                                                <span x-text="job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : 'Pending'"></span>
+                                                                                                                            'bg-amber-400': job.status === 'pending' || job.status === 'queued',
+                                                                                                                            'bg-blue-500 animate-pulse': job.status === 'running',
+                                                                                                                            'bg-emerald-500': job.status === 'completed',
+                                                                                                                            'bg-red-500': job.status === 'failed',
+                                                                                                                        }"></span>
+                                                <span
+                                                    x-text="job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : 'Pending'"></span>
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-slate-500 whitespace-nowrap" x-text="new Date(job.created_at).toLocaleString()"></td>
+                                        <td class="px-4 py-3 text-sm text-slate-500 whitespace-nowrap"
+                                            x-text="new Date(job.created_at).toLocaleString()"></td>
                                     </tr>
-                                    <tr x-show="job.jobId === currentJobId" x-cloak x-transition.origin.top class="bg-indigo-50/30 border-t border-indigo-100/50 shadow-inner">
+                                    <tr x-show="job.jobId === currentJobId" x-cloak x-transition.origin.top
+                                        class="bg-indigo-50/30 border-t border-indigo-100/50 shadow-inner">
                                         <td colspan="5" class="px-6 py-5">
                                             <!-- Progress bars -->
                                             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5"
@@ -320,34 +351,41 @@
                                                         <span class="text-sm font-semibold"
                                                             :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
                                                             Overall Progress
-                                                            <span x-show="packagingProgress === 100" class="text-green-600 ml-1"> <i class="fa fa-check-circle"></i> ✓ Complete</span>
+                                                            <span x-show="packagingProgress === 100"
+                                                                class="text-green-600 ml-1"> <i
+                                                                    class="fa fa-check-circle"></i> ✓ Complete</span>
                                                         </span>
                                                         <span class="text-sm font-bold text-blue-600"
                                                             x-text="packagingProgress + '%'"></span>
                                                     </div>
-                                                    <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
+                                                    <div
+                                                        class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
                                                         <div class="h-full rounded-full transition-all duration-500 shadow-sm"
                                                             :class="{
-                                                                'bg-emerald-500': packagingProgress === 100, 
-                                                                'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
-                                                                'bg-red-500': packagingError !== ''
-                                                            }"
-                                                            :style="`width: ${packagingProgress}%`"></div>
+                                                                                                                                    'bg-emerald-500': packagingProgress === 100, 
+                                                                                                                                    'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
+                                                                                                                                    'bg-red-500': packagingError !== ''
+                                                                                                                                }"
+                                                            :style="`width: ${packagingProgress}%`">
+                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 <hr class="border-slate-100 mb-5">
 
                                                 <!-- Stage bars -->
-                                                <div class="flex flex-col gap-4 bg-slate-50 border border-slate-100 rounded-lg p-4">
+                                                <div
+                                                    class="flex flex-col gap-4 bg-slate-50 border border-slate-100 rounded-lg p-4">
 
                                                     <!-- Download -->
                                                     <div>
                                                         <div class="flex items-center justify-between mb-1">
-                                                            <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                            <span
+                                                                class="text-xs font-semibold text-slate-600 flex items-center gap-2">
                                                                 <span x-show="fileDownloadProgress === 100"
                                                                     class="text-emerald-500 text-sm">✓</span>
-                                                                <span x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0"
+                                                                <span
+                                                                    x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0"
                                                                     class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                                 <span x-show="fileDownloadProgress === 0"
                                                                     class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
@@ -367,10 +405,12 @@
                                                     <div class="grid grid-cols-2 gap-4">
                                                         <div>
                                                             <div class="flex items-center justify-between mb-1">
-                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                <span
+                                                                    class="text-xs font-semibold text-slate-600 flex items-center gap-2">
                                                                     <span x-show="baseFileExtraction === 100"
                                                                         class="text-emerald-500 text-sm">✓</span>
-                                                                    <span x-show="baseFileExtraction < 100 && baseFileExtraction > 0"
+                                                                    <span
+                                                                        x-show="baseFileExtraction < 100 && baseFileExtraction > 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                                     <span x-show="baseFileExtraction === 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
@@ -387,10 +427,12 @@
                                                         </div>
                                                         <div>
                                                             <div class="flex items-center justify-between mb-1">
-                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                <span
+                                                                    class="text-xs font-semibold text-slate-600 flex items-center gap-2">
                                                                     <span x-show="headFileExtraction === 100"
                                                                         class="text-emerald-500 text-sm">✓</span>
-                                                                    <span x-show="headFileExtraction < 100 && headFileExtraction > 0"
+                                                                    <span
+                                                                        x-show="headFileExtraction < 100 && headFileExtraction > 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                                     <span x-show="headFileExtraction === 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
@@ -410,10 +452,12 @@
                                                     <!-- Compare -->
                                                     <div>
                                                         <div class="flex items-center justify-between mb-1">
-                                                            <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                            <span
+                                                                class="text-xs font-semibold text-slate-600 flex items-center gap-2">
                                                                 <span x-show="compareFilesProgress === 100"
                                                                     class="text-emerald-500 text-sm">✓</span>
-                                                                <span x-show="compareFilesProgress < 100 && compareFilesProgress > 0"
+                                                                <span
+                                                                    x-show="compareFilesProgress < 100 && compareFilesProgress > 0"
                                                                     class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                                 <span x-show="compareFilesProgress === 0"
                                                                     class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
@@ -433,10 +477,12 @@
                                                     <div class="grid grid-cols-2 gap-4">
                                                         <div>
                                                             <div class="flex items-center justify-between mb-1">
-                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                <span
+                                                                    class="text-xs font-semibold text-slate-600 flex items-center gap-2">
                                                                     <span x-show="packageGenProgress === 100"
                                                                         class="text-emerald-500 text-sm">✓</span>
-                                                                    <span x-show="packageGenProgress < 100 && packageGenProgress > 0"
+                                                                    <span
+                                                                        x-show="packageGenProgress < 100 && packageGenProgress > 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                                     <span x-show="packageGenProgress === 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
@@ -453,10 +499,12 @@
                                                         </div>
                                                         <div>
                                                             <div class="flex items-center justify-between mb-1">
-                                                                <span class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                                                <span
+                                                                    class="text-xs font-semibold text-slate-600 flex items-center gap-2">
                                                                     <span x-show="compressionProgress === 100"
                                                                         class="text-emerald-500 text-sm">✓</span>
-                                                                    <span x-show="compressionProgress < 100 && compressionProgress > 0"
+                                                                    <span
+                                                                        x-show="compressionProgress < 100 && compressionProgress > 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                                     <span x-show="compressionProgress === 0"
                                                                         class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
@@ -474,8 +522,9 @@
                                                     </div>
 
                                                 </div>
-                                                
-                                                <div x-show="packagingError" x-cloak class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg shadow-sm">
+
+                                                <div x-show="packagingError" x-cloak
+                                                    class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg shadow-sm">
                                                     <span class="text-sm font-semibold text-red-600">Error:</span>
                                                     <span class="text-sm text-red-700" x-text="packagingError"></span>
                                                 </div>
@@ -484,21 +533,22 @@
                                             <!-- Status message -->
                                             <p class="mt-3 text-sm font-medium flex items-center gap-2 h-6"
                                                 :class="packagingError ? 'text-red-500' : 'text-slate-500'">
-                                                <span x-show="isRunning" class="rotate-anim inline-block opacity-70">⟳</span>
+                                                <span x-show="isRunning"
+                                                    class="rotate-anim inline-block opacity-70">⟳</span>
                                                 <span x-text="packagingMessage || ''"></span>
                                             </p>
                                         </td>
                                     </tr>
                                 </tbody>
                             </template>
-                            </table>
-                        </div>
+                        </table>
                     </div>
-                </x-ui.card>
-            </div>
-        
+                </div>
+            </x-ui.card>
+        </div>
+
         {{-- ============================================================ --}}
-    
+
 
         {{-- ================================================================ --}}
         {{-- CARD 3 — View list of previously generated packages by the user --}}
@@ -712,7 +762,7 @@
                         name: dbJob.package_name,
                     }
                 })),
-                
+
                 currentJobId: null,         // DB ID of the currently-running job
                 jobStatus: '',              // queued | running | completed | failed
                 isQueuing: false,           // true while POSTing to create jobs
@@ -742,6 +792,13 @@
                 get canStartQueue() {
                     // Repo selected AND at least one complete row (ignoring the trailing blank row)
                     return !!(this.selectedRepository && this.packageRows.some(r => this.isRowComplete(r)));
+                },
+
+                get canAddRow() {
+                    // Show the "Add Job" button only when the last row is fully complete
+                    if (!this.selectedRepository || this.packageRows.length === 0) return false;
+                    const lastRow = this.packageRows[this.packageRows.length - 1];
+                    return this.isRowComplete(lastRow);
                 },
 
                 get completeRows() {
@@ -823,16 +880,25 @@
 
                 handleRowInteract(index) {
                     this.updateRowNames();
-                    const isLastRow = index === this.packageRows.length - 1;
-                    if (isLastRow && this.isRowComplete(this.packageRows[index])) {
-                        const prev = this.packageRows[index];
-                        this.packageRows.push({
-                            id: Date.now(),
-                            base: '', head: '',
-                            environment: prev.environment || 'PROD',
-                            customName: false, name: ''
-                        });
+                    // No longer auto-adds a row — user must click the "Add Job" button
+                },
+
+                addRow() {
+                    const prev = this.packageRows[this.packageRows.length - 1];
+                    this.packageRows.push({
+                        id: Date.now(),
+                        base: '', head: '',
+                        environment: prev ? (prev.environment || 'PROD') : 'PROD',
+                        customName: false, name: ''
+                    });
+                },
+
+                removeRow(index) {
+                    // Close floating dropdown if it was open on this row
+                    if (this.floatDd.open && this.floatDd.rowIndex === index) {
+                        this.floatDd.open = false;
                     }
+                    this.packageRows.splice(index, 1);
                 },
 
                 updateRowNames() {
@@ -1003,7 +1069,7 @@
                             const prog = payload.progress || {};
 
                             this.jobStatus = payload.status;
-                            
+
                             // Let's propagate the new status to the unified list to instantly show "running" tag
                             const uq = this.unifiedQueue.find(q => q.jobId === this.currentJobId);
                             if (uq) uq.status = this.jobStatus;
