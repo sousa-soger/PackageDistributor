@@ -4,13 +4,13 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
-                                                    repositories: @js($repositories),
-                                                    queueUrl: '{{ route('deployments.queue-job') }}',
-                                                    jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                                                    downloadUrl: '{{ route('download.archive') }}',
-                                                    csrfToken: '{{ csrf_token() }}',
-                                                    dbQueuedPackages: @js($queuedPackages)
-                                                })">
+                repositories: @js($repositories),
+                queueUrl: '{{ route('deployments.queue-job') }}',
+                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                downloadUrl: '{{ route('download.archive') }}',
+                csrfToken: '{{ csrf_token() }}',
+                dbQueuedPackages: @js($queuedPackages)
+            })">
         {{-- ================================================================ --}}
         {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}
@@ -213,22 +213,6 @@
                         </button>
 
                         <!-- Queued job badge -->
-                        <div x-show="currentJobId && jobStatus" x-cloak
-                            class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border" :class="{
-                                                                    'bg-amber-50 border-amber-200 text-amber-700': jobStatus === 'queued',
-                                                                    'bg-blue-50 border-blue-200 text-blue-700': jobStatus === 'running',
-                                                                    'bg-emerald-50 border-emerald-200 text-emerald-700': jobStatus === 'completed',
-                                                                    'bg-red-50 border-red-200 text-red-700': jobStatus === 'failed',
-                                                                }">
-                            <span class="inline-block h-1.5 w-1.5 rounded-full" :class="{
-                                                                        'bg-amber-400': jobStatus === 'queued',
-                                                                        'bg-blue-500 animate-pulse': jobStatus === 'running',
-                                                                        'bg-emerald-500': jobStatus === 'completed',
-                                                                        'bg-red-500': jobStatus === 'failed',
-                                                                    }"></span>
-                            <span
-                                x-text="'Job #' + currentJobId + ' — ' + (jobStatus ? jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1) : '')"></span>
-                        </div>
                     </div>
                 </div>
 
@@ -278,7 +262,7 @@
             <x-ui.card class="p-8 w-full">
                 <div class="space-y-6">
                     <div>
-                        <h2 class="text-xl font-semibold text-slate-900">Pending Jobs</h2>
+                        <h2 class="text-xl font-semibold text-slate-900">Active Jobs</h2>
                         <p class="text-sm text-slate-500 mt-1">
                             Jobs that are queued and not in completion
                         </p>
@@ -289,100 +273,110 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Env</th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Project</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Package</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Version</th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Created</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold"></th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold"></th>
                                 </tr>
                             </thead>
                             <template x-for="job in unifiedQueue" :key="job.jobId">
                                 <tbody class="divide-y divide-slate-100">
                                     <tr class="transition-colors hover:bg-slate-50">
                                         <td class="px-4 py-3 text-sm text-slate-800" x-text="job.row.environment"></td>
-                                        <td class="px-4 py-3 text-sm flex gap-2">
-                                            <span class="font-medium text-slate-800" x-text="job.row.project_name"></span>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span class="font-bold text-slate-800" x-text="job.row.project_name"></span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-slate-800">
-                                            <div class="flex flex-col gap-1">
-                                                <span class="font-medium text-slate-600 truncate max-w-sm"
-                                                    x-text="job.row.name"></span>
-                                                <div class="text-xs">
-                                                    From <span class="text-rose-700 font-medium"
-                                                        x-text="job.row.base_version"></span>
-                                                    to <span class="text-green-600 font-medium"
-                                                        x-text="job.row.head_version"></span>
-                                                </div>
+                                        <td class="px-4 py-3 text- text-slate-800">
+                                            <div class="flex items-center gap-2">
+                                                <span
+                                                    class="px-2 py-0.5 rounded border border-rose-100 bg-rose-50 text-rose-700 font-medium text-sm whitespace-nowrap"
+                                                    x-text="job.row.base_version"></span>
+                                                <span class="text-slate-700 text-lg">→</span>
+                                                <span
+                                                    class="px-2 py-0.5 rounded border border-emerald-100 bg-emerald-50 text-emerald-700 font-medium text-sm whitespace-nowrap"
+                                                    x-text="job.row.head_version"></span>
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
                                             <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                                                class="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium border"
                                                 :class="{
-                                                                        'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
-                                                                        'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
-                                                                        'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
-                                                                        'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
-                                                                    }">
+                                                        'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
+                                                        'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
+                                                        'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
+                                                        'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
+                                                    }">
                                                 <span class="inline-block h-1.5 w-1.5 rounded-full mr-1.5" :class="{
-                                                                        'bg-amber-400': job.status === 'pending' || job.status === 'queued',
-                                                                        'bg-blue-500 animate-pulse': job.status === 'running',
-                                                                        'bg-emerald-500': job.status === 'completed',
-                                                                        'bg-red-500': job.status === 'failed',
-                                                                    }"></span>
+                                                        'bg-amber-400': job.status === 'pending' || job.status === 'queued',
+                                                        'bg-blue-500 animate-pulse': job.status === 'running',
+                                                        'bg-emerald-500': job.status === 'completed',
+                                                        'bg-red-500': job.status === 'failed',
+                                                    }"></span>
                                                 <span
                                                     x-text="job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : 'Pending'"></span>
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-slate-500 whitespace-nowrap"
-                                            x-text="new Date(job.created_at).toLocaleString()">
-                                        </td>
+
+                                        <!-- Download .zip -->
                                         <td class="px-4 py-3" @click.stop>
-                                            <div class="flex items-center gap-2">
+                                            <div class="flex items-center gap-2"
+                                                :class="job.status !== 'completed' ? 'opacity-40 cursor-not-allowed' : ''">
                                                 <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1"
-                                                    width="16"
-                                                    class="octicon octicon-file-zip color-fg-muted flex-shrink-0">
-                                                    <path
+                                                    width="16" class="flex-shrink-0"
+                                                    :class="job.status === 'completed' ? 'text-slate-500' : 'text-slate-300'">
+                                                    <path fill="currentColor"
                                                         d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z">
                                                     </path>
                                                 </svg>
-                                                <a href="{{ route('download.archive', ['folder' => $package->package_name, 'format' => '.zip']) }}"
-                                                    class="no-underline group">
-                                                    <span
-                                                        class="text-sm text-blue-600 font-medium group-hover:underline">Update
-                                                        package</span>
-                                                    <span
-                                                        class="text-sm text-blue-600 font-medium group-hover:underline">(.zip)</span>
-                                                </a>
+                                                <template x-if="job.status === 'completed'">
+                                                    <a :href="'{{ url('download-archive') }}?folder=' + encodeURIComponent(job.row.name) + '&format=.zip'"
+                                                        class="group">
+                                                        <span
+                                                            class="text-sm text-blue-600 font-medium group-hover:underline">Update
+                                                            Package .zip</span>
+                                                    </a>
+                                                </template>
+                                                <template x-if="job.status !== 'completed'">
+                                                    <span class="text-sm text-slate-400 font-medium select-none">Update
+                                                        Package .zip</span>
+                                                </template>
                                             </div>
                                         </td>
+                                        <!-- Download .tar.gz -->
                                         <td class="px-4 py-3" @click.stop>
-                                            <div class="flex items-center gap-2">
+                                            <div class="flex items-center gap-2"
+                                                :class="job.status !== 'completed' ? 'opacity-40 cursor-not-allowed' : ''">
                                                 <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1"
-                                                    width="16"
-                                                    class="octicon octicon-file-zip color-fg-muted flex-shrink-0">
-                                                    <path
+                                                    width="16" class="flex-shrink-0"
+                                                    :class="job.status === 'completed' ? 'text-slate-500' : 'text-slate-300'">
+                                                    <path fill="currentColor"
                                                         d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z">
                                                     </path>
                                                 </svg>
-                                                <a href="{{ route('download.archive', ['folder' => $package->package_name, 'format' => '.tar.gz']) }}"
-                                                    class="no-underline group">
-                                                    <span
-                                                        class="text-sm text-blue-600 font-medium group-hover:underline">Update
-                                                        package</span>
-                                                    <span
-                                                        class="text-sm text-blue-600 font-medium group-hover:underline">(.tar.gz)</span>
-                                                </a>
+                                                <template x-if="job.status === 'completed'">
+                                                    <a :href="'{{ url('download-archive') }}?folder=' + encodeURIComponent(job.row.name) + '&format=.tar.gz'"
+                                                        class="group">
+                                                        <span
+                                                            class="text-sm text-blue-600 font-medium group-hover:underline">Update
+                                                            Package .tar.gz</span>
+                                                    </a>
+                                                </template>
+                                                <template x-if="job.status !== 'completed'">
+                                                    <span class="text-sm text-slate-400 font-medium select-none">Update
+                                                        Package .tar.gz</span>
+                                                </template>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr x-show="job.jobId === currentJobId" x-cloak x-transition.origin.top
                                         class="bg-indigo-50/30 border-t border-indigo-100/50 shadow-inner">
-                                        <td colspan="5" class="px-6 py-5">
+                                        <td colspan="6" class="px-6 py-5">
                                             <!-- Progress bars -->
                                             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5"
                                                 x-show="isRunning || packagingProgress > 0 || packagingResult || packagingError">
 
                                                 <!-- Overall -->
-                                                <div class="mb-5">
+                                                <div class="mb-2">
                                                     <div class="mb-2 flex items-center justify-between">
                                                         <span class="text-sm font-semibold"
                                                             :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
@@ -398,15 +392,15 @@
                                                         class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
                                                         <div class="h-full rounded-full transition-all duration-500 shadow-sm"
                                                             :class="{
-                                                                                    'bg-emerald-500': packagingProgress === 100, 
-                                                                                    'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
-                                                                                    'bg-red-500': packagingError !== ''
-                                                                                }" :style="`width: ${packagingProgress}%`">
+                                                                'bg-emerald-500': packagingProgress === 100, 
+                                                                'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
+                                                                'bg-red-500': packagingError !== ''
+                                                            }" :style="`width: ${packagingProgress}%`">
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <hr class="border-slate-100 mb-5">
+                                                <hr class="border-slate-100 mb-2">
 
                                                 <!-- Stage bars -->
                                                 <div
@@ -643,14 +637,17 @@
                                         <tr @click="expanded = !expanded"
                                             class="cursor-pointer hover:bg-slate-50 transition-colors">
                                             <td class="px-4 py-3 text-sm text-slate-800">{{ $package->environment }}</td>
-                                            <td class="px-4 py-3 text-sm text-slate-800">{{ $package->project_name }}</td>
+                                            <td class="px-4 py-3 text-sm font-bold text-slate-800">{{ $package->project_name }}</td>
                                             <td class="px-4 py-3 text-sm text-slate-800">
-                                                From <span
-                                                    class="py-1 text-sm text-rose-700 font-medium">{{ $package->base_version }}</span>
-                                                to <span
-                                                    class="py-1 text-sm text-green-600 font-medium">{{ $package->head_version }}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span
+                                                        class="px-2 py-0.5 rounded border border-rose-100 bg-rose-50 text-rose-700 font-medium text-sm whitespace-nowrap">{{ $package->base_version }}</span>
+                                                    <span class="text-slate-700 text-lg">→</span>
+                                                    <span
+                                                        class="px-2 py-0.5 rounded border border-emerald-100 bg-emerald-50 text-emerald-700 font-medium text-sm whitespace-nowrap">{{ $package->head_version }}</span>
+                                                </div>
                                             </td>
-                                            <td class="px-4 py-3 text-sm text-slate-800 whitespace-nowrap">
+                                            <td class="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
                                                 {{ $package->created_at->format('d M Y, h:i A') }}
                                             </td>
                                             <td class="px-4 py-3" @click.stop>
@@ -814,8 +811,8 @@
                     row: {
                         environment: dbJob.environment,
                         project_name: dbJob.project_name,
-                        base: dbJob.base_version,
-                        head: dbJob.head_version,
+                        base_version: dbJob.base_version,
+                        head_version: dbJob.head_version,
                         name: dbJob.package_name,
                     }
                 })),
@@ -1064,10 +1061,19 @@
                                 throw new Error(data.message || `Failed to queue job for row: ${row.name}`);
                             }
 
-                            const jobEntry = { row: { ...row }, jobId: data.job_id, status: data.status, created_at: new Date().toISOString() };
+                            const jobEntry = {
+                                row: {
+                                    ...row,
+                                    project_name: this.selectedRepositoryLabel,
+                                    base_version: baseRef,
+                                    head_version: headRef
+                                },
+                                jobId: data.job_id,
+                                status: data.status,
+                                created_at: new Date().toISOString()
+                            };
                             this.jobQueue.push(jobEntry);
                             // Unshift pushes it to the TOP of the unified display queue
-                            row.project_name = this.selectedRepositoryLabel;
                             this.unifiedQueue.unshift(jobEntry);
                         }
                     } catch (err) {
