@@ -161,9 +161,16 @@ class GitHubService
         fclose($fh);
 
         if (!$ok || $httpCode < 200 || $httpCode >= 300) {
+            $errorBody = '';
             if (file_exists($destinationZipPath)) {
+                $errorBody = file_get_contents($destinationZipPath);
                 unlink($destinationZipPath);
             }
+            \Illuminate\Support\Facades\Log::error("GitHub download failed for {$url}", [
+                'http_code' => $httpCode,
+                'curl_ok'   => $ok,
+                'response'  => substr($errorBody, 0, 1000), // Log first 1KB of error
+            ]);
             return false;
         }
 

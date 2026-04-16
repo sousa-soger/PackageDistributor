@@ -4,13 +4,13 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
-                repositories: @js($repositories),
-                queueUrl: '{{ route('deployments.queue-job') }}',
-                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                downloadUrl: '{{ route('download.archive') }}',
-                csrfToken: '{{ csrf_token() }}',
-                dbQueuedPackages: @js($queuedPackages)
-            })">
+                                        repositories: @js($repositories),
+                                        queueUrl: '{{ route('deployments.queue-job') }}',
+                                        jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                                        downloadUrl: '{{ route('download.archive') }}',
+                                        csrfToken: '{{ csrf_token() }}',
+                                        dbQueuedPackages: @js($queuedPackages)
+                                    })">
         {{-- ================================================================ --}}
         {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}
@@ -277,6 +277,7 @@
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold"></th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold"></th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold"></th>
                                 </tr>
                             </thead>
                             <template x-for="job in unifiedQueue" :key="job.jobId">
@@ -301,17 +302,17 @@
                                             <span
                                                 class="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium border"
                                                 :class="{
-                                                        'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
-                                                        'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
-                                                        'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
-                                                        'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
-                                                    }">
+                                                                                'bg-amber-50 border-amber-200 text-amber-700': job.status === 'pending' || job.status === 'queued',
+                                                                                'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
+                                                                                'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
+                                                                                'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
+                                                                            }">
                                                 <span class="inline-block h-1.5 w-1.5 rounded-full mr-1.5" :class="{
-                                                        'bg-amber-400': job.status === 'pending' || job.status === 'queued',
-                                                        'bg-blue-500 animate-pulse': job.status === 'running',
-                                                        'bg-emerald-500': job.status === 'completed',
-                                                        'bg-red-500': job.status === 'failed',
-                                                    }"></span>
+                                                                                'bg-amber-400': job.status === 'pending' || job.status === 'queued',
+                                                                                'bg-blue-500 animate-pulse': job.status === 'running',
+                                                                                'bg-emerald-500': job.status === 'completed',
+                                                                                'bg-red-500': job.status === 'failed',
+                                                                            }"></span>
                                                 <span
                                                     x-text="job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : 'Pending'"></span>
                                             </span>
@@ -367,10 +368,20 @@
                                                 </template>
                                             </div>
                                         </td>
+                                        <td>
+                                            <button type="button" @click="" title="Remove this job"
+                                                class="shrink-0 text-red-500 hover:text-red-600 transition-colors focus:outline-none ">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
                                     </tr>
                                     <tr x-show="job.jobId === currentJobId" x-cloak x-transition.origin.top
                                         class="bg-indigo-50/30 border-t border-indigo-100/50 shadow-inner">
-                                        <td colspan="6" class="px-6 py-5">
+                                        <td colspan="7" class="px-6 py-5">
                                             <!-- Progress bars -->
                                             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5"
                                                 x-show="isRunning || packagingProgress > 0 || packagingResult || packagingError">
@@ -392,10 +403,11 @@
                                                         class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
                                                         <div class="h-full rounded-full transition-all duration-500 shadow-sm"
                                                             :class="{
-                                                                'bg-emerald-500': packagingProgress === 100, 
-                                                                'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
-                                                                'bg-red-500': packagingError !== ''
-                                                            }" :style="`width: ${packagingProgress}%`">
+                                                                                        'bg-emerald-500': packagingProgress === 100, 
+                                                                                        'bg-blue-500': packagingProgress > 0 && packagingProgress < 100,
+                                                                                        'bg-red-500': packagingError !== ''
+                                                                                    }"
+                                                            :style="`width: ${packagingProgress}%`">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -818,7 +830,6 @@
                 })),
 
                 currentJobId: null,         // DB ID of the currently-running job
-                jobStatus: '',              // queued | running | completed | failed
                 isQueuing: false,           // true while POSTing to create jobs
                 isRunning: false,           // true while polling and not yet terminal
                 pollIntervalId: null,       // setInterval handle
@@ -921,6 +932,16 @@
                         await this.fetchRateLimit();
                     });
                     setInterval(() => this.updateRowNames(), 60000);
+
+                    // ── Auto-resume polling on refresh ──────────────────────────
+                    const activeJob = this.unifiedQueue.find(q => q.status === 'running' || q.status === 'pending' || q.status === 'queued');
+                    if (activeJob) {
+                        this.isRunning = true;
+                        this.currentJobId = activeJob.jobId;
+                        this.activeRow = activeJob.row;
+                        this.packagingMessage = 'Resuming job tracking...';
+                        this.startPolling();
+                    }
                 },
 
                 // ── Row helpers ───────────────────────────────────────────────
@@ -1017,7 +1038,16 @@
 
                 async startPackaging() {
                     const rows = this.completeRows;
-                    if (!this.canStartQueue || rows.length === 0) return;
+                    // Prevent double-submission of already active jobs
+                    const activeNames = this.unifiedQueue
+                        .filter(q => ['running', 'pending', 'queued'].includes(q.status))
+                        .map(q => q.row.name);
+
+                    const finalRows = rows.filter(r => !activeNames.includes(r.name));
+                    if (finalRows.length === 0) {
+                        this.packagingError = 'Selected packages are already in the queue or running.';
+                        return;
+                    }
 
                     // Reset all state for a fresh multi-job run
                     this.isQueuing = true;
@@ -1025,15 +1055,14 @@
                     this.packagingResult = null;
                     this.packagingError = '';
                     this.currentJobId = null;
-                    this.jobStatus = '';
                     this.jobQueue = [];
                     this.jobQueueIndex = 0;
                     this.jobResults = [];
-                    this.packagingMessage = `Submitting ${rows.length} job(s) to queue...`;
+                    this.packagingMessage = `Submitting ${finalRows.length} job(s) to queue...`;
 
                     // ── Submit ALL complete rows to the backend at once ──────
                     try {
-                        for (const row of rows) {
+                        for (const row of finalRows) {
                             const baseObj = this.allRepoVersions.find(v => v.unique_key === row.base);
                             const headObj = this.allRepoVersions.find(v => v.unique_key === row.head);
                             const baseRef = baseObj ? baseObj.ref : row.base.split(':').slice(1).join(':');
@@ -1105,7 +1134,6 @@
                     const entry = this.jobQueue[this.jobQueueIndex];
                     this.activeRow = entry.row;
                     this.currentJobId = entry.jobId;
-                    this.jobStatus = entry.status;
 
                     // Reset per-job progress bars
                     this.packagingProgress = 0;
@@ -1144,11 +1172,9 @@
                             const payload = await res.json();
                             const prog = payload.progress || {};
 
-                            this.jobStatus = payload.status;
-
                             // Let's propagate the new status to the unified list to instantly show "running" tag
                             const uq = this.unifiedQueue.find(q => q.jobId === this.currentJobId);
-                            if (uq) uq.status = this.jobStatus;
+                            if (uq) uq.status = payload.status;
 
                             // Advance stage fields (only forward, never retreat)
                             const adv = (key, val) => {
@@ -1212,7 +1238,6 @@
                 resetJob() {
                     this.stopPolling();
                     this.currentJobId = null;
-                    this.jobStatus = '';
                     this.isQueuing = false;
                     this.isRunning = false;
                     this.packagingResult = null;
