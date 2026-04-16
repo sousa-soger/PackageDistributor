@@ -4,10 +4,6 @@ namespace App\Http\Controllers;
 
 class PackageController extends Controller
 {
-
-
-
-
     public function indexV3()
     {
         $repositories = array_map(static function (array $item) {
