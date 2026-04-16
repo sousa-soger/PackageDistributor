@@ -135,7 +135,7 @@
 
                                 <!-- Package Folder Name -->
                                 <div class="w-[48%] pl-6 pr-2 flex items-center gap-3">
-                                    <input type="text" x-model="row.name"
+                                    <input type="text" x-model="row.name"sogkerkl
                                         @input="row.customName = true; handleRowInteract(index)"
                                         :readonly="!row.customName || !isRowReadyForName(row)"
                                         :disabled="!isRowReadyForName(row)"
