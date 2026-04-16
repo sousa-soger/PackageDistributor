@@ -367,6 +367,10 @@
 
                     // ── Clear the form so it's ready for the next batch ──────
                     this.resetFormFields();
+                    
+                    this.$nextTick(() => {
+                        document.getElementById('active-jobs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
 
                     // ── Process jobs sequentially ────────────────────────────
                     await this.processNextJob();

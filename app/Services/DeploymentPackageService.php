@@ -138,6 +138,13 @@ class DeploymentPackageService
                 $headVersion
             );
 
+            try {
+                $compareData = $githubService->compare($owner, $repoName, $baseVersion, $headVersion);
+                $this->versionInfoTxt($packageRoot, $headVersion, $compareData);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Could not generate version_info.txt: " . $e->getMessage());
+            }
+
             // ── Generate update / rollback directories ────────────────────
             $progressCallback(['packagingMessage' => 'Generating update and rollback packages...'], 'Generating packages...');
             $this->generatePackagesWithProgress($packageRoot, $baseExtractPath, $headExtractPath, $diffData, $progressCallback);
@@ -548,6 +555,59 @@ class DeploymentPackageService
         }
 
         file_put_contents($path, $content);
+    }
+
+    private function versionInfoTxt(string $packageRoot, string $headVersion, array $compareData): void
+    {
+        $path = $packageRoot . DIRECTORY_SEPARATOR . 'version_info.txt';
+        $content = "==================================================\n";
+        $content .= "               Version Information                \n";
+        $content .= "==================================================\n";
+        $content .= "Version: {$headVersion}\n";
+        $content .= "GeneratedDate: " . now()->format('Y-m-d H:i:s') . "\n\n";
+
+        $commits = $compareData['commits'] ?? [];
+        if (!empty($commits)) {
+            $latestCommit = array_pop($commits);
+            $latestSha = substr($latestCommit['sha'] ?? '', 0, 8);
+            $latestMessage = rtrim($latestCommit['commit']['message'] ?? '');
+            $latestMessageIndented = collect(explode("\n", $latestMessage))
+                ->map(fn($line) => $line === '' ? '' : "  " . $line)
+                ->implode("\n");
+
+            $content .= "--- Latest Commit Details ------------------------\n";
+            $content .= "Commit Hash: {$latestSha}\n";
+            $content .= "Commit Message:\n{$latestMessageIndented}\n\n";
+
+            if (!empty($commits)) {
+                $content .= "==================================================\n";
+                $content .= "            Additional Commit History             \n";
+                $content .= "==================================================\n";
+
+                $commits = array_reverse($commits);
+                foreach ($commits as $index => $commit) {
+                    $sha = substr($commit['sha'] ?? '', 0, 8);
+                    $message = rtrim($commit['commit']['message'] ?? '');
+                    $messageIndented = collect(explode("\n", $message))
+                        ->map(fn($line) => $line === '' ? '' : "  " . $line)
+                        ->implode("\n");
+
+                    $content .= "Commit: \n";
+                    $content .= "  {$sha}\n";
+                    if ($messageIndented !== '') {
+                        $content .= "{$messageIndented}\n";
+                    }
+                    
+                    if ($index < count($commits) - 1) {
+                        $content .= "\n--------------------------------------------------\n";
+                    } else {
+                        $content .= "\n";
+                    }
+                }
+            }
+        }
+
+        file_put_contents($path, rtrim($content) . "\n");
     }
 
     // ── Directory size helper ─────────────────────────────────────────────────

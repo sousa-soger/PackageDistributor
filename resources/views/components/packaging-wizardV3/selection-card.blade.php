@@ -35,19 +35,46 @@
         <!-- Multi-row Base/Head Selection -->
         <div class="mt-8 overflow-visible" x-show="selectedRepository && !isLoadingVersions" x-cloak>
             <div class="min-w-[900px]">
-
                 <div class="flex text-sm font-semibold text-slate-800 pb-4">
-                    <div class="w-[20%] text-center">BASE</div>
-                    <div class="w-[20%] text-center">HEAD</div>
+                    <div class="w-[20%] flex items-center justify-center gap-1.5">
+                        <span>BASE</span>
+                        <span class="inline-flex items-center" title="Outdated Version">
+                            <div class="relative inline-flex items-center justify-center">
+                                <svg class="w-7 h-7 text-slate-400 stroke-current drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="#f8fafc"></path>
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                </svg>
+                                <div class="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 ring-[2.5px] ring-white">
+                                    <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
+                    <div class="w-[20%] flex items-center justify-center gap-1.5">
+                        <span>HEAD</span>
+                        <span class="inline-flex items-center" title="Updated Version">
+                            <div class="relative inline-flex items-center justify-center">
+                                <svg class="w-7 h-7 text-blue-500 stroke-current drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="#eff6ff"></path>
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                </svg>
+                                <div class="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 ring-[2.5px] ring-white">
+                                    <svg class="h-3.5 w-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/></svg>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
                     <div class="w-[12%] text-center">Environment</div>
                     <div class="w-[48%] text-left pl-6">Package Folder Name</div>
                 </div>
 
                 <!-- Relative container for continuous vertical lines -->
                 <div class="relative pt-2 pb-2">
-                    <div class="absolute -top-6 bottom-0 left-[20%] w-px bg-slate-200"></div>
-                    <div class="absolute -top-6 bottom-0 left-[40%] w-px bg-slate-200"></div>
-                    <div class="absolute -top-6 bottom-0 left-[52%] w-px bg-slate-200"></div>
+                    <div class="absolute -top-1 bottom-0 left-[20%] w-px bg-slate-300"></div>
+                    <div class="absolute -top-7 bottom-0 left-[40%] w-px bg-slate-300"></div>
+                    <div class="absolute -top-7 bottom-0 left-[52%] w-px bg-slate-300"></div>
 
                     <!-- Rows -->
                     <div class="space-y-4">
