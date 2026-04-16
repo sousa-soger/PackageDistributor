@@ -12,7 +12,7 @@ Route::view('/user-auth', 'user-auth')->name('user-auth');
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home')->name('home');
 
-    Route::get('/new-package', [PackageController::class, 'index'])->name('new-package');
+
 
 
 

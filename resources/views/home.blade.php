@@ -16,7 +16,7 @@
             </p>
 
             <div class="mt-6">
-                <a href="{{ route('new-package') }}">
+                <a href="{{ route('new-packageV3') }}">
                     <x-ui.primary-button>Create New Package</x-ui.primary-button>
                 </a>
             </div>

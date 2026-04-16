@@ -244,9 +244,9 @@
             </p>
 
             <div class="mt-6">
-                <a href="{{ route('new-package') }}">
-                    <x-ui.primary-button>Create New Package</x-ui.primary-button>
-                </a>
+                    <a href="{{ route('new-packageV3') }}">
+                        <x-ui.primary-button>Create New Package</x-ui.primary-button>
+                    </a>
             </div>
         </x-ui.card>
         </div>
