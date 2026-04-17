@@ -54,3 +54,9 @@ Route::middleware('auth')->group(function () {
 
 // User download package route (no auth guard so direct link downloads still work)
 Route::get('/download-archive', [DeploymentPackageController::class, 'downloadArchive'])->name('download.archive');
+
+// Bulk actions (auth required)
+Route::middleware('auth')->group(function () {
+    Route::post('/deployments/bulk-download', [DeploymentPackageController::class, 'bulkDownload'])->name('deployments.bulk-download');
+    Route::delete('/deployments/bulk-delete', [DeploymentPackageController::class, 'bulkDelete'])->name('deployments.bulk-delete');
+});

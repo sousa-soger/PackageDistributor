@@ -61,6 +61,7 @@
                     rowIndex: null,
                     field: null,   // 'base' | 'head'
                     typeFilter: '',
+                    searchQuery: '',
                     style: '',
                 },
 
@@ -164,7 +165,12 @@
 
                 get floatDdVersions() {
                     const tf = this.floatDd.typeFilter;
-                    return this.allRepoVersions.filter(v => !tf || v.type === tf);
+                    const sq = this.floatDd.searchQuery.toLowerCase();
+                    return this.allRepoVersions.filter(v => {
+                        const matchType = !tf || v.type === tf;
+                        const matchSearch = !sq || v.name.toLowerCase().includes(sq);
+                        return matchType && matchSearch;
+                    });
                 },
 
                 // ── Lifecycle ────────────────────────────────────────────────
@@ -172,6 +178,9 @@
                 init() {
                     this.fetchRateLimit();
                     this.$watch('selectedRepository', async () => {
+                        if (this.selectedRepository) {
+                            this.isLoadingVersions = true;
+                        }
                         this.floatDd.open = false;
                         this.packageRows = [
                             { id: Date.now(), base: '', head: '', environment: 'PROD', customName: false, name: '' }
@@ -267,7 +276,12 @@
                     this.floatDd.rowIndex = rowIndex;
                     this.floatDd.field = field;
                     this.floatDd.typeFilter = '';
+                    this.floatDd.searchQuery = '';
                     this.floatDd.open = true;
+                    // Auto-focus search bar
+                    this.$nextTick(() => {
+                        if (this.$refs.searchBar) this.$refs.searchBar.focus();
+                    });
                 },
 
                 selectFloatVersion(versionKey) {

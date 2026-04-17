@@ -3,15 +3,15 @@
         <div>
             <h2 class="text-xl font-semibold text-slate-900">Package Selection</h2>
             <p class="text-sm text-slate-500 mt-1">
-                Select repositories then select [base → head] to create update and rollback package
+                Select repositories
             </p>
         </div>
 
         <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Repository</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Project Name:</label>
             <select x-model="selectedRepository"
                 class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500">
-                <option value="" disabled>Select a repository...</option>
+                <option value="" disabled>Select the repository of the project...</option>
                 @foreach ($repositories as $repository)
                     <option value="{{ $repository['id'] }}">
                         {{ $repository['label'] }} ({{ $repository['owner'] }}/{{ $repository['repo'] }})
@@ -20,24 +20,63 @@
             </select>
         </div>
 
+        <!-- Show Description -->
+        {{-- 
         <div x-show="repoData" class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
             <div class="flex flex-col gap-1">
                 <span class="font-semibold text-slate-900">Description:</span>
                 <span class="text-slate-500" x-text="repoData?.description || '-'"></span>
             </div>
         </div>
+        --}}
 
-        <div x-show="isLoadingVersions"
-            class="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500">
-            Loading repository versions...
+        
+        <style>
+            .repo-loading-container {
+                position: relative;
+                overflow: hidden;
+                min-height: 120px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+           
+        </style>
+        
+        <div x-show="selectedRepository !== null && isLoadingVersions" x-cloak
+            class="mt-1 repo-loading-container rounded-xl border border-slate-200 bg-white text-center text-sm text-slate-500">
+            <!-- Animation Background Elements -->
+            {{-- 
+            <div class="rings-wrapper">
+                <div class="ring"></div>
+                <div class="ring"></div>
+                <div class="ring"></div>
+            </div>
+            <div class="glow-orb"></div>
+            --}}
+            <div class="repo-loader" aria-label="Loading repository" role="img">
+                <span class="seg s1"></span>
+                <span class="seg s2"></span>
+                <span class="seg s3"></span>
+                <span class="seg s4"></span>
+                <span class="seg s5"></span>
+                <span class="seg s6"></span>
+                <span class="seg s7"></span>
+                <span class="beam"></span>
+            </div>
+            
+            <div class="relative z-10 flex flex-col items-center justify-center">
+                <span class="font-medium text-blue-900 animate-pulse">Loading repository versions...</span>
+            </div>
         </div>
 
         <!-- Multi-row Base/Head Selection -->
-        <div class="mt-8 overflow-visible" x-show="selectedRepository && !isLoadingVersions" x-cloak>
+        <div class="mt-10 overflow-visible" x-show="selectedRepository && !isLoadingVersions" x-cloak>
             <div class="min-w-[900px]">
                 <div class="flex text-sm font-semibold text-slate-800 pb-4">
-                    <div class="w-[20%] flex items-center justify-center gap-1.5">
-                        <span>BASE</span>
+                    <div class="w-[20%] flex items-center justify-center gap-1.5 relative">
+                        <span>Current Version</span>
                         <span class="inline-flex items-center" title="Outdated Version">
                             <div class="relative inline-flex items-center justify-center">
                                 <svg class="w-7 h-7 text-slate-400 stroke-current drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -50,9 +89,17 @@
                                 </div>
                             </div>
                         </span>
+
+                        <!-- Connector Arrow -->
+                        <div class="absolute -right-3 top-1/2 -translate-y-1/2 text-slate-400 z-20">
+                            
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                        </div>
                     </div>
                     <div class="w-[20%] flex items-center justify-center gap-1.5">
-                        <span>HEAD</span>
+                        <span>Target Version</span>
                         <span class="inline-flex items-center" title="Updated Version">
                             <div class="relative inline-flex items-center justify-center">
                                 <svg class="w-7 h-7 text-blue-500 stroke-current drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -135,19 +182,23 @@
 
                                 <!-- Package Folder Name -->
                                 <div class="w-[48%] pl-6 pr-2 flex items-center gap-3">
-                                    <input type="text" x-model="row.name"sogkerkl
+                                    <input type="text" x-model="row.name"
                                         @input="row.customName = true; handleRowInteract(index)"
                                         :readonly="!row.customName || !isRowReadyForName(row)"
                                         :disabled="!isRowReadyForName(row)"
-                                        :class="(!row.customName || !isRowReadyForName(row)) ? 'bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-200'"
-                                        class="w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-slate-300 transition-colors"
+                                        :class="{
+                                            'bg-white text-slate-700 border-slate-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-text': row.customName,
+                                            'bg-transparent text-slate-700 border-transparent shadow-none focus:outline-none focus:ring-0 cursor-default': !row.customName,
+                                            'opacity-50 cursor-not-allowed select-none': !isRowReadyForName(row)
+                                        }"
+                                        class="w-full rounded-lg border px-4 py-2.5 text-sm placeholder:text-slate-400 transition-all"
                                         placeholder="">
                                     <!-- Pencil / Revert icon -->
                                     <button type="button"
                                         @click="row.customName = !row.customName; if(row.customName) { $nextTick(() => { $el.previousElementSibling.focus() }) }; handleRowInteract(index)"
                                         x-show="isRowReadyForName(row)" x-cloak
                                         class="shrink-0 transition focus:outline-none"
-                                        :class="row.customName ? 'text-amber-500 hover:text-amber-600' : 'text-blue-600 hover:text-blue-800'"
+                                        :class="row.customName ? 'text-slate-500 hover:text-slate-600' : 'text-blue-600 hover:text-blue-800'"
                                         :title="row.customName ? 'Revert to automatic name' : 'Edit name manually'">
                                         <!-- Pencil Icon (when auto) -->
                                         <svg x-show="!row.customName" xmlns="http://www.w3.org/2000/svg"
@@ -196,12 +247,11 @@
             </div>
         </div>
 
-        <div class="mt-8 relative z-10" x-show="selectedRepository" x-cloak>
+        <div class="mt-8 relative z-10" x-show="selectedRepository && canStartQueue" x-cloak>
             <div class="mb-6 border-t border-slate-200 pt-6">
-                <h2 class="text-xl font-semibold text-slate-800">Distribution Package Lifecycle</h2>
+                <h2 class="text-xl font-semibold text-slate-800">Start Packaging</h2>
                 <p class="mt-2 text-sm text-slate-500">
-                    The system will generate an update package and a rollback package based on the selected Git
-                    versions.
+                    Build the update and rollback packages based on the selected Git versions.
                 </p>
             </div>
 

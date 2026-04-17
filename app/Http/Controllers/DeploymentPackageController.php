@@ -199,7 +199,7 @@ class DeploymentPackageController extends Controller
     }
 
     // =========================================================================
-    // Download (unchanged)
+    // Download (single archive)
     // =========================================================================
 
     public function downloadArchive(Request $request)
@@ -219,7 +219,6 @@ class DeploymentPackageController extends Controller
         $packageRoot = storage_path("app/deployment-packages/{$folderName}");
         $archivePath = $packageRoot . $format;
 
-        // If the uncompressed directory still exists (e.g. legacy V1/V2 behavior), compile on demand
         if (File::exists($packageRoot) && File::isDirectory($packageRoot)) {
             if ($format === '.tar.gz') {
                 if (!$this->createTarGz($packageRoot, $folderName)) {
@@ -232,7 +231,6 @@ class DeploymentPackageController extends Controller
             }
         }
 
-        // At this point, the file must exist (either just built, or built previously by V3 queue worker)
         if (!File::exists($archivePath) || File::isDirectory($archivePath)) {
             return response('Package archive not found.', 404);
         }
@@ -286,5 +284,89 @@ class DeploymentPackageController extends Controller
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    // =========================================================================
+    // Bulk actions (V3)
+    // =========================================================================
+
+    /**
+     * POST /deployments/bulk-download
+     * Body: { ids: [1,2,...], format: '.zip'|'.tar.gz' }
+     * Streams a single merged archive containing all selected packages.
+     */
+    public function bulkDownload(Request $request)
+    {
+        $ids    = $request->input('ids', []);
+        $format = $request->input('format', '.zip');
+
+        if (empty($ids)) {
+            return response('No packages selected.', 400);
+        }
+
+        $jobs = DeploymentJob::whereIn('id', $ids)->get();
+        if ($jobs->isEmpty()) {
+            return response('No matching packages found.', 404);
+        }
+
+        $tmpName = 'bulk-' . now()->format('YmdHis');
+        $tmpZip  = storage_path("app/temp/{$tmpName}.zip");
+        File::ensureDirectoryExists(storage_path('app/temp'));
+
+        $zip = new \ZipArchive();
+        if ($zip->open($tmpZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return response('Could not create bulk archive.', 500);
+        }
+
+        foreach ($jobs as $job) {
+            $folder  = $job->package_name;
+            $archive = storage_path("app/deployment-packages/{$folder}{$format}");
+            if (File::exists($archive)) {
+                $zip->addFile($archive, basename($archive));
+            }
+        }
+        $zip->close();
+
+        if ($format === '.zip') {
+            return response()->download($tmpZip, "{$tmpName}.zip")->deleteFileAfterSend(true);
+        }
+
+        // For tar.gz: wrap the collected .tar.gz files in a zip for simplicity
+        return response()->download($tmpZip, "{$tmpName}.zip")->deleteFileAfterSend(true);
+    }
+
+    /**
+     * DELETE /deployments/bulk-delete
+     * Body: { ids: [1,2,...] }
+     * Deletes DB records and package files for each id.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return response()->json(['message' => 'No packages selected.'], 400);
+        }
+
+        $jobs = DeploymentJob::whereIn('id', $ids)->get();
+
+        foreach ($jobs as $job) {
+            $folder = $job->package_name;
+            $base   = storage_path("app/deployment-packages/{$folder}");
+
+            // Delete archive files and folder
+            foreach (['.zip', '.tar.gz', '.tar'] as $ext) {
+                if (File::exists($base . $ext)) {
+                    File::delete($base . $ext);
+                }
+            }
+            if (File::isDirectory($base)) {
+                File::deleteDirectory($base);
+            }
+
+            $job->delete();
+        }
+
+        return response()->json(['message' => count($jobs) . ' package(s) deleted.']);
     }
 }

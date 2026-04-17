@@ -131,3 +131,176 @@
         animation: row-indeterminate 2.5s infinite linear;
     }
 }
+
+/* Testingggggg -------------------------------------------------------------------------- */
+.repo-loader {
+    --c1: #bdd3ea;
+    --c2: #eef6ff;
+    --bg: transparent;
+
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    display: inline-block;
+    border-radius: 24px;
+    background: var(--bg);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.repo-loader::before {
+    content: "";
+    position: absolute;
+    inset: 30%;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(196, 224, 255, 0.32) 0%,
+        rgba(160, 203, 248, 0.20) 28%,
+        rgba(205, 223, 241, 0.08) 46%,
+        transparent 60%
+    );
+    filter: blur(10px);
+    animation: aura 2.1s ease-in-out infinite;
+}
+
+.repo-loader::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    width: 84px;
+    height: 10px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(164, 206, 248, 0.28) 0%,
+        rgba(195, 221, 246, 0.14) 34%,
+        transparent 62%
+    );
+    filter: blur(7px);
+    animation: floorGlow 2.1s ease-in-out infinite;
+}
+
+.seg,
+.beam {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 999px;
+    transform-origin: center;
+    will-change: transform, opacity, filter;
+}
+
+.seg {
+    width: 84px;
+    height: 10px;
+    margin-left: -42px;
+    margin-top: -5px;
+    background: linear-gradient(
+        90deg,
+        rgb(221, 233, 245) 0%,
+        #D3E4F5 36%,
+        #BDD3EE 68%,
+        #A1C1ED 100%
+    );
+    box-shadow:
+        0 0 5px rgba(242, 242, 242, 0.5),
+        0 0 12px rgba(161, 193, 237, 0.3),
+        0 0 24px rgba(161, 193, 237, 0.15);
+    animation: helix 2.1s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.beam {
+    width: 96px;
+    height: 8px;
+    margin-left: -48px;
+    margin-top: -4px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(208, 228, 248, 0.28) 18%,
+        rgba(241, 248, 255, 0.56) 50%,
+        rgba(208, 228, 248, 0.28) 82%,
+        transparent 100%
+    );
+    box-shadow:
+        0 0 7px rgba(208, 228, 248, 0.26),
+        0 0 16px rgba(165, 206, 248, 0.12);
+    opacity: 0;
+    animation: centerBeam 2.1s ease-in-out infinite;
+}
+
+/* staggered offsets for constant-flow effect */
+.s1 { --x0: 0px;   --y0: -58px; --sx0: 0.45; --midY: -16px; --midSX: 0.85; --midO: 1; animation-delay: 0s; }
+.s2 { --x0: 18px;  --y0: -38px; --sx0: 0.82; --midY: -2px;  --midSX: 1.10; --midO: 0; animation-delay: -0.3s; }
+.s3 { --x0: -15px; --y0: -18px; --sx0: 1.00; --midY: 0px;   --midSX: 1.22; --midO: 0; animation-delay: -0.6s; }
+.s4 { --x0: 14px;  --y0: 0px;   --sx0: 1.06; --midY: 0px;   --midSX: 1.52; --midO: 1; animation-delay: -0.9s; }
+.s5 { --x0: -12px; --y0: 18px;  --sx0: 1.00; --midY: 0px;   --midSX: 1.22; --midO: 0; animation-delay: -1.2s; }
+.s6 { --x0: 16px;  --y0: 38px;  --sx0: 0.82; --midY: 2px;   --midSX: 1.10; --midO: 0; animation-delay: -1.5s; }
+.s7 { --x0: 0px;   --y0: 58px;  --sx0: 0.45; --midY: 16px;  --midSX: 0.85; --midO: 1; animation-delay: -1.8s; }
+
+@keyframes helix {
+    0% {
+        transform: translate(var(--x0), var(--y0)) scaleX(var(--sx0));
+        opacity: 0.72;
+        filter: brightness(0.98);
+    }
+
+    50% {
+        transform: translate(0, var(--midY)) scaleX(var(--midSX));
+        opacity: calc(var(--midO) * 0.78 + 0.22);
+        filter: brightness(1.1);
+    }
+
+    100% {
+        transform: translate(var(--x0), var(--y0)) scaleX(var(--sx0));
+        opacity: 0.72;
+        filter: brightness(0.98);
+    }
+}
+
+@keyframes centerBeam {
+    0%,
+    34%,
+    66%,
+    100% {
+        opacity: 0;
+        transform: translateY(0) scaleX(0.7);
+        filter: blur(0px) brightness(1);
+    }
+
+    45%,
+    55% {
+        opacity: 0.42;
+        transform: translateY(0) scaleX(1);
+        filter: blur(0.2px) brightness(1.08);
+    }
+}
+
+@keyframes aura {
+    0%,
+    100% {
+        transform: scale(0.95);
+        opacity: 0.56;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.86;
+    }
+}
+
+@keyframes floorGlow {
+    0%,
+    100% {
+        transform: translateX(-50%) scaleX(0.72);
+        opacity: 0.24;
+    }
+
+    50% {
+        transform: translateX(-50%) scaleX(1);
+        opacity: 0.46;
+    }
+}
