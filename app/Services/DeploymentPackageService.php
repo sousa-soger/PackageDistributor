@@ -176,11 +176,14 @@ class DeploymentPackageService
         $targzSize = ($tarGzPath && file_exists($tarGzPath)) ? $this->getFileSize($tarGzPath) : null;
         $originalDirSize = $this->getDirectorySize($packageRoot);
 
-        // ── Cleanup original uncompressed folder ──────────────────────────
-        $progressCallback(['packagingMessage' => 'Cleaning up uncompressed files...'], 'Cleaning up uncompressed files...');
+        // ── Cleanup original uncompressed folder and temp workspace ───────
+        $progressCallback(['packagingMessage' => 'Cleaning up temporary files...'], 'Cleaning up temporary files...');
         try {
             if (File::exists($packageRoot)) {
                 File::deleteDirectory($packageRoot);
+            }
+            if (isset($tempBasePath) && File::exists($tempBasePath)) {
+                File::deleteDirectory($tempBasePath);
             }
         } catch (\Throwable $e) {}
 
