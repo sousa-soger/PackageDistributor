@@ -50,6 +50,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/deployments/jobs/{id}/progress', [DeploymentPackageController::class, 'jobProgress'])
         ->where('id', '[0-9]+')
         ->name('deployments.job-progress');
+
+    // Cancel a queued/running job
+    Route::post('/deployments/jobs/{id}/cancel', [DeploymentPackageController::class, 'cancelJob'])
+        ->where('id', '[0-9]+')
+        ->name('deployments.job-cancel');
+
+    // Retry a failed/cancelled job
+    Route::post('/deployments/jobs/{id}/retry', [DeploymentPackageController::class, 'retryJob'])
+        ->where('id', '[0-9]+')
+        ->name('deployments.job-retry');
 });
 
 // User download package route (no auth guard so direct link downloads still work)

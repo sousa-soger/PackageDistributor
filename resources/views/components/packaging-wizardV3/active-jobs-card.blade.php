@@ -1,11 +1,12 @@
 <div id="active-jobs-section" x-show="unifiedQueue.length > 0" x-cloak
-    x-transition:enter="transition ease-out duration-300">
+    x-transition:enter="transition ease-out duration-300"
+    x-data="{ expandedJobId: null }">
     <x-ui.card class="p-8 w-full">
         <div class="space-y-6">
             <div>
-                <h2 class="text-xl font-semibold text-slate-900">Active Jobs</h2>
+                <h2 class="text-xl font-semibold text-slate-900">Current Packages</h2>
                 <p class="text-sm text-slate-500 mt-1">
-                    Jobs that are queued and not in completion
+                    View packaging progress and download once complete.
                 </p>
             </div>
             <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
@@ -22,15 +23,21 @@
                         </tr>
                     </thead>
                     <template x-for="job in unifiedQueue" :key="job.jobId">
-                        <tbody x-data="{ expanded: false }" class="divide-y divide-slate-100">
-                            <tr @click="expanded = !expanded" class="cursor-pointer transition-all duration-300" :class="{
+                        <tbody x-data="{
+                                get expanded() { return expandedJobId === job.jobId; },
+                                toggleExpanded() {
+                                    expandedJobId = (expandedJobId === job.jobId) ? null : job.jobId;
+                                }
+                            }" class="divide-y divide-slate-100">
+                            <tr @click="toggleExpanded()" class="cursor-pointer transition-all duration-300" :class="{
                                     'animate-row-success hover:bg-slate-50 transition-colors': job.status === 'completed',
                                     'bg-red-50/80 hover:bg-red-100/50': job.status === 'failed',
                                     'animate-row-indeterminate': job.jobId === currentJobId && packagingProgress === 0,
+                                    'animate-row-running': job.jobId === currentJobId && job.status === 'running' && packagingProgress > 0,
                                     'hover:bg-slate-50': job.status === 'queued' || job.status === 'pending' || (!job.status && job.jobId !== currentJobId)
 
-                                }" :style="(job.jobId === currentJobId && job.status === 'running' && packagingProgress > 0) 
-                                    ? `background: linear-gradient(to right, rgba(219, 234, 254, 0.5) ${packagingProgress}%, transparent ${packagingProgress}%);` 
+                                }" :style="(job.jobId === currentJobId && job.status === 'running' && packagingProgress > 0)
+                                    ? `background-image: linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.55) 50%, transparent 80%), linear-gradient(to right, rgba(187, 215, 252,0.55) ${packagingProgress}%, transparent ${packagingProgress}%);`
                                     : ''">
                                 <td class="px-4 py-3 text-sm text-slate-800" x-text="job.row.environment"></td>
                                 <td class="px-4 py-3 text-sm">
@@ -55,12 +62,14 @@
                                                                         'bg-blue-50 border-blue-200 text-blue-700': job.status === 'running',
                                                                         'bg-emerald-50 border-emerald-200 text-emerald-700': job.status === 'completed',
                                                                         'bg-red-50 border-red-200 text-red-700': job.status === 'failed',
+                                                                        'bg-slate-100 border-slate-300 text-slate-500': job.status === 'cancelled',
                                                                     }">
                                         <span class="inline-block h-1.5 w-1.5 rounded-full mr-1.5" :class="{
                                                                         'bg-amber-400': job.status === 'pending' || job.status === 'queued',
                                                                         'bg-blue-500 animate-pulse': job.status === 'running',
                                                                         'bg-emerald-500': job.status === 'completed',
                                                                         'bg-red-500': job.status === 'failed',
+                                                                        'bg-slate-400': job.status === 'cancelled',
                                                                     }"></span>
                                         <span
                                             x-text="job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : 'Pending'"></span>
@@ -164,14 +173,78 @@
                                         </template>
                                     </div>
                                 </td>
-                                <td>
-                                    <button type="button" @click.stop=""
-                                        x-show="!['completed', 'failed'].includes(job.status)" title="Remove this job"
-                                        class="shrink-0 text-red-500 hover:text-red-600 transition-colors focus:outline-none ">
-                                        <svg class="h-5 w-5 fill-current" viewBox="0 0 16 16"
-                                            xmlns="http://www.w3.org/2000/svg">
+                                <td class="px-2 py-3" @click.stop>
+                                    {{-- Stop button: visible for queued / pending / running jobs --}}
+                                    <button type="button"
+                                        x-show="['queued', 'pending', 'running'].includes(job.status)"
+                                        title="Stop job"
+                                        @click.stop="
+                                            fetch('/deployments/jobs/' + job.jobId + '/cancel', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                    'Accept': 'application/json'
+                                                }
+                                            })
+                                            .then(r => r.json())
+                                            .then(data => {
+                                                if (data.status === 'cancelled') {
+                                                    let idx = unifiedQueue.findIndex(j => j.jobId === job.jobId);
+                                                    if (idx !== -1) unifiedQueue[idx].status = 'cancelled';
+                                                }
+                                            })
+                                            .catch(console.error)
+                                        "
+                                        class="shrink-0 text-red-400 hover:text-red-600 transition-colors focus:outline-none p-1 rounded hover:bg-red-50">
+                                        <svg class="h-4 w-4 fill-current" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
                                             <path fill-rule="evenodd" clip-rule="evenodd"
                                                 d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z" />
+                                        </svg>
+                                    </button>
+
+                                    {{-- Retry button: visible only for failed or cancelled jobs --}}
+                                    <button type="button"
+                                        x-show="['failed', 'cancelled'].includes(job.status)"
+                                        title="Retry job"
+                                        @click.stop="
+                                            fetch('/deployments/jobs/' + job.jobId + '/retry', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                    'Accept': 'application/json'
+                                                }
+                                            })
+                                            .then(r => r.json())
+                                            .then(data => {
+                                                if (data.status === 'queued') {
+                                                    let idx = unifiedQueue.findIndex(j => j.jobId === job.jobId);
+                                                    if (idx !== -1) {
+                                                        unifiedQueue[idx].status = 'queued';
+                                                        unifiedQueue[idx].errorMessage = null;
+                                                        unifiedQueue[idx].progress = null;
+                                                    }
+                                                    // Re-attach polling so running → completed updates come through
+                                                    currentJobId = job.jobId;
+                                                    activeRow = job.row;
+                                                    isRunning = true;
+                                                    packagingProgress = 0;
+                                                    fileDownloadProgress = 0;
+                                                    headFileExtraction = 0;
+                                                    baseFileExtraction = 0;
+                                                    compareFilesProgress = 0;
+                                                    packageGenProgress = 0;
+                                                    compressionProgress = 0;
+                                                    packagingError = '';
+                                                    packagingMessage = 'Retrying job...';
+                                                    startPolling();
+                                                }
+                                            })
+                                            .catch(console.error)
+                                        "
+                                        class="shrink-0 text-slate-400 hover:text-blue-600 transition-colors focus:outline-none p-1 rounded hover:bg-blue-50">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                            <path d="M21 3v5h-5" />
                                         </svg>
                                     </button>
                                 </td>
@@ -180,32 +253,47 @@
                                 class="bg-indigo-50/30 border-t border-indigo-100/50 shadow-inner">
                                 <td colspan="7" class="px-6 py-5">
                                     <!-- Progress bars -->
-                                    <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5"
-                                        x-show="isRunning || packagingProgress > 0 || packagingResult || packagingError">
+                                    <!-- Resolve progress values: use live globals for the currently running job, stored job data for others -->
+                                    <template x-if="true">
+                                    <div x-data="{
+                                            get _isActive() { return job.jobId === currentJobId; },
+                                            get _overallPct()   { return this._isActive ? packagingProgress    : (job.progress?.packagingProgress    ?? 0); },
+                                            get _downloadPct()  { return this._isActive ? fileDownloadProgress : (job.progress?.fileDownloadProgress  ?? 0); },
+                                            get _basePct()      { return this._isActive ? baseFileExtraction   : (job.progress?.baseFileExtraction    ?? 0); },
+                                            get _headPct()      { return this._isActive ? headFileExtraction   : (job.progress?.headFileExtraction    ?? 0); },
+                                            get _comparePct()   { return this._isActive ? compareFilesProgress : (job.progress?.compareFilesProgress  ?? 0); },
+                                            get _genPct()       { return this._isActive ? packageGenProgress   : (job.progress?.packageGenProgress    ?? 0); },
+                                            get _compressPct()  { return this._isActive ? compressionProgress  : (job.progress?.compressionProgress   ?? 0); },
+                                            get _error()        { return this._isActive ? packagingError       : (job.errorMessage                   ?? ''); },
+                                            get _msg()          { return this._isActive ? packagingMessage     : (job.statusMessage                  ?? ''); },
+                                            get _running()      { return this._isActive ? isRunning            : false; },
+                                        }"
+                                        class="rounded-xl border border-slate-200 bg-white shadow-sm p-5"
+                                        x-show="_running || _overallPct > 0 || (job.jobId === currentJobId && packagingResult) || _error">
 
                                         <!-- Overall -->
                                         <div class="mb-2">
                                             <div class="mb-2 flex items-center justify-between">
                                                 <span class="text-sm font-semibold"
-                                                    :class="packagingProgress === 100 ? 'text-green-600' : 'text-slate-700'">
+                                                    :class="_overallPct === 100 ? 'text-green-600' : 'text-slate-700'">
                                                     Overall Progress
-                                                    <span x-show="packagingProgress === 100"
+                                                    <span x-show="_overallPct === 100"
                                                         class="text-green-600 ml-1"> <i class="fa fa-check-circle"></i>
                                                         ✓ Complete</span>
                                                 </span>
                                                 <span class="text-sm font-bold text-blue-600"
-                                                    x-text="packagingProgress + '%'"></span>
+                                                    x-text="_overallPct + '%'"></span>
                                             </div>
                                             <div
                                                 class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner relative">
                                                 <div class="h-full rounded-full transition-all duration-500 shadow-sm"
                                                     :class="{
-                                                                                'bg-emerald-500': packagingProgress === 100, 
-                                                                                'bg-blue-500': (packagingProgress > 0 && packagingProgress < 100) || packagingProgress === 0,
-                                                                                'bg-red-500': packagingError !== '',
-                                                                                'animate-indeterminate': packagingProgress === 0
+                                                                                'bg-emerald-500': _overallPct === 100, 
+                                                                                'bg-blue-500': (_overallPct > 0 && _overallPct < 100) || _overallPct === 0,
+                                                                                'bg-red-500': _error !== '',
+                                                                                'animate-indeterminate': _overallPct === 0
                                                                             }"
-                                                    :style="packagingProgress === 0 ? '' : `width: ${packagingProgress}%`">
+                                                    :style="_overallPct === 0 ? '' : `width: ${_overallPct}%`">
                                                 </div>
                                             </div>
                                         </div>
@@ -216,179 +304,180 @@
                                         <div class="flex flex-col bg-slate-50 border border-slate-100 rounded-lg p-4">
 
                                             <!-- Download — hidden until started, bar hidden on completion -->
-                                            <div x-show="fileDownloadProgress > 0"
-                                                :class="fileDownloadProgress < 100 ? 'mb-4' : 'mb-1'">
+                                            <div x-show="_downloadPct > 0"
+                                                :class="_downloadPct < 100 ? 'mb-4' : 'mb-1'">
                                                 <div class="flex items-center justify-between"
-                                                    :class="fileDownloadProgress < 100 ? 'mb-1' : ''">
+                                                    :class="_downloadPct < 100 ? 'mb-1' : ''">
                                                     <span class="text-xs font-semibold flex items-center gap-1.5"
-                                                        :class="fileDownloadProgress === 100 ? 'text-emerald-600' : 'text-slate-600'">
-                                                        <span x-show="fileDownloadProgress === 100"
+                                                        :class="_downloadPct === 100 ? 'text-emerald-600' : 'text-slate-600'">
+                                                        <span x-show="_downloadPct === 100"
                                                             class="text-emerald-500">✓</span>
                                                         <span
-                                                            x-show="fileDownloadProgress < 100 && fileDownloadProgress > 0"
+                                                            x-show="_downloadPct < 100 && _downloadPct > 0"
                                                             class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                         Downloading Repositories
                                                     </span>
-                                                    <span x-show="fileDownloadProgress < 100"
+                                                    <span x-show="_downloadPct < 100"
                                                         class="text-xs font-medium text-slate-400"
-                                                        x-text="fileDownloadProgress + '%'"></span>
+                                                        x-text="_downloadPct + '%'"></span>
                                                 </div>
-                                                <div x-show="fileDownloadProgress < 100"
+                                                <div x-show="_downloadPct < 100"
                                                     class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                     <div class="h-full rounded-full transition-all duration-500 bg-blue-400"
-                                                        :style="`width: ${fileDownloadProgress}%`"></div>
+                                                        :style="`width: ${_downloadPct}%`"></div>
                                                 </div>
                                             </div>
 
                                             <!-- Extraction — side-by-side until both done, then stacked -->
-                                            <div x-show="baseFileExtraction > 0 || headFileExtraction > 0"
-                                                :class="(baseFileExtraction === 100 && headFileExtraction === 100) ? 'mb-1 flex flex-col gap-1' : 'mb-4 grid grid-cols-2 gap-4'">
+                                            <div x-show="_basePct > 0 || _headPct > 0"
+                                                :class="(_basePct === 100 && _headPct === 100) ? 'mb-1 flex flex-col gap-1' : 'mb-4 grid grid-cols-2 gap-4'">
                                                 <!-- Base -->
                                                 <div>
                                                     <div class="flex items-center justify-between"
-                                                        :class="baseFileExtraction < 100 ? 'mb-1' : ''">
+                                                        :class="_basePct < 100 ? 'mb-1' : ''">
                                                         <span class="text-xs font-semibold flex items-center gap-1.5"
-                                                            :class="baseFileExtraction === 100 ? 'text-emerald-600' : 'text-slate-600'">
-                                                            <span x-show="baseFileExtraction === 100"
+                                                            :class="_basePct === 100 ? 'text-emerald-600' : 'text-slate-600'">
+                                                            <span x-show="_basePct === 100"
                                                                 class="text-emerald-500">✓</span>
                                                             <span
-                                                                x-show="baseFileExtraction < 100 && baseFileExtraction > 0"
+                                                                x-show="_basePct < 100 && _basePct > 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                                            <span x-show="baseFileExtraction === 0"
+                                                            <span x-show="_basePct === 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
                                                             Base Extraction
                                                         </span>
-                                                        <span x-show="baseFileExtraction < 100"
+                                                        <span x-show="_basePct < 100"
                                                             class="text-xs font-medium text-slate-400"
-                                                            x-text="baseFileExtraction + '%'"></span>
+                                                            x-text="_basePct + '%'"></span>
                                                     </div>
-                                                    <div x-show="baseFileExtraction < 100"
+                                                    <div x-show="_basePct < 100"
                                                         class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                         <div class="h-full rounded-full transition-all duration-500 bg-blue-400"
-                                                            :style="`width: ${baseFileExtraction}%`"></div>
+                                                            :style="`width: ${_basePct}%`"></div>
                                                     </div>
                                                 </div>
                                                 <!-- Head -->
                                                 <div>
                                                     <div class="flex items-center justify-between"
-                                                        :class="headFileExtraction < 100 ? 'mb-1' : ''">
+                                                        :class="_headPct < 100 ? 'mb-1' : ''">
                                                         <span class="text-xs font-semibold flex items-center gap-1.5"
-                                                            :class="headFileExtraction === 100 ? 'text-emerald-600' : 'text-slate-600'">
-                                                            <span x-show="headFileExtraction === 100"
+                                                            :class="_headPct === 100 ? 'text-emerald-600' : 'text-slate-600'">
+                                                            <span x-show="_headPct === 100"
                                                                 class="text-emerald-500">✓</span>
                                                             <span
-                                                                x-show="headFileExtraction < 100 && headFileExtraction > 0"
+                                                                x-show="_headPct < 100 && _headPct > 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                                            <span x-show="headFileExtraction === 0"
+                                                            <span x-show="_headPct === 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
                                                             Head Extraction
                                                         </span>
-                                                        <span x-show="headFileExtraction < 100"
+                                                        <span x-show="_headPct < 100"
                                                             class="text-xs font-medium text-slate-400"
-                                                            x-text="headFileExtraction + '%'"></span>
+                                                            x-text="_headPct + '%'"></span>
                                                     </div>
-                                                    <div x-show="headFileExtraction < 100"
+                                                    <div x-show="_headPct < 100"
                                                         class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                         <div class="h-full rounded-full transition-all duration-500 bg-blue-400"
-                                                            :style="`width: ${headFileExtraction}%`"></div>
+                                                            :style="`width: ${_headPct}%`"></div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- Compare — hidden until started, bar hidden on completion -->
-                                            <div x-show="compareFilesProgress > 0"
-                                                :class="compareFilesProgress < 100 ? 'mb-4' : 'mb-1'">
+                                            <div x-show="_comparePct > 0"
+                                                :class="_comparePct < 100 ? 'mb-4' : 'mb-1'">
                                                 <div class="flex items-center justify-between"
-                                                    :class="compareFilesProgress < 100 ? 'mb-1' : ''">
+                                                    :class="_comparePct < 100 ? 'mb-1' : ''">
                                                     <span class="text-xs font-semibold flex items-center gap-1.5"
-                                                        :class="compareFilesProgress === 100 ? 'text-emerald-600' : 'text-slate-600'">
-                                                        <span x-show="compareFilesProgress === 100"
+                                                        :class="_comparePct === 100 ? 'text-emerald-600' : 'text-slate-600'">
+                                                        <span x-show="_comparePct === 100"
                                                             class="text-emerald-500">✓</span>
                                                         <span
-                                                            x-show="compareFilesProgress < 100 && compareFilesProgress > 0"
+                                                            x-show="_comparePct < 100 && _comparePct > 0"
                                                             class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                                         Comparing Diffs
                                                     </span>
-                                                    <span x-show="compareFilesProgress < 100"
+                                                    <span x-show="_comparePct < 100"
                                                         class="text-xs font-medium text-slate-400"
-                                                        x-text="compareFilesProgress + '%'"></span>
+                                                        x-text="_comparePct + '%'"></span>
                                                 </div>
-                                                <div x-show="compareFilesProgress < 100"
+                                                <div x-show="_comparePct < 100"
                                                     class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                     <div class="h-full rounded-full transition-all duration-500 bg-blue-400"
-                                                        :style="`width: ${compareFilesProgress}%`"></div>
+                                                        :style="`width: ${_comparePct}%`"></div>
                                                 </div>
                                             </div>
 
                                             <!-- Gen + Compress — side-by-side until both done, then stacked -->
-                                            <div x-show="packageGenProgress > 0 || compressionProgress > 0"
-                                                :class="(packageGenProgress === 100 && compressionProgress === 100) ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-4'">
+                                            <div x-show="_genPct > 0 || _compressPct > 0"
+                                                :class="(_genPct === 100 && _compressPct === 100) ? 'flex flex-col gap-1' : 'grid grid-cols-2 gap-4'">
                                                 <!-- Packaging -->
                                                 <div>
                                                     <div class="flex items-center justify-between"
-                                                        :class="packageGenProgress < 100 ? 'mb-1' : ''">
+                                                        :class="_genPct < 100 ? 'mb-1' : ''">
                                                         <span class="text-xs font-semibold flex items-center gap-1.5"
-                                                            :class="packageGenProgress === 100 ? 'text-emerald-600' : 'text-slate-600'">
-                                                            <span x-show="packageGenProgress === 100"
+                                                            :class="_genPct === 100 ? 'text-emerald-600' : 'text-slate-600'">
+                                                            <span x-show="_genPct === 100"
                                                                 class="text-emerald-500">✓</span>
                                                             <span
-                                                                x-show="packageGenProgress < 100 && packageGenProgress > 0"
+                                                                x-show="_genPct < 100 && _genPct > 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                                            <span x-show="packageGenProgress === 0"
+                                                            <span x-show="_genPct === 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
                                                             Packaging Directory
                                                         </span>
-                                                        <span x-show="packageGenProgress < 100"
+                                                        <span x-show="_genPct < 100"
                                                             class="text-xs font-medium text-slate-400"
-                                                            x-text="packageGenProgress + '%'"></span>
+                                                            x-text="_genPct + '%'"></span>
                                                     </div>
-                                                    <div x-show="packageGenProgress < 100"
+                                                    <div x-show="_genPct < 100"
                                                         class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                         <div class="h-full rounded-full transition-all duration-500 bg-blue-400"
-                                                            :style="`width: ${packageGenProgress}%`"></div>
+                                                            :style="`width: ${_genPct}%`"></div>
                                                     </div>
                                                 </div>
                                                 <!-- Compression -->
                                                 <div>
                                                     <div class="flex items-center justify-between"
-                                                        :class="compressionProgress < 100 ? 'mb-1' : ''">
+                                                        :class="_compressPct < 100 ? 'mb-1' : ''">
                                                         <span class="text-xs font-semibold flex items-center gap-1.5"
-                                                            :class="compressionProgress === 100 ? 'text-emerald-600' : 'text-slate-600'">
-                                                            <span x-show="compressionProgress === 100"
+                                                            :class="_compressPct === 100 ? 'text-emerald-600' : 'text-slate-600'">
+                                                            <span x-show="_compressPct === 100"
                                                                 class="text-emerald-500">✓</span>
                                                             <span
-                                                                x-show="compressionProgress < 100 && compressionProgress > 0"
+                                                                x-show="_compressPct < 100 && _compressPct > 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                                            <span x-show="compressionProgress === 0"
+                                                            <span x-show="_compressPct === 0"
                                                                 class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
                                                             Compressing Folder
                                                         </span>
-                                                        <span x-show="compressionProgress < 100"
+                                                        <span x-show="_compressPct < 100"
                                                             class="text-xs font-medium text-slate-400"
-                                                            x-text="compressionProgress + '%'"></span>
+                                                            x-text="_compressPct + '%'"></span>
                                                     </div>
-                                                    <div x-show="compressionProgress < 100"
+                                                    <div x-show="_compressPct < 100"
                                                         class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                                         <div class="h-full rounded-full transition-all duration-500 bg-blue-400"
-                                                            :style="`width: ${compressionProgress}%`"></div>
+                                                            :style="`width: ${_compressPct}%`"></div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                         </div>
 
-                                        <div x-show="packagingError" x-cloak
+                                        <div x-show="_error" x-cloak
                                             class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg shadow-sm">
                                             <span class="text-sm font-semibold text-red-600">Error:</span>
-                                            <span class="text-sm text-red-700" x-text="packagingError"></span>
+                                            <span class="text-sm text-red-700" x-text="_error"></span>
                                         </div>
                                     </div>
+                                    </template>
 
                                     <!-- Status message -->
                                     <p class="mt-3 text-sm font-medium flex items-center gap-2 h-6"
-                                        :class="packagingError ? 'text-red-500' : 'text-slate-500'">
-                                        <span x-show="isRunning" class="rotate-anim inline-block opacity-70">⟳</span>
-                                        <span x-text="packagingMessage || ''"></span>
+                                        :class="(job.jobId === currentJobId ? packagingError : job.errorMessage) ? 'text-red-500' : 'text-slate-500'">
+                                        <span x-show="job.jobId === currentJobId && isRunning" class="rotate-anim inline-block opacity-70">⟳</span>
+                                        <span x-text="job.jobId === currentJobId ? (packagingMessage || '') : (job.statusMessage || '')"></span>
                                     </p>
                                 </td>
                             </tr>

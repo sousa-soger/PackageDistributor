@@ -199,6 +199,71 @@ class DeploymentPackageController extends Controller
     }
 
     // =========================================================================
+    // V3 — Job control (cancel / retry)
+    // =========================================================================
+
+    /**
+     * Cancel a queued or running job.
+     * Marks the DB record as cancelled; the queue worker checks status before
+     * executing and will skip it if it hasn't started yet.
+     *
+     * Route: POST /deployments/jobs/{id}/cancel
+     */
+    public function cancelJob(int $id)
+    {
+        $job = DeploymentJob::find($id);
+
+        if (!$job) {
+            return response()->json(['error' => 'Job not found.'], 404);
+        }
+
+        if (!in_array($job->status, ['queued', 'pending', 'running'])) {
+            return response()->json(['error' => "Cannot cancel a job with status '{$job->status}'."], 422);
+        }
+
+        $job->markCancelled();
+        \Illuminate\Support\Facades\Cache::forget($job->progressCacheKey());
+
+        return response()->json(['message' => 'Job cancelled.', 'status' => 'cancelled']);
+    }
+
+    /**
+     * Retry a failed or cancelled job by re-queuing it.
+     *
+     * Route: POST /deployments/jobs/{id}/retry
+     */
+    public function retryJob(int $id)
+    {
+        $job = DeploymentJob::find($id);
+
+        if (!$job) {
+            return response()->json(['error' => 'Job not found.'], 404);
+        }
+
+        if (!in_array($job->status, ['failed', 'cancelled'])) {
+            return response()->json(['error' => "Only failed or cancelled jobs can be retried (current status: '{$job->status}')."], 422);
+        }
+
+        // Reset the record back to queued
+        $job->update([
+            'status'        => 'queued',
+            'error_message' => null,
+            'progress'      => null,
+            'message'       => null,
+            'started_at'    => null,
+            'finished_at'   => null,
+        ]);
+
+        // Seed a fresh progress entry so polling returns something immediately
+        \Illuminate\Support\Facades\Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), 600);
+
+        // Dispatch a new queue job
+        \App\Jobs\GenerateDeploymentPackageJob::dispatch($job->id);
+
+        return response()->json(['message' => 'Job re-queued.', 'status' => 'queued', 'job_id' => $job->id]);
+    }
+
+    // =========================================================================
     // Download (single archive)
     // =========================================================================
 

@@ -9,6 +9,7 @@
                 jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
                 downloadUrl: '{{ route('download.archive') }}',
                 csrfToken: '{{ csrf_token() }}',
+                completedPackages: @js($packages),
                 dbQueuedPackages: @js($queuedPackages)
             })">
         {{-- ================================================================ --}}
@@ -38,7 +39,7 @@
 
 @push('scripts')
     <script>
-        function newPackageWizard({ repositories, queueUrl, jobProgressBaseUrl, downloadUrl, csrfToken, dbQueuedPackages }) {
+        function newPackageWizard({ repositories, queueUrl, jobProgressBaseUrl, downloadUrl, csrfToken, completedPackages, dbQueuedPackages }) {
             return {
                 // ── Repository & version state ───────────────────────────────
                 repositories,
@@ -70,6 +71,10 @@
                     jobId: dbJob.id,
                     status: dbJob.status,
                     created_at: dbJob.created_at,
+                    // Carry DB-persisted progress, message, and error so non-active rows show their own state
+                    progress: dbJob.progress ?? null,
+                    statusMessage: dbJob.message ?? '',
+                    errorMessage: dbJob.error_message ?? '',
                     row: {
                         environment: dbJob.environment,
                         project_name: dbJob.project_name,
@@ -89,6 +94,10 @@
                 jobQueue: [],               // array of { row, jobId } entries to process
                 jobQueueIndex: 0,           // index of the currently running job
                 jobResults: [],             // accumulated results [{row, result, error}]
+
+                // ── Duplicate detection ──────────────────────────────────────
+                completedPackages,          // all completed jobs for this user
+                duplicateModal: { open: false, match: null },
 
                 // ── Progress fields (same names as V2/V1 so the UI is identical) ──
                 packagingProgress: 0,
@@ -214,7 +223,28 @@
 
                 handleRowInteract(index) {
                     this.updateRowNames();
-                    // No longer auto-adds a row — user must click the "Add Job" button
+                    const row = this.packageRows[index];
+                    if (row) this.checkDuplicate(row);
+                },
+
+                checkDuplicate(row) {
+                    if (!row.base || !row.head || !this.selectedRepository) return;
+
+                    const baseObj = this.allRepoVersions.find(v => v.unique_key === row.base);
+                    const headObj = this.allRepoVersions.find(v => v.unique_key === row.head);
+                    const baseRef = baseObj ? baseObj.ref : row.base.split(':').slice(1).join(':');
+                    const headRef = headObj ? headObj.ref : row.head.split(':').slice(1).join(':');
+
+                    const match = this.completedPackages.find(p =>
+                        p.repo === this.selectedRepository &&
+                        p.base_version === baseRef &&
+                        p.head_version === headRef &&
+                        p.environment === row.environment
+                    );
+
+                    if (match) {
+                        this.duplicateModal = { open: true, match };
+                    }
                 },
 
                 addRow() {
@@ -288,6 +318,16 @@
                     if (this.floatDd.rowIndex === null) return;
                     const row = this.packageRows[this.floatDd.rowIndex];
                     if (!row) return;
+
+                    // If selecting Head and it matches existing Base, clear Base
+                    if (this.floatDd.field === 'head' && row.base === versionKey) {
+                        row.base = '';
+                    }
+                    // If selecting Base and it matches existing Head, clear Head
+                    if (this.floatDd.field === 'base' && row.head === versionKey) {
+                        row.head = '';
+                    }
+
                     row[this.floatDd.field] = versionKey;
                     this.handleRowInteract(this.floatDd.rowIndex);
                     this.floatDd.open = false;
@@ -362,7 +402,10 @@
                                 },
                                 jobId: data.job_id,
                                 status: data.status,
-                                created_at: new Date().toISOString()
+                                created_at: new Date().toISOString(),
+                                progress: null,      // populated once job completes/fails
+                                statusMessage: '',
+                                errorMessage: '',
                             };
                             this.jobQueue.push(jobEntry);
                             // Unshift pushes it to the TOP of the unified display queue
@@ -466,6 +509,22 @@
                                 this.packagingMessage = 'Package created successfully.';
                                 this.packagingResult = payload.result;
 
+                                // Snapshot the final progress into the unifiedQueue entry so the
+                                // detail panel shows correct data after this job is no longer active
+                                if (uq) {
+                                    uq.progress = {
+                                        packagingProgress: 100,
+                                        fileDownloadProgress: 100,
+                                        headFileExtraction: 100,
+                                        baseFileExtraction: 100,
+                                        compareFilesProgress: 100,
+                                        packageGenProgress: 100,
+                                        compressionProgress: 100,
+                                    };
+                                    uq.statusMessage = 'Package created successfully.';
+                                    uq.errorMessage = '';
+                                }
+
                                 // Record result and advance to next job
                                 this.jobResults.push({ row: this.activeRow, result: payload.result, error: null });
                                 this.jobQueueIndex++;
@@ -483,6 +542,21 @@
                                 this.stopPolling();
                                 this.packagingError = payload.error || 'Job failed.';
                                 this.packagingMessage = 'Packaging failed.';
+
+                                // Snapshot the failure into the unifiedQueue entry
+                                if (uq) {
+                                    uq.progress = {
+                                        packagingProgress: this.packagingProgress,
+                                        fileDownloadProgress: this.fileDownloadProgress,
+                                        headFileExtraction: this.headFileExtraction,
+                                        baseFileExtraction: this.baseFileExtraction,
+                                        compareFilesProgress: this.compareFilesProgress,
+                                        packageGenProgress: this.packageGenProgress,
+                                        compressionProgress: this.compressionProgress,
+                                    };
+                                    uq.statusMessage = 'Packaging failed.';
+                                    uq.errorMessage = this.packagingError;
+                                }
 
                                 // Record failure and stop (don't auto-advance on error)
                                 this.jobResults.push({ row: this.activeRow, result: null, error: this.packagingError });

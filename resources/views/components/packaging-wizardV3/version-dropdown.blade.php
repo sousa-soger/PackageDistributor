@@ -29,6 +29,7 @@
     </div>
     <div x-ref="versionList" class="max-h-60 overflow-y-auto py-1">
         <template x-for="v in floatDdVersions" :key="v.unique_key">
+            
             <button type="button" @click="selectFloatVersion(v.unique_key)"
                 class="w-full px-4 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center justify-between transition"
                 :class="floatDdCurrentValue === v.unique_key ? 'bg-blue-50/70 font-medium text-blue-700' : 'text-slate-700'">

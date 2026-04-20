@@ -55,6 +55,7 @@
             </div>
             <div class="glow-orb"></div>
             --}}
+            
             <div class="repo-loader" aria-label="Loading repository" role="img">
                 <span class="seg s1"></span>
                 <span class="seg s2"></span>
@@ -65,6 +66,8 @@
                 <span class="seg s7"></span>
                 <span class="beam"></span>
             </div>
+    
+            
             
             <div class="relative z-10 flex flex-col items-center justify-center">
                 <span class="font-medium text-blue-900 animate-pulse">Loading repository versions...</span>
@@ -258,9 +261,10 @@
             <div class="mt-6 flex items-center gap-4">
                 <!-- Process Queue button -->
                 <button type="button" id="btn-process-queue" @click="startPackaging()"
-                    :disabled="!canStartQueue || isQueuing || isRunning"
+                    {{--  :disabled="!canStartQueue || isQueuing || isRunning"--}}
                     class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition disabled:bg-slate-300 disabled:cursor-not-allowed shadow-sm hover:bg-blue-700">
-                    <span x-show="!isQueuing && !isRunning">Process Queue</span>
+                    <span>Process Queue</span>
+                    <!-- 
                     <span x-show="isQueuing" x-cloak>Submitting...</span>
                     <span x-show="isRunning && !isQueuing" x-cloak class="flex items-center gap-2">
                         <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -271,9 +275,206 @@
                         </svg>
                         Running...
                     </span>
+                    -->
                 </button>
             </div>
         </div>
 
     </div>
 </x-ui.card>
+
+{{-- ── Duplicate Package Modal ─────────────────────────────────────────── --}}
+{{-- Sits in the parent Alpine scope (newPackageWizard) so it has access   --}}
+{{-- to duplicateModal state. Fixed overlay — works anywhere in the DOM.   --}}
+<div x-show="duplicateModal.open" x-cloak
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+    @click.self="duplicateModal.open = false">
+
+    <div
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+
+        {{-- Header --}}
+        <div class="flex items-start justify-between px-6 py-5 border-b border-slate-100">
+            <div>
+                <h3 class="text-base font-semibold text-slate-900">Package Exists in History</h3>
+                <p class="text-sm text-slate-500 mt-0.5">Would you want to download the existing package?</p>
+            </div>
+            <button @click="duplicateModal.open = false"
+                class="text-slate-400 hover:text-slate-600 transition-colors ml-4 shrink-0 mt-0.5 focus:outline-none"
+                title="Close">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="px-6 py-5 space-y-4">
+
+            {{-- Package name --}}
+            <p class="text-sm font-bold text-slate-900"
+                x-text="'Package: ' + (duplicateModal.match?.package_name ?? '')"></p>
+
+            {{-- Job details row --}}
+            <div class="flex flex-wrap items-center gap-3 text-sm py-1">
+                <span class="font-semibold text-slate-700 shrink-0"
+                    x-text="duplicateModal.match?.environment ?? ''"></span>
+                <span class="font-bold text-slate-800"
+                    x-text="duplicateModal.match?.project_name ?? ''"></span>
+                <div class="flex items-center gap-2">
+                    <span
+                        class="px-2 py-0.5 rounded border border-rose-100 bg-rose-50 text-rose-700 font-medium text-xs whitespace-nowrap"
+                        x-text="duplicateModal.match?.base_version ?? ''"></span>
+                    <span class="text-slate-500 text-lg">→</span>
+                    <span
+                        class="px-2 py-0.5 rounded border border-emerald-100 bg-emerald-50 text-emerald-700 font-medium text-xs whitespace-nowrap"
+                        x-text="duplicateModal.match?.head_version ?? ''"></span>
+                </div>
+                <span class="text-slate-400 text-xs ml-auto whitespace-nowrap">
+                    Created at : 
+                <span class="text-slate-400 text-xs ml-auto whitespace-nowrap"
+                    x-text="duplicateModal.match?.finished_at
+                        ? new Date(duplicateModal.match.finished_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : ''">
+                </span>
+                </span>
+            </div>
+
+            {{-- Checksums --}}
+            <div class="text-xs text-slate-500 space-y-1.5 bg-slate-50 rounded-xl p-3 border border-slate-100">
+
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5" x-show="duplicateModal.match?.zip_size">
+                    <span>
+                        <svg class="h-4 w-4 text-slate-500 shrink-0" aria-hidden="true" height="16" viewBox="0 0 16 16"
+                            version="1.1" width="16">
+                            <path fill="currentColor"
+                                d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z" />
+                        </svg>
+                    </span>
+                    <a :href="'{{ url('download-archive') }}?folder=' + encodeURIComponent(duplicateModal.match?.package_name ?? '') + '&format=.zip'"
+                        class="flex items-center gap-1.5 group">
+                        <svg class="h-4 w-4 text-blue-600" width="15" height="15" viewBox="0 0 15 15" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M7.50005 1.04999C7.74858 1.04999 7.95005 1.25146 7.95005 1.49999V8.41359L10.1819 6.18179C10.3576 6.00605 10.6425 6.00605 10.8182 6.18179C10.994 6.35753 10.994 6.64245 10.8182 6.81819L7.81825 9.81819C7.64251 9.99392 7.35759 9.99392 7.18185 9.81819L4.18185 6.81819C4.00611 6.64245 4.00611 6.35753 4.18185 6.18179C4.35759 6.00605 4.64251 6.00605 4.81825 6.18179L7.05005 8.41359V1.49999C7.05005 1.25146 7.25152 1.04999 7.50005 1.04999ZM2.5 10C2.77614 10 3 10.2239 3 10.5V12C3 12.5539 3.44565 13 3.99635 13H11.0012C11.5529 13 12 12.5528 12 12V10.5C12 10.2239 12.2239 10 12.5 10C12.7761 10 13 10.2239 13 10.5V12C13 13.1041 12.1062 14 11.0012 14H3.99635C2.89019 14 2 13.103 2 12V10.5C2 10.2239 2.22386 10 2.5 10Z" />
+                        </svg>
+                        <span class="text-sm text-blue-600 font-medium group-hover:underline">Package (.zip)</span>
+                    </a>
+                    <span class="text-slate-300">|</span>
+                    <span>Size: <span class="font-medium" x-text="duplicateModal.match?.zip_size ?? '-'"></span></span>
+                    <span class="text-slate-300">|</span>
+                    <button
+                        type="button"
+                        x-data="{ copied: false }"
+                        class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                        @click="
+                            const txt = duplicateModal.match?.zip_sha256 ?? '';
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(txt);
+                            } else {
+                                const el = document.createElement('textarea');
+                                el.value = txt;
+                                el.style.position = 'fixed';
+                                el.style.opacity = '0';
+                                document.body.appendChild(el);
+                                el.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(el);
+                            }
+                            copied = true;
+                            setTimeout(() => copied = false, 1500);
+                        "
+                        title="Copy ZIP SHA256"
+                    >
+                        <span x-text="copied ? 'Copied!' : 'SHA256'"></span>
+                        <svg x-show="!copied" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <svg x-show="copied" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                    
+                </div>
+
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5" x-show="duplicateModal.match?.targz_size">
+                    <span>
+                        <svg class="h-4 w-4 text-slate-500 shrink-0" aria-hidden="true" height="16" viewBox="0 0 16 16"
+                            version="1.1" width="16">
+                            <path fill="currentColor"
+                                d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.185 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177L9.513 1.573a.25.25 0 0 0-.177-.073H7.25a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h-3a.25.25 0 0 0-.25.25Zm3.75 8.75h.5c.966 0 1.75.784 1.75 1.75v3a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1-.75-.75v-3c0-.966.784-1.75 1.75-1.75ZM6 5.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 6 5.25Zm.75 2.25h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 6.75A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75ZM8.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM8 9.75A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Zm-1 2.5v2.25h1v-2.25a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25Z" />
+                        </svg>
+                    </span>
+                    <a :href="'{{ url('download-archive') }}?folder=' + encodeURIComponent(duplicateModal.match?.package_name ?? '') + '&format=.tar.gz'"
+                        class="flex items-center gap-1.5 group">
+                        <svg class="h-4 w-4 text-blue-600" width="15" height="15" viewBox="0 0 15 15" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M7.50005 1.04999C7.74858 1.04999 7.95005 1.25146 7.95005 1.49999V8.41359L10.1819 6.18179C10.3576 6.00605 10.6425 6.00605 10.8182 6.18179C10.994 6.35753 10.994 6.64245 10.8182 6.81819L7.81825 9.81819C7.64251 9.99392 7.35759 9.99392 7.18185 9.81819L4.18185 6.81819C4.00611 6.64245 4.00611 6.35753 4.18185 6.18179C4.35759 6.00605 4.64251 6.00605 4.81825 6.18179L7.05005 8.41359V1.49999C7.05005 1.25146 7.25152 1.04999 7.50005 1.04999ZM2.5 10C2.77614 10 3 10.2239 3 10.5V12C3 12.5539 3.44565 13 3.99635 13H11.0012C11.5529 13 12 12.5528 12 12V10.5C12 10.2239 12.2239 10 12.5 10C12.7761 10 13 10.2239 13 10.5V12C13 13.1041 12.1062 14 11.0012 14H3.99635C2.89019 14 2 13.103 2 12V10.5C2 10.2239 2.22386 10 2.5 10Z" />
+                        </svg>
+                        <span class="text-sm text-blue-600 font-medium group-hover:underline">Package (.tar.gz)</span>
+                    </a>
+                    <span class="text-slate-300">|</span>
+                    <span>Size: <span class="font-medium" x-text="duplicateModal.match?.targz_size ?? '-'"></span></span>
+                    <span class="text-slate-300">|</span>
+                    <button
+                        type="button"
+                        x-data="{ copied: false }"
+                        class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                        @click="
+                            const txt = duplicateModal.match?.targz_sha256 ?? '';
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(txt);
+                            } else {
+                                const el = document.createElement('textarea');
+                                el.value = txt;
+                                el.style.position = 'fixed';
+                                el.style.opacity = '0';
+                                document.body.appendChild(el);
+                                el.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(el);
+                            }
+                            copied = true;
+                            setTimeout(() => copied = false, 1500);
+                        "
+                        title="Copy TAR.GZ SHA256"
+                    >
+                        <span x-text="copied ? 'Copied!' : 'SHA256'"></span>
+                        <svg x-show="!copied" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <svg x-show="copied" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Footer --}}
+        <div class="flex justify-end px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+            <button @click="duplicateModal.open = false"
+                class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1">
+                Proceed Anyway
+            </button>
+        </div>
+
+    </div>
+</div>
