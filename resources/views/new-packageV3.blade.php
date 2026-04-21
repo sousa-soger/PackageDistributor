@@ -35,6 +35,7 @@
         {{-- ================================================================ --}}
 
     </div>
+    
 @endsection
 
 @push('scripts')
@@ -319,13 +320,15 @@
                     const row = this.packageRows[this.floatDd.rowIndex];
                     if (!row) return;
 
-                    // If selecting Head and it matches existing Base, clear Base
+                    // If selecting Head and it matches existing Base, clear Base and show toast
                     if (this.floatDd.field === 'head' && row.base === versionKey) {
                         row.base = '';
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'warning', message: 'Versions Identical. Current version was cleared.' } }));
                     }
-                    // If selecting Base and it matches existing Head, clear Head
+                    // If selecting Base and it matches existing Head, clear Head and show toast
                     if (this.floatDd.field === 'base' && row.head === versionKey) {
                         row.head = '';
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'warning', message: 'Versions Identical. Target version was cleared.' } }));
                     }
 
                     row[this.floatDd.field] = versionKey;
@@ -508,6 +511,8 @@
                                     this.compareFilesProgress = this.packageGenProgress = this.compressionProgress = 100;
                                 this.packagingMessage = 'Package created successfully.';
                                 this.packagingResult = payload.result;
+                                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'Package created successfully.' } }));
+                                
 
                                 // Snapshot the final progress into the unifiedQueue entry so the
                                 // detail panel shows correct data after this job is no longer active
@@ -542,6 +547,7 @@
                                 this.stopPolling();
                                 this.packagingError = payload.error || 'Job failed.';
                                 this.packagingMessage = 'Packaging failed.';
+                                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Job failed: ' + this.packagingError } }));
 
                                 // Snapshot the failure into the unifiedQueue entry
                                 if (uq) {
@@ -561,6 +567,29 @@
                                 // Record failure and stop (don't auto-advance on error)
                                 this.jobResults.push({ row: this.activeRow, result: null, error: this.packagingError });
                                 this.isRunning = false;
+                            }
+
+                            if (payload.status === 'cancelled') {
+                                this.stopPolling();
+                                this.packagingMessage = 'Job was cancelled.';
+                                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'warning', message: 'Job was cancelled.' } }));
+
+                                // Ensure the row shows the cancelled status immediately
+                                if (uq) {
+                                    uq.status = 'cancelled';
+                                    uq.statusMessage = 'Job was cancelled.';
+                                }
+
+                                // Record cancellation and advance to the next job in the queue
+                                this.jobResults.push({ row: this.activeRow, result: null, error: 'cancelled' });
+                                this.jobQueueIndex++;
+
+                                if (this.jobQueueIndex < this.jobQueue.length) {
+                                    setTimeout(() => this.processNextJob(), 500);
+                                } else {
+                                    this.isRunning = false;
+                                    this.packagingMessage = 'All jobs processed.';
+                                }
                             }
 
                         } catch (e) {

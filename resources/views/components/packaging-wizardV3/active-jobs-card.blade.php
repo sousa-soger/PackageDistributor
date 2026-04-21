@@ -31,8 +31,9 @@
                             }" class="divide-y divide-slate-100">
                             <tr @click="toggleExpanded()" class="cursor-pointer transition-all duration-300" :class="{
                                     'animate-row-success hover:bg-slate-50 transition-colors': job.status === 'completed',
+                                    'bg-slate-100/50 hover:bg-slate-100': job.status === 'cancelled',
                                     'bg-red-50/80 hover:bg-red-100/50': job.status === 'failed',
-                                    'animate-row-indeterminate': job.jobId === currentJobId && packagingProgress === 0,
+                                    'animate-row-indeterminate': job.jobId === currentJobId && packagingProgress === 0 && job.status !== 'cancelled',
                                     'animate-row-running': job.jobId === currentJobId && job.status === 'running' && packagingProgress > 0,
                                     'hover:bg-slate-50': job.status === 'queued' || job.status === 'pending' || (!job.status && job.jobId !== currentJobId)
 
@@ -256,8 +257,8 @@
                                     <!-- Resolve progress values: use live globals for the currently running job, stored job data for others -->
                                     <template x-if="true">
                                     <div x-data="{
-                                            get _isActive() { return job.jobId === currentJobId; },
-                                            get _overallPct()   { return this._isActive ? packagingProgress    : (job.progress?.packagingProgress    ?? 0); },
+                                            get _isActive()     { return job.jobId === currentJobId; },
+                                            get _overallPct()   { return this._isActive ? packagingProgress    : (job.progress?.packagingProgress    ?? 0);  },
                                             get _downloadPct()  { return this._isActive ? fileDownloadProgress : (job.progress?.fileDownloadProgress  ?? 0); },
                                             get _basePct()      { return this._isActive ? baseFileExtraction   : (job.progress?.baseFileExtraction    ?? 0); },
                                             get _headPct()      { return this._isActive ? headFileExtraction   : (job.progress?.headFileExtraction    ?? 0); },
@@ -286,12 +287,14 @@
                                             </div>
                                             <div
                                                 class="h-2 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner relative">
+                                                <!-- Active Job row status and progress animation and coloring -->
                                                 <div class="h-full rounded-full transition-all duration-500 shadow-sm"
                                                     :class="{
-                                                                                'bg-emerald-500': _overallPct === 100, 
-                                                                                'bg-blue-500': (_overallPct > 0 && _overallPct < 100) || _overallPct === 0,
+                                                                                'bg-emerald-500': _overallPct === 100 && job.status !== 'cancelled' && _error === '', 
+                                                                                'bg-blue-500': _overallPct < 100 && job.status !== 'cancelled' && _error === '',
                                                                                 'bg-red-500': _error !== '',
-                                                                                'animate-indeterminate': _overallPct === 0
+                                                                                'bg-slate-400': job.status === 'cancelled',
+                                                                                'animate-indeterminate': _overallPct === 0 && job.status !== 'cancelled' && _error === ''
                                                                             }"
                                                     :style="_overallPct === 0 ? '' : `width: ${_overallPct}%`">
                                                 </div>

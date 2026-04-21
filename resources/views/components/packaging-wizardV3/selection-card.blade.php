@@ -293,7 +293,7 @@
     x-transition:leave="transition ease-in duration-150"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
-    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm !mb-0" {{-- !mb-0 to force the modal to be pushed below since the new-packV3.blade.php is space-y-8 --}}
     @click.self="duplicateModal.open = false">
 
     <div

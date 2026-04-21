@@ -5,6 +5,17 @@
             selected: [],
             get allIds() { return {{ $packages->pluck('id')->toJson() }}; },
             get allSelected() { return this.selected.length === this.allIds.length && this.allIds.length > 0; },
+            init() {
+                if (sessionStorage.getItem('flash_toast_msg')) {
+                    const msg = sessionStorage.getItem('flash_toast_msg');
+                    const type = sessionStorage.getItem('flash_toast_type');
+                    sessionStorage.removeItem('flash_toast_msg');
+                    sessionStorage.removeItem('flash_toast_type');
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { type: type, message: msg } }));
+                    }, 50);
+                }
+            },
             toggleAll() {
                 if (this.allSelected) {
                     this.selected = [];
@@ -61,9 +72,13 @@
                     body: JSON.stringify({ ids: this.selected })
                 });
                 if (resp.ok) {
+                    sessionStorage.setItem('flash_toast_msg', this.selected.length + ' Package(s) deleted successfully.');
+                    sessionStorage.setItem('flash_toast_type', 'success');
                     window.location.reload();
                 } else {
-                    alert('Delete failed. Please try again.');
+                    sessionStorage.setItem('flash_toast_msg', 'Delete failed. Please try again.');
+                    sessionStorage.setItem('flash_toast_type', 'error');
+                    window.location.reload();
                 }
             }
         }">
@@ -100,7 +115,7 @@
                                         <input type="checkbox"
                                             class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                             :checked="allSelected"
-                                            @click.prevent="toggleAll()">
+                                            @change="toggleAll()">
                                     </th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Env</th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Project</th>
@@ -266,14 +281,15 @@
                             @endforeach
                         </table>
                     </div>
-
-                    <!-- Floating Bulk Action Bar -->
+                </div>
+                
+                <!-- Floating Bulk Action Bar -->
+                <div class="sticky bottom-4 z-40 flex justify-center pointer-events-none">
                     <div x-show="selected.length > 0" x-cloak x-transition:enter="transition ease-out duration-200"
                         x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2"
-                        class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
-                        <div class="flex items-center gap-1 rounded-xl border border-slate-200 bg-white shadow-xl px-3 py-2 text-sm whitespace-nowrap">
+                        class="pointer-events-auto flex items-center gap-1 rounded-xl border border-slate-200 bg-white shadow-xl px-3 py-2 text-sm">
                             <!-- Count -->
                             <span class="font-semibold text-slate-700 pr-2 border-r border-slate-200 mr-1">
                                 <span x-text="selected.length"></span> Selected

@@ -11,6 +11,13 @@
 
         </div>
 
+        <x-ui.toast :flashes="array_filter([
+            session('success') ? ['type'=>'success','message'=>session('success')] : null,
+            session('error')   ? ['type'=>'error',  'message'=>session('error')]   : null,
+            session('warning') ? ['type'=>'warning','message'=>session('warning')] : null,
+            session('info')    ? ['type'=>'info',   'message'=>session('info')]    : null,
+        ])" />
+
         @stack('scripts')
         
     </body>
