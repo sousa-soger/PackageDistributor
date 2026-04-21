@@ -11,6 +11,7 @@ Route::view('/user-auth', 'user-auth')->name('user-auth');
 
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home')->name('home');
+    Route::view('/register-repo', 'register_repo')->name('register-repo');
     Route::get('/new-packageV3', [PackageController::class, 'indexV3'])->name('new-packageV3');
     Route::get('/packages/done', [PackageController::class, 'donePackages'])
         ->name('packages.done');
