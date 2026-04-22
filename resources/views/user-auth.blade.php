@@ -1,6 +1,6 @@
 @extends('layouts.app-nosidebar')
 
-@section('title', 'Loggin')
+@section('title', 'Log in')
 
 @section('content')
     <section class="min-h-screen px-6 py-4 lg:px-10">
@@ -147,7 +147,7 @@
             </div>
 
             {{-- to try for login only --}}
-            <footer class="pt-6 text-sm text-slate-500">
+            <footer class="pt-6 text-sm text-slate-500" x-show="{{ config('ldap.enabled')}}" x-cloak>
                 <button onclick="document.getElementById('registerModal').classList.remove('hidden')" class="px-4 py-2 rounded-lg bg-white outline text-black hover:bg-blue-700 transition">
                     Register User
                 </button>
