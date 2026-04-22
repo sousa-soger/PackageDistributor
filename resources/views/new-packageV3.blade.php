@@ -12,6 +12,9 @@
                 completedPackages: @js($packages),
                 dbQueuedPackages: @js($queuedPackages)
             })">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">New Package</h1>
+        </div>
         {{-- ================================================================ --}}
         {{-- CARD 1 — Repository selection + multi-row version picker --}}
         {{-- ================================================================ --}}

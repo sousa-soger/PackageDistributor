@@ -3,7 +3,7 @@
         <div>
             <h2 class="text-xl font-semibold text-slate-900">Package Selection</h2>
             <p class="text-sm text-slate-500 mt-1">
-                Select repositories
+                Choose the project and versions you want to create the update and rollback packages from.
             </p>
         </div>
 
