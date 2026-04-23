@@ -5,7 +5,7 @@
 @section('content')
     <div x-data="{
         gitlabOauth: @js($gitlabConnected),
-        activeTab: 'all',
+        activeTab: 'projects',
         search: '',
         loading: false,
         loadingExplore: false,
@@ -103,6 +103,7 @@
                     p.path.toLowerCase().includes(this.search.toLowerCase());
 
                 const matchesTab = this.activeTab === 'all' ||
+                    this.activeTab === 'projects' ||
                     p.category === this.activeTab;
 
                 return matchesSearch && matchesTab;
@@ -172,11 +173,16 @@
 
                 {{-- Tabs --}}
                 <div class="flex border-b border-slate-200 px-2 pt-1">
+                    <button 
+                        @click="activeTab =  'projects'"
+                        :class="activeTab === 'projects' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                        class="px-4 py-2.5 text-sm border-b-2 transition-colors -mb-px"
+                    >My Projects</button>
                     <button
                         @click="activeTab = 'personal'"
                         :class="activeTab === 'personal' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700'"
                         class="px-4 py-2.5 text-sm border-b-2 transition-colors -mb-px"
-                    >My Personal Projects</button>
+                    >Personal</button>
                     <button
                         @click="activeTab = 'shared'"
                         :class="activeTab === 'shared' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700'"
@@ -262,7 +268,7 @@
                         </div>
                     </template>
                     <template x-if="loadingExplore">
-                        <div class="rounded-xl border py-16 text-center relative z-10 flex flex-col justify-center">
+                        <div x-show="activeTab === 'all'" class="rounded-xl border py-16 text-center relative z-10 flex flex-col justify-center">
                             <span class="font-medium text-blue-900 animate-pulse">Loading SAINS Internal GitLab Projects...</span>
                         </div>
                     </template>

@@ -46,9 +46,7 @@ class GitLabProjectController extends Controller
         }
 
         return response()->json(
-            collect($response->json())->map(function ($project) {
-                $namespaceKind = data_get($project, 'namespace.kind');
-
+            collect($response->json())->map(function ($project) use ($user) {
                 return [
                     'id' => $project['id'],
                     'icon' => 'gitlab',
@@ -58,7 +56,7 @@ class GitLabProjectController extends Controller
                     'lastActivity' => $project['last_activity_at'],
                     'visibility' => $project['visibility'] ?? 'private',
                     'role' => null,
-                    'category' => $namespaceKind === 'user' ? 'personal' : 'shared',
+                    'category' => data_get($project, 'namespace.path') === $user->gitlab_username ? 'personal' : 'shared',
                     'web_url' => $project['web_url'],
                     'http_url_to_repo' => $project['http_url_to_repo'] ?? null,
                     'ssh_url_to_repo' => $project['ssh_url_to_repo'] ?? null,
@@ -99,9 +97,7 @@ class GitLabProjectController extends Controller
         }
 
         return response()->json(
-            collect($response->json())->map(function ($project) {
-                $namespaceKind = data_get($project, 'namespace.kind');
-
+            collect($response->json())->map(function ($project) use ($user) {
                 return [
                     'id' => $project['id'],
                     'icon' => 'gitlab',
@@ -111,7 +107,7 @@ class GitLabProjectController extends Controller
                     'lastActivity' => $project['last_activity_at'],
                     'visibility' => $project['visibility'] ?? 'internal',
                     'role' => null,
-                    'category' => $namespaceKind === 'user' ? 'personal' : 'shared',
+                    'category' => data_get($project, 'namespace.path') === $user->gitlab_username ? 'personal' : 'shared',
                     'web_url' => $project['web_url'],
                     'http_url_to_repo' => $project['http_url_to_repo'] ?? null,
                     'ssh_url_to_repo' => $project['ssh_url_to_repo'] ?? null,
