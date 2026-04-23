@@ -9,7 +9,7 @@
         <div class="px-4 py-3 border-b border-slate-200">
             <div class="flex items-center gap-3 w-full" :class="collapsed ? 'justify-center' : ''">
                 <div x-show="!collapsed" x-transition.opacity class="flex-1">
-                    <h1 class="text-[22px] leading-8 font-bold text-slate-900 whitespace-nowrap">CybixDeployer</h1>
+                    <h1 class="text-[22px] leading-8 font-bold text-slate-900 whitespace-nowrap">CyBixDecployment</h1>
                     <p class="text-[14px] text-slate-500 mt-1 whitespace-nowrap">Package Distribution</p>
                 </div>
 
@@ -20,7 +20,7 @@
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="16" height="16" rx="2" ry="2" />
                             <line x1="9" y1="3" x2="9" y2="19" />
-                        </svg>
+                        </svg>  
                     </button>
                 </div>
             </div>
