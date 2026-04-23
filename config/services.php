@@ -38,4 +38,11 @@ return [
     'github' => [
         'token' => env('GITHUB_TOKEN'),
     ],
+
+    'gitlab' => [
+        'base_url' => env('GITLAB_BASE_URL', 'https://gitlab.com'),
+        'client_id' => env('GITLAB_CLIENT_ID'),
+        'client_secret' => env('GITLAB_CLIENT_SECRET'),
+        'redirect' => env('GITLAB_REDIRECT_URI'),
+    ],
 ];

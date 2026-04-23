@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\GitHubController;
 use App\Http\Controllers\DeploymentPackageController;
+use App\Http\Controllers\GitHubController;
+use App\Http\Controllers\GitLabOAuthController;
+use App\Http\Controllers\GitLabProjectController;
 use App\Http\Controllers\PackageController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,7 +13,20 @@ Route::view('/user-auth', 'user-auth')->name('user-auth');
 
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home')->name('home');
-    Route::view('/projects', 'projects')->name('projects');
+
+    Route::get('/projects', [GitLabProjectController::class, 'index'])
+        ->name('projects');
+    Route::get('/gitlab/oauth/redirect', [GitLabOAuthController::class, 'redirect'])
+        ->name('gitlab.oauth.redirect');
+    Route::get('/gitlab/oauth/callback', [GitLabOAuthController::class, 'callback'])
+        ->name('gitlab.oauth.callback');
+    Route::post('/gitlab/oauth/disconnect', [GitLabOAuthController::class, 'disconnect'])
+        ->name('gitlab.oauth.disconnect');
+    Route::get('/gitlab/projects', [GitLabProjectController::class, 'list'])
+        ->name('gitlab.projects');
+    Route::get('/gitlab/explore', [GitLabProjectController::class, 'explore'])
+        ->name('gitlab.explore');
+
     Route::get('/new-packageV3', [PackageController::class, 'indexV3'])->name('new-packageV3');
     Route::get('/packages/done', [PackageController::class, 'donePackages'])
         ->name('packages.done');

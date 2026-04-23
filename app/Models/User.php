@@ -22,6 +22,15 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'gitlab_id',
+        'gitlab_username',
+        'gitlab_name',
+        'gitlab_email',
+        'gitlab_avatar',
+        'gitlab_token',
+        'gitlab_refresh_token',
+        'gitlab_token_expires_at',
+        'gitlab_connected_at',
     ];
 
     /**
@@ -32,6 +41,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'gitlab_token',
+        'gitlab_refresh_token',
     ];
 
     /**
@@ -44,6 +55,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'gitlab_token' => 'encrypted',
+            'gitlab_refresh_token' => 'encrypted',
+            'gitlab_token_expires_at' => 'datetime',
+            'gitlab_connected_at' => 'datetime',
         ];
     }
 }
