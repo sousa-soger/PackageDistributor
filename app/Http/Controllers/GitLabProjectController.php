@@ -248,4 +248,26 @@ class GitLabProjectController extends Controller
 
         return response()->json(['message' => 'Role updated successfully.']);
     }
+
+    public function removeMember(Request $request, int $projectId, int $userId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->gitlab_token) {
+            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        }
+
+        $response = Http::withToken($user->gitlab_token)
+            ->acceptJson()
+            ->delete("{$this->baseUrl()}/api/v4/projects/{$projectId}/members/{$userId}");
+
+        if ($response->failed()) {
+            return response()->json([
+                'message' => 'Failed to remove member.',
+                'error' => $response->json(),
+            ], $response->status());
+        }
+
+        return response()->json(['message' => 'Member removed successfully.']);
+    }
 }

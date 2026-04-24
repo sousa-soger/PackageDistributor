@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
         ->name('gitlab.members.invite');
     Route::put('/gitlab/projects/{projectId}/members/{userId}', [GitLabProjectController::class, 'updateMemberRole'])
         ->name('gitlab.members.update');
+    Route::delete('/gitlab/projects/{projectId}/members/{userId}', [GitLabProjectController::class, 'removeMember'])
+        ->name('gitlab.members.remove');
 
     Route::get('/new-packageV3', [PackageController::class, 'indexV3'])->name('new-packageV3');
     Route::get('/packages/done', [PackageController::class, 'donePackages'])

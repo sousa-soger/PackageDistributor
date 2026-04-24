@@ -17,16 +17,17 @@ class GitLabOAuthController extends Controller
     {
         return $this->gitlabDriver()
             ->scopes([
+                'api',
                 'read_user',
-                'read_api',
                 'read_repository',
             ])
+            ->stateless()
             ->redirect();
     }
 
     public function callback(Request $request)
     {
-        $gitlabUser = $this->gitlabDriver()->user();
+        $gitlabUser = $this->gitlabDriver()->stateless()->user();
 
         $request->user()->update([
             'gitlab_id' => $gitlabUser->getId(),
