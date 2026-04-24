@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\GenerateDeploymentPackageJob;
 use App\Models\DeploymentJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 
@@ -24,11 +25,11 @@ class DeploymentPackageController extends Controller
         session()->save();
 
         $validated = $request->validate([
-            'environment'  => ['required', 'string', 'max:20'],
+            'environment' => ['required', 'string', 'max:20'],
             'project_name' => ['required', 'string', 'max:100'],
             'base_version' => ['required', 'string', 'max:100'],
             'head_version' => ['required', 'string', 'max:100'],
-            'repo'         => ['required', 'string', 'max:255'],
+            'repo' => ['required', 'string', 'max:255'],
             'package_name' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -36,32 +37,32 @@ class DeploymentPackageController extends Controller
         File::ensureDirectoryExists($tmpDir);
 
         try {
-            $exitCode = \Illuminate\Support\Facades\Artisan::call('deploy:delta', [
-                'environment'  => $validated['environment'],
-                'project'      => $validated['project_name'],
-                'base'         => $validated['base_version'],
-                'head'         => $validated['head_version'],
-                '--repo'       => $validated['repo'],
-                '--name'       => $validated['package_name'] ?? '',
+            $exitCode = Artisan::call('deploy:delta', [
+                'environment' => $validated['environment'],
+                'project' => $validated['project_name'],
+                'base' => $validated['base_version'],
+                'head' => $validated['head_version'],
+                '--repo' => $validated['repo'],
+                '--name' => $validated['package_name'] ?? '',
             ]);
 
-            $output = \Illuminate\Support\Facades\Artisan::output();
+            $output = Artisan::output();
 
             if ($exitCode !== 0) {
                 return response()->json([
-                    'status'  => 'error',
+                    'status' => 'error',
                     'message' => "Command exited with code {$exitCode}.\nOutput:\n{$output}",
                 ], 500);
             }
 
             $outputLines = preg_split('/\r\n|\r|\n/', trim($output));
-            $lastLine    = trim(end($outputLines));
-            $decoded     = json_decode($lastLine, true);
+            $lastLine = trim(end($outputLines));
+            $decoded = json_decode($lastLine, true);
 
-            if (!is_array($decoded)) {
+            if (! is_array($decoded)) {
                 return response()->json([
-                    'status'     => 'error',
-                    'message'    => 'Package generated, but result payload could not be parsed.',
+                    'status' => 'error',
+                    'message' => 'Package generated, but result payload could not be parsed.',
                     'raw_output' => $output,
                 ], 500);
             }
@@ -70,8 +71,8 @@ class DeploymentPackageController extends Controller
 
         } catch (\Throwable $e) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Failed to generate package: ' . $e->getMessage(),
+                'status' => 'error',
+                'message' => 'Failed to generate package: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -85,13 +86,13 @@ class DeploymentPackageController extends Controller
 
         $progress = Cache::get("packaging_progress_{$name}", [
             'fileDownloadProgress' => 0,
-            'headFileExtraction'   => 0,
-            'baseFileExtraction'   => 0,
+            'headFileExtraction' => 0,
+            'baseFileExtraction' => 0,
             'compareFilesProgress' => 0,
-            'packageGenProgress'   => 0,
-            'compressionProgress'  => 0,
-            'packagingProgress'    => 0,
-            'packagingMessage'     => 'Starting...',
+            'packageGenProgress' => 0,
+            'compressionProgress' => 0,
+            'packagingProgress' => 0,
+            'packagingMessage' => 'Starting...',
         ]);
 
         return response()->json($progress)
@@ -115,34 +116,36 @@ class DeploymentPackageController extends Controller
         session()->save();
 
         $validated = $request->validate([
-            'environment'  => ['required', 'string', 'max:20'],
+            'environment' => ['required', 'string', 'max:20'],
             'project_name' => ['required', 'string', 'max:100'],
             'base_version' => ['required', 'string', 'max:100'],
             'head_version' => ['required', 'string', 'max:100'],
-            'repo'         => ['required', 'string', 'max:255'],
+            'repo' => ['required', 'string', 'max:255'],
             'package_name' => ['nullable', 'string', 'max:255'],
+            'vcs_provider' => ['nullable', 'string', 'in:github,gitlab'],
         ]);
 
         // Derive the package name the same way the Artisan command did
         if (empty($validated['package_name'])) {
             $environment = strtoupper(trim($validated['environment']));
-            $project     = trim($validated['project_name']);
-            $base        = preg_replace('/[^\w.\-]+/', '_', $validated['base_version']);
-            $head        = preg_replace('/[^\w.\-]+/', '_', $validated['head_version']);
-            $timestamp   = now()->format('Ymd-Hi');
+            $project = trim($validated['project_name']);
+            $base = preg_replace('/[^\w.\-]+/', '_', $validated['base_version']);
+            $head = preg_replace('/[^\w.\-]+/', '_', $validated['head_version']);
+            $timestamp = now()->format('Ymd-Hi');
             $validated['package_name'] = "{$environment}-{$project}-{$base}-to-{$head}-{$timestamp}";
         }
 
         // Create the DB record
         $job = DeploymentJob::create([
-            'user_id'      => auth()->id(),
-            'repo'         => $validated['repo'],
+            'user_id' => auth()->id(),
+            'repo' => $validated['repo'],
+            'vcs_provider' => $validated['vcs_provider'] ?? config('packaging.vcs_provider', 'github'),
             'project_name' => $validated['project_name'],
-            'environment'  => $validated['environment'],
+            'environment' => $validated['environment'],
             'base_version' => $validated['base_version'],
             'head_version' => $validated['head_version'],
             'package_name' => $validated['package_name'],
-            'status'       => 'queued',
+            'status' => 'queued',
         ]);
 
         // Seed the cache so progress polling returns something useful immediately
@@ -152,8 +155,8 @@ class DeploymentPackageController extends Controller
         GenerateDeploymentPackageJob::dispatch($job->id);
 
         return response()->json([
-            'status'       => 'queued',
-            'job_id'       => $job->id,
+            'status' => 'queued',
+            'job_id' => $job->id,
             'package_name' => $job->package_name,
         ]);
     }
@@ -170,7 +173,7 @@ class DeploymentPackageController extends Controller
 
         $job = DeploymentJob::find($id);
 
-        if (!$job) {
+        if (! $job) {
             return response()->json(['error' => 'Job not found.'], 404)
                 ->header('Cache-Control', 'no-store');
         }
@@ -179,9 +182,9 @@ class DeploymentPackageController extends Controller
         $progress = Cache::get($job->progressCacheKey(), $job->progress ?? $job->defaultProgressArray());
 
         $payload = [
-            'job_id'  => $job->id,
-            'status'  => $job->status,
-            'progress'=> $progress,
+            'job_id' => $job->id,
+            'status' => $job->status,
+            'progress' => $progress,
         ];
 
         if ($job->status === 'completed') {
@@ -213,16 +216,16 @@ class DeploymentPackageController extends Controller
     {
         $job = DeploymentJob::find($id);
 
-        if (!$job) {
+        if (! $job) {
             return response()->json(['error' => 'Job not found.'], 404);
         }
 
-        if (!in_array($job->status, ['queued', 'pending', 'running'])) {
+        if (! in_array($job->status, ['queued', 'pending', 'running'])) {
             return response()->json(['error' => "Cannot cancel a job with status '{$job->status}'."], 422);
         }
 
         $job->markCancelled();
-        \Illuminate\Support\Facades\Cache::forget($job->progressCacheKey());
+        Cache::forget($job->progressCacheKey());
 
         return response()->json(['message' => 'Job cancelled.', 'status' => 'cancelled']);
     }
@@ -236,29 +239,29 @@ class DeploymentPackageController extends Controller
     {
         $job = DeploymentJob::find($id);
 
-        if (!$job) {
+        if (! $job) {
             return response()->json(['error' => 'Job not found.'], 404);
         }
 
-        if (!in_array($job->status, ['failed', 'cancelled'])) {
+        if (! in_array($job->status, ['failed', 'cancelled'])) {
             return response()->json(['error' => "Only failed or cancelled jobs can be retried (current status: '{$job->status}')."], 422);
         }
 
         // Reset the record back to queued
         $job->update([
-            'status'        => 'queued',
+            'status' => 'queued',
             'error_message' => null,
-            'progress'      => null,
-            'message'       => null,
-            'started_at'    => null,
-            'finished_at'   => null,
+            'progress' => null,
+            'message' => null,
+            'started_at' => null,
+            'finished_at' => null,
         ]);
 
         // Seed a fresh progress entry so polling returns something immediately
-        \Illuminate\Support\Facades\Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), 600);
+        Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), 600);
 
         // Dispatch a new queue job
-        \App\Jobs\GenerateDeploymentPackageJob::dispatch($job->id);
+        GenerateDeploymentPackageJob::dispatch($job->id);
 
         return response()->json(['message' => 'Job re-queued.', 'status' => 'queued', 'job_id' => $job->id]);
     }
@@ -270,9 +273,9 @@ class DeploymentPackageController extends Controller
     public function downloadArchive(Request $request)
     {
         $folderName = $request->query('folder');
-        $format     = $request->query('format', '.zip');
+        $format = $request->query('format', '.zip');
 
-        if (!$folderName) {
+        if (! $folderName) {
             return response('Folder parameter is required.', 400);
         }
 
@@ -282,21 +285,21 @@ class DeploymentPackageController extends Controller
         }
 
         $packageRoot = storage_path("app/deployment-packages/{$folderName}");
-        $archivePath = $packageRoot . $format;
+        $archivePath = $packageRoot.$format;
 
         if (File::exists($packageRoot) && File::isDirectory($packageRoot)) {
             if ($format === '.tar.gz') {
-                if (!$this->createTarGz($packageRoot, $folderName)) {
+                if (! $this->createTarGz($packageRoot, $folderName)) {
                     return response('Could not generate tar.gz file.', 500);
                 }
             } else {
-                if (!$this->createZip($packageRoot, $folderName)) {
+                if (! $this->createZip($packageRoot, $folderName)) {
                     return response('Could not generate ZIP file.', 500);
                 }
             }
         }
 
-        if (!File::exists($archivePath) || File::isDirectory($archivePath)) {
+        if (! File::exists($archivePath) || File::isDirectory($archivePath)) {
             return response('Package archive not found.', 404);
         }
 
@@ -305,25 +308,26 @@ class DeploymentPackageController extends Controller
 
     private function createZip(string $packageRoot, string $folderName): ?string
     {
-        $zipPath = $packageRoot . '.zip';
+        $zipPath = $packageRoot.'.zip';
         if (File::exists($zipPath)) {
             return $zipPath;
         }
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
             $files = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($packageRoot, \RecursiveDirectoryIterator::SKIP_DOTS),
                 \RecursiveIteratorIterator::LEAVES_ONLY
             );
             foreach ($files as $file) {
-                if (!$file->isDir()) {
-                    $filePath     = $file->getRealPath();
+                if (! $file->isDir()) {
+                    $filePath = $file->getRealPath();
                     $relativePath = str_replace('\\', '/', substr($filePath, strlen($packageRoot) + 1));
                     $zip->addFile($filePath, $relativePath);
                 }
             }
             $zip->close();
+
             return $zipPath;
         }
 
@@ -332,19 +336,20 @@ class DeploymentPackageController extends Controller
 
     private function createTarGz(string $packageRoot, string $folderName): ?string
     {
-        $tarGzPath = $packageRoot . '.tar.gz';
+        $tarGzPath = $packageRoot.'.tar.gz';
         if (File::exists($tarGzPath)) {
             return $tarGzPath;
         }
 
         try {
-            $tarPath = $packageRoot . '.tar';
-            $tar     = new \PharData($tarPath);
+            $tarPath = $packageRoot.'.tar';
+            $tar = new \PharData($tarPath);
             $tar->buildFromDirectory($packageRoot);
             $tar->compress(\Phar::GZ);
             if (File::exists($tarPath)) {
                 unlink($tarPath);
             }
+
             return $tarGzPath;
         } catch (\Throwable $e) {
             return null;
@@ -362,7 +367,7 @@ class DeploymentPackageController extends Controller
      */
     public function bulkDownload(Request $request)
     {
-        $ids    = $request->input('ids', []);
+        $ids = $request->input('ids', []);
         $format = $request->input('format', '.zip');
 
         if (empty($ids)) {
@@ -374,17 +379,17 @@ class DeploymentPackageController extends Controller
             return response('No matching packages found.', 404);
         }
 
-        $tmpName = 'bulk-' . now()->format('YmdHis');
-        $tmpZip  = storage_path("app/temp/{$tmpName}.zip");
+        $tmpName = 'bulk-'.now()->format('YmdHis');
+        $tmpZip = storage_path("app/temp/{$tmpName}.zip");
         File::ensureDirectoryExists(storage_path('app/temp'));
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($tmpZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             return response('Could not create bulk archive.', 500);
         }
 
         foreach ($jobs as $job) {
-            $folder  = $job->package_name;
+            $folder = $job->package_name;
             $archive = storage_path("app/deployment-packages/{$folder}{$format}");
             if (File::exists($archive)) {
                 $zip->addFile($archive, basename($archive));
@@ -417,12 +422,12 @@ class DeploymentPackageController extends Controller
 
         foreach ($jobs as $job) {
             $folder = $job->package_name;
-            $base   = storage_path("app/deployment-packages/{$folder}");
+            $base = storage_path("app/deployment-packages/{$folder}");
 
             // Delete archive files and folder
             foreach (['.zip', '.tar.gz', '.tar'] as $ext) {
-                if (File::exists($base . $ext)) {
-                    File::delete($base . $ext);
+                if (File::exists($base.$ext)) {
+                    File::delete($base.$ext);
                 }
             }
             if (File::isDirectory($base)) {
@@ -432,6 +437,6 @@ class DeploymentPackageController extends Controller
             $job->delete();
         }
 
-        return response()->json(['message' => count($jobs) . ' package(s) deleted.']);
+        return response()->json(['message' => count($jobs).' package(s) deleted.']);
     }
 }

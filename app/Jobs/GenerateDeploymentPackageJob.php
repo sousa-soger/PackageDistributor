@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\DeploymentJob;
+use App\Models\User;
 use App\Services\DeploymentPackageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,9 +35,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
      */
     public int $timeout = 600;
 
-    public function __construct(public readonly int $deploymentJobId)
-    {
-    }
+    public function __construct(public readonly int $deploymentJobId) {}
 
     public function handle(DeploymentPackageService $service): void
     {
@@ -46,6 +45,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
         // Only process if the job is still queued (not already cancelled etc.)
         if ($job->status !== 'queued') {
             Log::warning("GenerateDeploymentPackageJob: job #{$job->id} has status '{$job->status}', skipping.");
+
             return;
         }
 
@@ -57,10 +57,10 @@ class GenerateDeploymentPackageJob implements ShouldQueue
         // On every tick we also re-read the DB status — if it flipped to
         // 'cancelled' we throw JobCancelledException to bail out immediately.
 
-        $lastDbWrite      = 0;
-        $dbThrottleMs     = 2000; // milliseconds
-        $lastCancelCheck  = 0;
-        $cancelCheckMs    = 1500; // check for cancellation every 1.5 s
+        $lastDbWrite = 0;
+        $dbThrottleMs = 2000; // milliseconds
+        $lastCancelCheck = 0;
+        $cancelCheckMs = 1500; // check for cancellation every 1.5 s
 
         $progressCallback = function (array $data, string $message) use ($job, &$lastDbWrite, $dbThrottleMs, &$lastCancelCheck, $cancelCheckMs) {
             // ── Cancellation check ────────────────────────────────────────
@@ -77,20 +77,20 @@ class GenerateDeploymentPackageJob implements ShouldQueue
             $cacheKey = $job->progressCacheKey();
 
             $current = Cache::get($cacheKey, $job->defaultProgressArray());
-            $merged  = array_merge($current, $data);
+            $merged = array_merge($current, $data);
             if ($message !== '') {
                 $merged['packagingMessage'] = $message;
             }
 
             // Derive weighted overall progress
-            if (!isset($data['packagingProgress'])) {
+            if (! isset($data['packagingProgress'])) {
                 $merged['packagingProgress'] = (int) round(
-                    ($merged['fileDownloadProgress']   / 100) * 10 +
-                    ($merged['headFileExtraction']     / 100) * 20 +
-                    ($merged['baseFileExtraction']     / 100) * 20 +
-                    ($merged['compareFilesProgress']   / 100) * 10 +
-                    ($merged['packageGenProgress']     / 100) * 20 +
-                    ($merged['compressionProgress']    / 100) * 20
+                    ($merged['fileDownloadProgress'] / 100) * 10 +
+                    ($merged['headFileExtraction'] / 100) * 20 +
+                    ($merged['baseFileExtraction'] / 100) * 20 +
+                    ($merged['compareFilesProgress'] / 100) * 10 +
+                    ($merged['packageGenProgress'] / 100) * 20 +
+                    ($merged['compressionProgress'] / 100) * 20
                 );
             }
 
@@ -101,12 +101,20 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 $lastDbWrite = $nowMs;
                 $job->update([
                     'progress' => $merged,
-                    'message'  => $merged['packagingMessage'] ?? '',
+                    'message' => $merged['packagingMessage'] ?? '',
                 ]);
             }
         };
 
         // ── Run the service ───────────────────────────────────────────────────
+
+        // For GitLab jobs, fetch the owner's OAuth token so the service can authenticate.
+        $vcsProvider = $job->vcs_provider ?? 'github';
+        $gitlabToken = '';
+        if ($vcsProvider === 'gitlab') {
+            $owner = User::find($job->user_id);
+            $gitlabToken = $owner?->gitlab_token ?? '';
+        }
 
         try {
             $result = $service->generate(
@@ -116,7 +124,9 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 $job->head_version,
                 $job->repo,
                 $job->package_name,
-                $progressCallback
+                $progressCallback,
+                $vcsProvider,
+                $gitlabToken
             );
 
             // Guard: job may have been cancelled while the final lines of
@@ -124,6 +134,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
             $job->refresh();
             if ($job->status === 'cancelled') {
                 Log::info("GenerateDeploymentPackageJob: job #{$job->id} completed but status is 'cancelled' — discarding result.");
+
                 return;
             }
 
@@ -132,13 +143,13 @@ class GenerateDeploymentPackageJob implements ShouldQueue
             // Also write the final full-100 snapshot to cache
             Cache::put($job->progressCacheKey(), [
                 'fileDownloadProgress' => 100,
-                'headFileExtraction'   => 100,
-                'baseFileExtraction'   => 100,
+                'headFileExtraction' => 100,
+                'baseFileExtraction' => 100,
                 'compareFilesProgress' => 100,
-                'packageGenProgress'   => 100,
-                'compressionProgress'  => 100,
-                'packagingProgress'    => 100,
-                'packagingMessage'     => 'Done.',
+                'packageGenProgress' => 100,
+                'compressionProgress' => 100,
+                'packagingProgress' => 100,
+                'packagingMessage' => 'Done.',
             ], 600);
 
         } catch (JobCancelledException $e) {
@@ -146,7 +157,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
             Log::info("GenerateDeploymentPackageJob: job #{$job->id} was cancelled mid-run and stopped cleanly.");
 
         } catch (\Throwable $e) {
-            Log::error("GenerateDeploymentPackageJob #{$this->deploymentJobId} failed: " . $e->getMessage(), [
+            Log::error("GenerateDeploymentPackageJob #{$this->deploymentJobId} failed: ".$e->getMessage(), [
                 'exception' => $e,
             ]);
             $job->markFailed($e->getMessage());
@@ -162,8 +173,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
         $job = DeploymentJob::find($this->deploymentJobId);
         // Don't overwrite a deliberate cancellation
         if ($job && $job->status === 'running') {
-            $job->markFailed('Job was killed by the queue worker: ' . $exception->getMessage());
+            $job->markFailed('Job was killed by the queue worker: '.$exception->getMessage());
         }
     }
 }
-

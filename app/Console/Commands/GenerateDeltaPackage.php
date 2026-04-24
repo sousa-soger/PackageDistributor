@@ -34,26 +34,26 @@ class GenerateDeltaPackage extends Command
     public function handle(DeploymentPackageService $service): int
     {
         $environment = strtoupper(trim($this->argument('environment')));
-        $project     = trim($this->argument('project'));
-        $base        = trim($this->argument('base'));
-        $head        = trim($this->argument('head'));
-        $repo        = $this->option('repo') ?? '';
+        $project = trim($this->argument('project'));
+        $base = trim($this->argument('base'));
+        $head = trim($this->argument('head'));
+        $repo = $this->option('repo') ?? '';
 
-        $timestamp   = now()->format('Ymd-Hi');
-        $folderName  = $this->option('name') ?: "{$environment}-{$project}-{$this->safe($base)}-to-{$this->safe($head)}-{$timestamp}";
+        $timestamp = now()->format('Ymd-Hi');
+        $folderName = $this->option('name') ?: "{$environment}-{$project}-{$this->safe($base)}-to-{$this->safe($head)}-{$timestamp}";
 
         // Progress callback — writes to cache keyed by folder name (V1/V2 compat)
         $progressCallback = function (array $data, string $message) use ($folderName) {
             $cacheKey = "packaging_progress_{$folderName}";
-            $current  = Cache::get($cacheKey, [
+            $current = Cache::get($cacheKey, [
                 'fileDownloadProgress' => 0,
-                'headFileExtraction'   => 0,
-                'baseFileExtraction'   => 0,
+                'headFileExtraction' => 0,
+                'baseFileExtraction' => 0,
                 'compareFilesProgress' => 0,
-                'packageGenProgress'   => 0,
-                'compressionProgress'  => 0,
-                'packagingProgress'    => 0,
-                'packagingMessage'     => 'Initializing...',
+                'packageGenProgress' => 0,
+                'compressionProgress' => 0,
+                'packagingProgress' => 0,
+                'packagingMessage' => 'Initializing...',
             ]);
 
             $merged = array_merge($current, $data);
@@ -62,14 +62,14 @@ class GenerateDeltaPackage extends Command
             }
 
             // Derive overall packagingProgress from weighted stage values
-            if (!isset($data['packagingProgress'])) {
+            if (! isset($data['packagingProgress'])) {
                 $merged['packagingProgress'] = (int) round(
-                    ($merged['fileDownloadProgress']   / 100) * 10 +
-                    ($merged['headFileExtraction']     / 100) * 20 +
-                    ($merged['baseFileExtraction']     / 100) * 20 +
-                    ($merged['compareFilesProgress']   / 100) * 10 +
-                    ($merged['packageGenProgress']     / 100) * 20 +
-                    ($merged['compressionProgress']    / 100) * 20
+                    ($merged['fileDownloadProgress'] / 100) * 10 +
+                    ($merged['headFileExtraction'] / 100) * 20 +
+                    ($merged['baseFileExtraction'] / 100) * 20 +
+                    ($merged['compareFilesProgress'] / 100) * 10 +
+                    ($merged['packageGenProgress'] / 100) * 20 +
+                    ($merged['compressionProgress'] / 100) * 20
                 );
             }
 
@@ -92,8 +92,9 @@ class GenerateDeltaPackage extends Command
 
             return self::SUCCESS;
         } catch (\Throwable $e) {
-            $progressCallback(['packagingMessage' => 'Error: ' . $e->getMessage()], 'Error: ' . $e->getMessage());
+            $progressCallback(['packagingMessage' => 'Error: '.$e->getMessage()], 'Error: '.$e->getMessage());
             $this->error($e->getMessage());
+
             return self::FAILURE;
         }
     }

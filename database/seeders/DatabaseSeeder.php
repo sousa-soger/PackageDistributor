@@ -89,7 +89,6 @@ class DatabaseSeeder extends Seeder
 
         DB::table('versions')->insert($rows);
 
-
         // User::factory(10)->create();
 
         User::factory()->create([

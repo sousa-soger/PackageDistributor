@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 
 class CleanupTempFiles extends Command
 {
@@ -27,25 +28,26 @@ class CleanupTempFiles extends Command
     {
         $tempPath = storage_path('app/temp');
 
-        if (!\Illuminate\Support\Facades\File::exists($tempPath)) {
+        if (! File::exists($tempPath)) {
             $this->info('Temp directory does not exist. Nothing to clean.');
+
             return;
         }
 
-        $directories = \Illuminate\Support\Facades\File::directories($tempPath);
+        $directories = File::directories($tempPath);
         $count = 0;
 
         foreach ($directories as $directory) {
-            if (\Illuminate\Support\Facades\File::lastModified($directory) < now()->subHours(24)->timestamp) {
-                \Illuminate\Support\Facades\File::deleteDirectory($directory);
+            if (File::lastModified($directory) < now()->subHours(24)->timestamp) {
+                File::deleteDirectory($directory);
                 $count++;
             }
         }
 
-        $files = \Illuminate\Support\Facades\File::files($tempPath);
+        $files = File::files($tempPath);
         foreach ($files as $file) {
-            if (\Illuminate\Support\Facades\File::lastModified($file) < now()->subHours(24)->timestamp) {
-                \Illuminate\Support\Facades\File::delete($file);
+            if (File::lastModified($file) < now()->subHours(24)->timestamp) {
+                File::delete($file);
                 $count++;
             }
         }

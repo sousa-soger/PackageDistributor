@@ -270,4 +270,46 @@ class GitLabProjectController extends Controller
 
         return response()->json(['message' => 'Member removed successfully.']);
     }
+
+    /**
+     * Get branches and tags for a GitLab project.
+     * Used by the packaging wizard when vcs_provider = 'gitlab'.
+     *
+     * GET /gitlab/projects/{projectId}/versions
+     */
+    public function getProjectVersions(Request $request, int $projectId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->gitlab_token) {
+            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        }
+
+        $base = $this->baseUrl();
+
+        $branchesResponse = Http::withToken($user->gitlab_token)
+            ->get("{$base}/api/v4/projects/{$projectId}/repository/branches", [
+                'per_page' => 100,
+            ]);
+
+        $tagsResponse = Http::withToken($user->gitlab_token)
+            ->get("{$base}/api/v4/projects/{$projectId}/repository/tags", [
+                'per_page' => 100,
+            ]);
+
+        if ($branchesResponse->failed() || $tagsResponse->failed()) {
+            return response()->json([
+                'message' => 'Failed to fetch project versions.',
+            ], 500);
+        }
+
+        $branches = collect($branchesResponse->json())->map(fn ($b) => ['name' => $b['name']]);
+        $tags = collect($tagsResponse->json())->map(fn ($t) => ['name' => $t['name']]);
+
+        return response()->json([
+            'branches' => $branches->values(),
+            'tags' => $tags->values(),
+            'releases' => [], // GitLab tags serve as releases
+        ]);
+    }
 }

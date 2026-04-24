@@ -31,9 +31,9 @@ class DeploymentJob extends Model
     ];
 
     protected $casts = [
-        'progress'    => 'array',
+        'progress' => 'array',
         'result_json' => 'array',
-        'started_at'  => 'datetime',
+        'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
 
@@ -52,7 +52,7 @@ class DeploymentJob extends Model
     public function markRunning(): void
     {
         $this->update([
-            'status'     => 'running',
+            'status' => 'running',
             'started_at' => now(),
         ]);
     }
@@ -60,14 +60,14 @@ class DeploymentJob extends Model
     public function markCompleted(array $result): void
     {
         $this->update([
-            'status'       => 'completed',
-            'result_json'  => $result,
-            'finished_at'  => now(),
-            'message'      => 'Done.',
-            'progress'     => $this->fullProgressArray(100),
-            'zip_size'     => $result['zip_size'] ?? null,
-            'zip_sha256'   => $result['zip_sha256'] ?? null,
-            'targz_size'   => $result['targz_size'] ?? null,
+            'status' => 'completed',
+            'result_json' => $result,
+            'finished_at' => now(),
+            'message' => 'Done.',
+            'progress' => $this->fullProgressArray(100),
+            'zip_size' => $result['zip_size'] ?? null,
+            'zip_sha256' => $result['zip_sha256'] ?? null,
+            'targz_size' => $result['targz_size'] ?? null,
             'targz_sha256' => $result['targz_sha256'] ?? null,
         ]);
 
@@ -77,17 +77,17 @@ class DeploymentJob extends Model
     public function markFailed(string $errorMessage): void
     {
         $this->update([
-            'status'        => 'failed',
+            'status' => 'failed',
             'error_message' => $errorMessage,
-            'finished_at'   => now(),
-            'message'       => 'Error: ' . $errorMessage,
+            'finished_at' => now(),
+            'message' => 'Error: '.$errorMessage,
         ]);
     }
 
     public function markCancelled(): void
     {
         $this->update([
-            'status'      => 'cancelled',
+            'status' => 'cancelled',
             'finished_at' => now(),
         ]);
     }
@@ -96,16 +96,16 @@ class DeploymentJob extends Model
      * Store a progress snapshot in cache (fast) and optionally persist to DB
      * (throttled so we don't write on every percentage tick).
      *
-     * @param array  $progressData  Stage fields to merge (e.g. ['fileDownloadProgress' => 42])
-     * @param string $message       Human-readable status message
-     * @param bool   $persistToDB   Force a DB write this tick (default: false for performance)
+     * @param  array  $progressData  Stage fields to merge (e.g. ['fileDownloadProgress' => 42])
+     * @param  string  $message  Human-readable status message
+     * @param  bool  $persistToDB  Force a DB write this tick (default: false for performance)
      */
     public function updateProgress(array $progressData, string $message = '', bool $persistToDB = false): void
     {
         $cacheKey = $this->progressCacheKey();
 
         $current = Cache::get($cacheKey, $this->defaultProgressArray());
-        $merged  = array_merge($current, $progressData);
+        $merged = array_merge($current, $progressData);
 
         if ($message !== '') {
             $merged['packagingMessage'] = $message;
@@ -116,7 +116,7 @@ class DeploymentJob extends Model
         if ($persistToDB) {
             $this->update([
                 'progress' => $merged,
-                'message'  => $merged['packagingMessage'] ?? '',
+                'message' => $merged['packagingMessage'] ?? '',
             ]);
         }
     }
@@ -127,13 +127,13 @@ class DeploymentJob extends Model
     {
         return [
             'fileDownloadProgress' => 0,
-            'headFileExtraction'   => 0,
-            'baseFileExtraction'   => 0,
+            'headFileExtraction' => 0,
+            'baseFileExtraction' => 0,
             'compareFilesProgress' => 0,
-            'packageGenProgress'   => 0,
-            'compressionProgress'  => 0,
-            'packagingProgress'    => 0,
-            'packagingMessage'     => 'Initializing...',
+            'packageGenProgress' => 0,
+            'compressionProgress' => 0,
+            'packagingProgress' => 0,
+            'packagingMessage' => 'Initializing...',
         ];
     }
 
@@ -141,13 +141,13 @@ class DeploymentJob extends Model
     {
         return [
             'fileDownloadProgress' => $value,
-            'headFileExtraction'   => $value,
-            'baseFileExtraction'   => $value,
+            'headFileExtraction' => $value,
+            'baseFileExtraction' => $value,
             'compareFilesProgress' => $value,
-            'packageGenProgress'   => $value,
-            'compressionProgress'  => $value,
-            'packagingProgress'    => $value,
-            'packagingMessage'     => 'Done.',
+            'packageGenProgress' => $value,
+            'compressionProgress' => $value,
+            'packagingProgress' => $value,
+            'packagingMessage' => 'Done.',
         ];
     }
 }

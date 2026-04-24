@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-{//** Should be taken from GitLab Repo listing */
+{
+    // ** Should be taken from GitLab Repo listing */
     /**
      * Run the migrations.
      */

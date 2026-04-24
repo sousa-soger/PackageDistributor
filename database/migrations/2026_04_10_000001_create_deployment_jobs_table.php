@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable()->index();
             $table->enum('status', ['queued', 'running', 'completed', 'failed', 'cancelled'])
-                  ->default('queued');
+                ->default('queued');
             $table->unsignedInteger('total_jobs')->default(0);
             $table->unsignedInteger('completed_jobs')->default(0);
             $table->unsignedInteger('failed_jobs')->default(0);
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->string('head_version', 100);
             $table->string('package_name');
             $table->enum('status', ['queued', 'running', 'completed', 'failed', 'cancelled'])
-                  ->default('queued')->index();
+                ->default('queued')->index();
             $table->unsignedInteger('queue_order')->nullable();
             $table->json('progress')->nullable();          // stage fields snapshot
             $table->string('message', 500)->nullable();    // last human-readable message

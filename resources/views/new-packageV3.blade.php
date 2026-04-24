@@ -4,13 +4,15 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-8 pt-4 pb-12" x-data="newPackageWizard({
-                repositories: @js($repositories),
+                        repositories: @js($repositories),
                 queueUrl: '{{ route('deployments.queue-job') }}',
                 jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
                 downloadUrl: '{{ route('download.archive') }}',
                 csrfToken: '{{ csrf_token() }}',
                 completedPackages: @js($packages),
-                dbQueuedPackages: @js($queuedPackages)
+                dbQueuedPackages: @js($queuedPackages),
+                vcsProvider: @js($vcsProvider),
+                gitlabConnected: @js($gitlabConnected)
             })">
         <div>
             <h1 class="text-3xl font-bold text-slate-900">New Package</h1>
@@ -43,8 +45,12 @@
 
 @push('scripts')
     <script>
-        function newPackageWizard({ repositories, queueUrl, jobProgressBaseUrl, downloadUrl, csrfToken, completedPackages, dbQueuedPackages }) {
+        function newPackageWizard({ repositories, queueUrl, jobProgressBaseUrl, downloadUrl, csrfToken, completedPackages, dbQueuedPackages, vcsProvider, gitlabConnected }) {
             return {
+                // ── Provider ─────────────────────────────────────────────────
+                vcsProvider,
+                gitlabConnected,
+
                 // ── Repository & version state ───────────────────────────────
                 repositories,
                 selectedRepository: '',
@@ -54,6 +60,37 @@
                 repoReleases: [],
                 isLoadingVersions: false,
                 rateLimit: null,
+
+                // ── GitLab project browser state ──────────────────────────────
+                gitlabProjects: [],        
+                gitlabExploreProjects: [], 
+                gitlabSearch: '',
+                activeTab: 'projects',   // 'projects' | 'personal' | 'shared' | 'all'
+                toggle: false,
+                gitlabLoading: false,
+                gitlabLoadingExplore: false,
+
+                get allVisibleProjects() {
+                    if (this.activeTab === 'all' && this.toggle) {
+                        return [...this.gitlabProjects, ...this.gitlabExploreProjects];
+                    }
+                    return this.gitlabProjects;
+                },
+
+                get filteredGitlabProjects() {
+                    return this.allVisibleProjects.filter(p => {
+                        const q = this.gitlabSearch.toLowerCase();
+                        const matchesSearch = q === '' ||
+                            p.name.toLowerCase().includes(q) ||
+                            (p.path && p.path.toLowerCase().includes(q));
+
+                        const matchesTab = this.activeTab === 'all' ||
+                            this.activeTab === 'projects' ||
+                            p.category === this.activeTab;
+
+                        return matchesSearch && matchesTab;
+                    });
+                },
 
                 // ── Multi-row packaging table ────────────────────────────────
                 packageRows: [
@@ -189,7 +226,25 @@
                 // ── Lifecycle ────────────────────────────────────────────────
 
                 init() {
-                    this.fetchRateLimit();
+                    if (this.vcsProvider === 'github') {
+                        this.fetchRateLimit();
+                    } else if (this.vcsProvider === 'gitlab' && this.gitlabConnected) {
+                        const saved = localStorage.getItem('gitlab_show_explore');
+                        this.toggle = saved === 'true';
+
+                        this.$watch('toggle', val => {
+                            localStorage.setItem('gitlab_show_explore', val);
+                            if (val && this.gitlabExploreProjects.length === 0 && !this.gitlabLoadingExplore) {
+                                this.loadGitlabExploreProjects();
+                            }
+                        });
+
+                        this.loadGitlabProjects().then(() => {
+                            if (this.toggle && this.gitlabExploreProjects.length === 0) {
+                                this.loadGitlabExploreProjects();
+                            }
+                        });
+                    }
                     this.$watch('selectedRepository', async () => {
                         if (this.selectedRepository) {
                             this.isLoadingVersions = true;
@@ -200,11 +255,11 @@
                         ];
                         await this.fetchRepoData();
                         await this.fetchRepoVersions();
-                        await this.fetchRateLimit();
+                        if (this.vcsProvider === 'github') await this.fetchRateLimit();
                     });
                     setInterval(() => this.updateRowNames(), 60000);
 
-                    // ── Auto-resume polling on refresh ──────────────────────────
+                    // ── Auto-resume polling on refresh ──────────────────────────────────
                     const activeJob = this.unifiedQueue.find(q => q.status === 'running' || q.status === 'pending' || q.status === 'queued');
                     if (activeJob) {
                         this.isRunning = true;
@@ -647,9 +702,54 @@
                     }
                 },
 
+                // ── GitLab project browser methods ────────────────────────────
+
+                async loadGitlabProjects() {
+                    if (!this.gitlabConnected) return;
+                    this.gitlabLoading = true;
+                    try {
+                        const res = await fetch('{{ route('gitlab.projects') }}', { headers: { Accept: 'application/json' } });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Failed to load GitLab projects.');
+                        this.gitlabProjects = data;
+                    } catch (e) {
+                         this.gitlabProjects = [];
+                    } finally {
+                        this.gitlabLoading = false;
+                    }
+                },
+
+                async loadGitlabExploreProjects() {
+                    if (!this.gitlabConnected) return;
+                    this.gitlabLoadingExplore = true;
+                    try {
+                        const res = await fetch('{{ route('gitlab.explore') }}', { headers: { Accept: 'application/json' } });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Failed to load explore projects.');
+                        const memberIds = new Set(this.gitlabProjects.map(p => p.id));
+                        this.gitlabExploreProjects = data.filter(p => !memberIds.has(p.id));
+                    } catch (e) {
+                        this.gitlabExploreProjects = [];
+                    } finally {
+                        this.gitlabLoadingExplore = false;
+                    }
+                },
+
+                selectGitlabProject(project) {
+                    this.selectedRepository = project.id;
+                    this.selectedRepositoryLabel_override = project.name;
+                    this.isLoadingVersions = true;
+                    this.floatDd.open = false;
+                    this.packageRows = [
+                        { id: Date.now(), base: '', head: '', environment: 'PROD', customName: false, name: '' }
+                    ];
+                    this.fetchRepoVersions();
+                },
+
                 // ── GitHub API helpers ────────────────────────────────────────
 
                 async fetchRateLimit() {
+                    if (this.vcsProvider !== 'github') return;
                     try {
                         this.rateLimit = await (await fetch('/github/rate-limit')).json();
                     } catch (e) { }
@@ -657,6 +757,7 @@
 
                 async fetchRepoData() {
                     if (!this.selectedRepository) { this.repoData = null; return; }
+                    if (this.vcsProvider !== 'github') { this.repoData = null; return; }
                     try {
                         const res = await fetch(`/github/repo-info?repo=${encodeURIComponent(this.selectedRepository)}`);
                         this.repoData = res.ok ? await res.json() : null;
@@ -670,16 +771,39 @@
                     }
                     this.isLoadingVersions = true;
                     try {
-                        const res = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
-                        const data = res.ok ? await res.json() : {};
+                        let data = {};
+                        if (this.vcsProvider === 'gitlab') {
+                            const res = await fetch(`/gitlab/projects/${encodeURIComponent(this.selectedRepository)}/versions`);
+                            data = res.ok ? await res.json() : {};
+                        } else {
+                        }
                         this.repoBranches = data.branches || [];
-                        this.repoTags = data.tags || [];
+                        this.repoTags     = data.tags     || [];
                         this.repoReleases = data.releases || [];
                     } catch {
                         this.repoBranches = this.repoTags = this.repoReleases = [];
                     } finally {
                         this.isLoadingVersions = false;
                     }
+                },
+
+                // ── Date formatting ───────────────────────────────────────────
+                timeAgo(dateString) {
+                    if (!dateString) return '-';
+                    const date = new Date(dateString);
+                    const now = new Date();
+                    const seconds = Math.floor((now - date) / 1000);
+                    let interval = seconds / 31536000;
+                    if (interval > 1) return Math.floor(interval) + " years ago";
+                    interval = seconds / 2592000;
+                    if (interval > 1) return Math.floor(interval) + " months ago";
+                    interval = seconds / 86400;
+                    if (interval > 1) return Math.floor(interval) + " days ago";
+                    interval = seconds / 3600;
+                    if (interval > 1) return Math.floor(interval) + " px hours ago";
+                    interval = seconds / 60;
+                    if (interval > 1) return Math.floor(interval) + " minutes ago";
+                    return "just now";
                 },
             };
         }

@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Version extends Model
-{ //** Should be taken from GitLab Repo listing */
+{
+    // ** Should be taken from GitLab Repo listing */
     protected $fillable = [
         'version_name',
         'commit_type',

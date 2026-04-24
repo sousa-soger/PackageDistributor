@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class GitHubService
 {
@@ -101,35 +102,35 @@ class GitHubService
         ?callable $progressCallback = null
     ): bool {
         $parentDir = dirname($destinationZipPath);
-        if (!is_dir($parentDir)) {
+        if (! is_dir($parentDir)) {
             mkdir($parentDir, 0755, true);
         }
 
-        $token   = config('services.github.token');
-        $url     = "{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}";
+        $token = config('services.github.token');
+        $url = "{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}";
 
         $fh = fopen($destinationZipPath, 'wb');
-        if (!$fh) {
+        if (! $fh) {
             return false;
         }
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 10,
-            CURLOPT_TIMEOUT        => 600,
-            CURLOPT_FILE           => $fh,
-            CURLOPT_HTTPHEADER     => array_filter([
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 600,
+            CURLOPT_FILE => $fh,
+            CURLOPT_HTTPHEADER => array_filter([
                 'Accept: application/vnd.github+json',
                 'X-GitHub-Api-Version: 2022-11-28',
                 'User-Agent: Laravel-App',
                 $token ? "Authorization: Bearer {$token}" : null,
             ]),
-            CURLOPT_NOPROGRESS     => $progressCallback === null,
+            CURLOPT_NOPROGRESS => $progressCallback === null,
         ]);
 
-        $lastNotify   = 0;
-        $notifyEvery  = 512 * 1024; // 512 KB
+        $lastNotify = 0;
+        $notifyEvery = 512 * 1024; // 512 KB
 
         if ($progressCallback !== null) {
             curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (
@@ -140,7 +141,7 @@ class GitHubService
                 $ulNow
             ) use ($progressCallback, &$lastNotify, $notifyEvery) {
                 $dlTotal = (int) $dlTotal;
-                $dlNow   = (int) $dlNow;
+                $dlNow = (int) $dlNow;
 
                 if ($dlTotal <= 0 || $dlNow <= 0) {
                     return;
@@ -155,22 +156,23 @@ class GitHubService
             });
         }
 
-        $ok       = curl_exec($ch);
+        $ok = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         fclose($fh);
 
-        if (!$ok || $httpCode < 200 || $httpCode >= 300) {
+        if (! $ok || $httpCode < 200 || $httpCode >= 300) {
             $errorBody = '';
             if (file_exists($destinationZipPath)) {
                 $errorBody = file_get_contents($destinationZipPath);
                 unlink($destinationZipPath);
             }
-            \Illuminate\Support\Facades\Log::error("GitHub download failed for {$url}", [
+            Log::error("GitHub download failed for {$url}", [
                 'http_code' => $httpCode,
-                'curl_ok'   => $ok,
-                'response'  => substr($errorBody, 0, 1000), // Log first 1KB of error
+                'curl_ok' => $ok,
+                'response' => substr($errorBody, 0, 1000), // Log first 1KB of error
             ]);
+
             return false;
         }
 
