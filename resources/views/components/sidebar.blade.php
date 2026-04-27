@@ -79,6 +79,26 @@
                     </span>
                 </x-ui.nav-link>
 
+                <!-- New Package nav-link -->
+                <x-ui.nav-link :href="route('create-package')" :active="request()->routeIs('create-package')">
+                    <div class="icon-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package-plus h-4 w-4"><path d="M16 16h6"></path><path d="M19 13v6"></path><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"></path><path d="m7.5 4.27 9 5.15"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" x2="12" y1="22" y2="12"></line></svg>
+                    </div>
+                    <span x-show="!collapsed" x-transition.opacity class="nav-text">
+                        New Package
+                    </span>
+                </x-ui.nav-link>
+
+                <!-- Packages nav-link -->
+                <x-ui.nav-link :href="route('packages.index')" :active="request()->routeIs('packages.index')">
+                    <div class="icon-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package h-4 w-4"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>
+                    </div>
+                    <span x-show="!collapsed" x-transition.opacity class="nav-text">
+                        Packages
+                    </span>
+                </x-ui.nav-link>
+
                 <!-- Settings nav-link -->
                 <x-ui.nav-link :href="route('settings')" :active="request()->routeIs('settings')">
                     <div class="icon-container">

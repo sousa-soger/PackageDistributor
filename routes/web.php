@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
         ->name('gitlab.project.versions');
 
     Route::get('/new-packageV3', [PackageController::class, 'indexV3'])->name('new-packageV3');
+    Route::get('/create-package', [PackageController::class, 'createPackage'])->name('create-package');
+    Route::get('/packages', [PackageController::class, 'packages'])->name('packages.index');
     Route::get('/packages/done', [PackageController::class, 'donePackages'])
         ->name('packages.done');
     Route::get('/packages/queue', [PackageController::class, 'queuedPackages'])
