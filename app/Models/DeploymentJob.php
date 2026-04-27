@@ -11,6 +11,7 @@ class DeploymentJob extends Model
         'user_id',
         'batch_id',
         'repo',
+        'vcs_provider',
         'project_name',
         'environment',
         'base_version',

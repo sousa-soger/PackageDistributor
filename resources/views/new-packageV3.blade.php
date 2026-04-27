@@ -62,13 +62,14 @@
                 rateLimit: null,
 
                 // ── GitLab project browser state ──────────────────────────────
-                gitlabProjects: [],        
-                gitlabExploreProjects: [], 
+                gitlabProjects: [],
+                gitlabExploreProjects: [],
                 gitlabSearch: '',
                 activeTab: 'projects',   // 'projects' | 'personal' | 'shared' | 'all'
                 toggle: false,
                 gitlabLoading: false,
                 gitlabLoadingExplore: false,
+                gitlabSelectedPath: '',  // string path used as 'repo' in queue payload
 
                 get allVisibleProjects() {
                     if (this.activeTab === 'all' && this.toggle) {
@@ -190,6 +191,9 @@
                 },
 
                 get selectedRepositoryLabel() {
+                    if (this.selectedRepositoryLabel_override) {
+                        return this.selectedRepositoryLabel_override;
+                    }
                     const repo = this.repositories.find(r => r.id === this.selectedRepository);
                     return repo ? repo.label : this.selectedRepository;
                 },
@@ -444,8 +448,9 @@
                                     project_name: this.selectedRepositoryLabel,
                                     base_version: baseRef,
                                     head_version: headRef,
-                                    repo: this.selectedRepository,
+                                    repo: this.vcsProvider === 'gitlab' ? this.gitlabSelectedPath : this.selectedRepository,
                                     package_name: row.name,
+                                    vcs_provider: this.vcsProvider,
                                 }),
                             });
 
@@ -736,7 +741,8 @@
                 },
 
                 selectGitlabProject(project) {
-                    this.selectedRepository = project.id;
+                    this.selectedRepository = project.id;  // numeric ID — used for API version fetching
+                    this.gitlabSelectedPath = project.path || String(project.id); // string slug — used as repo in payload
                     this.selectedRepositoryLabel_override = project.name;
                     this.isLoadingVersions = true;
                     this.floatDd.open = false;
@@ -776,6 +782,8 @@
                             const res = await fetch(`/gitlab/projects/${encodeURIComponent(this.selectedRepository)}/versions`);
                             data = res.ok ? await res.json() : {};
                         } else {
+                            const res = await fetch(`/github/repo-versions?repo=${encodeURIComponent(this.selectedRepository)}`);
+                            data = res.ok ? await res.json() : {};
                         }
                         this.repoBranches = data.branches || [];
                         this.repoTags     = data.tags     || [];

@@ -73,11 +73,13 @@ class DeploymentPackageService
             if ($vcsProvider === 'gitlab') {
                 // ── GitLab archive download ───────────────────────────────
                 $base = rtrim(config('services.gitlab.base_url'), '/');
+                // GitLab requires the project ID or URL-encoded namespace path in URL segments
+                $encodedRepo = rawurlencode($repo);
 
                 $progressCallback(['packagingMessage' => 'Downloading base version from GitLab...'], 'Downloading base version...');
                 $baseResponse = Http::withToken($gitlabToken)
                     ->withOptions(['sink' => $baseZipPath])
-                    ->get("{$base}/api/v4/projects/{$repo}/repository/archive.zip", ['sha' => $baseVersion]);
+                    ->get("{$base}/api/v4/projects/{$encodedRepo}/repository/archive.zip", ['sha' => $baseVersion]);
 
                 if ($baseResponse->failed()) {
                     throw new \RuntimeException("GitLab: failed to download base version {$baseVersion}. Status: {$baseResponse->status()}.");
@@ -86,7 +88,7 @@ class DeploymentPackageService
 
                 $headResponse = Http::withToken($gitlabToken)
                     ->withOptions(['sink' => $headZipPath])
-                    ->get("{$base}/api/v4/projects/{$repo}/repository/archive.zip", ['sha' => $headVersion]);
+                    ->get("{$base}/api/v4/projects/{$encodedRepo}/repository/archive.zip", ['sha' => $headVersion]);
 
                 if ($headResponse->failed()) {
                     throw new \RuntimeException("GitLab: failed to download head version {$headVersion}. Status: {$headResponse->status()}.");
