@@ -4,15 +4,17 @@
     {{-- Logo / Brand --}}
     <div class="px-5 py-5" style="border-bottom: 1px solid hsl(var(--sidebar-border));">
         <div class="flex items-center gap-2.5">
-            <div class="h-8 w-8 rounded-xl brand-gradient-bg flex items-center justify-center shrink-0 shadow-sm">
-                <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+            <div class="relative flex items-center justify-center rounded-xl brand-gradient-bg shadow-soft h-9 w-9">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="currentColor" class="text-[hsl(var(--on-brand))]" fill="none" stroke="current-color">
+                    <title>construction</title>
+                    <path d="M27.69,34.62l-4.85-7.84.37-.36,1.6,1.37a1.5,1.5,0,0,0,.53,1.93,1.54,1.54,0,0,0,.81.23,1.49,1.49,0,0,0,.87-.27L37,38.2a.62.62,0,0,0,.44.18.64.64,0,0,0,.47-.21.65.65,0,0,0,0-.91L27.8,28.66l5-7.88a1.49,1.49,0,0,0,0-1.62,2.26,2.26,0,0,0-.25-.29L26.74,12a1.5,1.5,0,0,0-1.24-.66h0l-7.67.07a1.22,1.22,0,0,0-1.07.69l-2.37,5.09-.63-.54a.63.63,0,0,0-.9,0,.64.64,0,0,0,0,.91l.93.8-.24.53a1.52,1.52,0,0,0,.59,2,1.42,1.42,0,0,0,.74.2,1.51,1.51,0,0,0,1.27-.7l.78.67L13.4,24.87a2.37,2.37,0,0,0-.76,1.66l-.26,8.58L10.05,45.19A2.35,2.35,0,0,0,11.81,48a2.48,2.48,0,0,0,.54.06,2.35,2.35,0,0,0,2.29-1.83l2.44-10.53.23-7.63,1.4,1,4,6.49-4.38,9.15a2.35,2.35,0,1,0,4.25,2L27.76,36A1.37,1.37,0,0,0,27.69,34.62Z"/>
+                    <circle cx="33.46" cy="12.22" r="4.3"/>
+                    <path d="M61.39,45.33c-1.44-2.1-8.34-15.16-10.12-17s-3.36-2.08-4.44-1.64a6.94,6.94,0,0,0-3,2.24c-1.27,1.73-3,6.91-4.44,9.23a11.08,11.08,0,0,0-.8,1l-.08.06c-1.06.64-4,1.19-5.19,2.4a15.63,15.63,0,0,0-1.92,2.6l-.18.25a8.22,8.22,0,0,1-3.93,3.27l0,.32H60.43C60.66,48.08,63.15,47.9,61.39,45.33Z"/>
                 </svg>
             </div>
-            <div>
-                <p class="text-sm font-bold leading-none" style="color: hsl(var(--foreground));">Cybix Deployer</p>
-                <p class="text-[11px] mt-0.5" style="color: hsl(var(--muted-foreground));">Package Distribution</p>
+            <div class="flex flex-col leading-none">
+                <span class="font-semibold tracking-tight text-lg">Cybix <span class="brand-gradient-text">Deployer</span></span>
+                <span class="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-0.5">CI / CD Platform</span>
             </div>
         </div>
     </div>
@@ -81,9 +83,18 @@
                         @if(request()->routeIs('projects'))
                             <span class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full brand-gradient-bg"></span>
                         @endif
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch h-4 w-4">
+                            <line x1="6" x2="6" y1="3" y2="15"></line>
+                            <circle cx="18" cy="6" r="3"></circle>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <path d="M18 9a9 9 0 0 1-9 9"></path>
+                        </svg>
+                        {{-- 
                         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                        </svg>                        
+                        --}}
+
                         <span>Projects</span>
                     </a>
                 </li>
@@ -100,9 +111,11 @@
                 <li>
                     <a href="#"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 sidebar-link opacity-50 cursor-not-allowed">
-                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch h-4 w-4">
+                            <line x1="6" x2="6" y1="3" y2="15"></line>
+                            <circle cx="18" cy="6" r="3"></circle>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                         <span>Repositories</span>
                         <span class="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded brand-soft-bg" style="color:hsl(var(--brand-iris))">Soon</span>
                     </a>

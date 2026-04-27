@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'New Package')
+@section('title', 'Create Package')
+@section('subtitle', 'Generate update and rollback packages in one place.')
 
 @section('content')
 <div
@@ -21,44 +22,33 @@
     })"
     x-init="init()"
 >
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-            <p class="text-sm font-medium text-slate-500">Cybix Deployer</p>
-            <h1 class="text-3xl font-bold tracking-tight text-slate-950">Create package</h1>
-            <p class="mt-1 text-sm text-slate-500">Generate update and rollback packages in one place.</p>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Source mode</p>
-            <p class="mt-1 text-sm font-semibold text-slate-800" x-text="vcsProvider.toUpperCase()"></p>
-        </div>
-    </div>
-
     <div x-show="phase === 'form'" x-cloak class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        
+
         <div class="space-y-5">
-            <section class="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
+            <section class="section-card">
                 <div class="mb-5 flex items-start gap-3">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7FB7C9]/15 text-sm font-bold text-[#3A7E92]">1</div>
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg brand-soft-bg text-sm font-semibold text-primary">1</div>
                     <div>
-                        <h2 class="text-base font-semibold tracking-tight text-slate-950">Project & Repository</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Choose where this package comes from.</p>
+                        <h2 class="text-base font-semibold tracking-tight">Project & Repository</h2>
+                        <p class="mt-0.5 text-xs text-muted-foreground">Choose where this package comes from.</p>
                     </div>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="text-sm font-semibold text-slate-700">Project</label>
-                        <div class="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium leading-none">Project</label>
+                        <div class="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
                             Current Laravel version uses repository as the main selector.
                         </div>
                     </div>
 
-                    <div>
-                        <label class="text-sm font-semibold text-slate-700">Repository</label>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium leading-none">Repository</label>
 
                         <template x-if="vcsProvider === 'github'">
                             <select
-                                class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition focus:border-[#7FB7C9] focus:ring-4 focus:ring-[#7FB7C9]/15"
+                                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 x-model="selectedRepository"
                             >
                                 <option value="">Choose repository</option>
@@ -71,7 +61,7 @@
                         <template x-if="vcsProvider === 'gitlab'">
                             <div class="mt-2 space-y-2">
                                 <template x-if="!gitlabConnected">
-                                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                                         GitLab is not connected. Connect GitLab first from Projects.
                                     </div>
                                 </template>
@@ -80,33 +70,33 @@
                                     <div class="space-y-2">
                                         <input
                                             type="search"
-                                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#7FB7C9] focus:ring-4 focus:ring-[#7FB7C9]/15"
+                                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                             placeholder="Search GitLab projects..."
                                             x-model="gitlabSearch"
                                         >
 
-                                        <div class="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                        <div class="max-h-56 overflow-y-auto rounded-md border border-border bg-popover shadow-md mt-1">
                                             <template x-if="gitlabLoading">
-                                                <div class="px-4 py-3 text-sm text-slate-500">Loading projects...</div>
+                                                <div class="px-3 py-2 text-sm text-muted-foreground">Loading projects...</div>
                                             </template>
 
                                             <template x-for="project in filteredGitlabProjects" :key="project.id">
                                                 <button
                                                     type="button"
-                                                    class="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-slate-50"
-                                                    :class="selectedRepository == project.id ? 'bg-[#7FB7C9]/10' : ''"
+                                                    class="flex w-full items-center justify-between gap-3 border-b border-border/30 px-3 py-2 text-left text-sm transition last:border-b-0 hover:bg-secondary/40"
+                                                    :class="selectedRepository == project.id ? 'bg-secondary/60' : ''"
                                                     @click="selectGitlabProject(project)"
                                                 >
                                                     <span>
-                                                        <span class="block font-semibold text-slate-800" x-text="project.name"></span>
-                                                        <span class="block text-xs text-slate-500" x-text="project.path"></span>
+                                                        <span class="block font-semibold" x-text="project.name"></span>
+                                                        <span class="block text-[11px] text-muted-foreground mt-0.5" x-text="project.path"></span>
                                                     </span>
-                                                    <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600" x-text="project.visibility"></span>
+                                                    <span class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-foreground/80 lowercase" x-text="project.visibility"></span>
                                                 </button>
                                             </template>
 
                                             <template x-if="!gitlabLoading && filteredGitlabProjects.length === 0">
-                                                <div class="px-4 py-3 text-sm text-slate-500">No projects found.</div>
+                                                <div class="px-3 py-2 text-sm text-muted-foreground">No projects found.</div>
                                             </template>
                                         </div>
                                     </div>
@@ -116,26 +106,32 @@
                     </div>
                 </div>
 
-                <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500" x-show="selectedRepository">
-                    <span class="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 font-medium" x-text="selectedRepositoryLabel"></span>
-                    <span class="inline-flex items-center rounded-lg bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">Connected</span>
+                <div class="flex flex-wrap items-center gap-2 mt-4 text-xs text-muted-foreground" x-show="selectedRepository">
+                    <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+                        <span class="capitalize" x-text="vcsProvider"></span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-1" x-text="selectedRepositoryLabel"></span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 border border-success/30 text-success bg-success/10">
+                        <span class="h-1.5 w-1.5 rounded-full bg-current"></span>Connected
+                    </span>
                 </div>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
-                <div class="mb-5 flex items-start gap-3">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7FB7C9]/15 text-sm font-bold text-[#3A7E92]">2</div>
+            <section class="section-card">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg brand-soft-bg text-sm font-semibold text-primary">2</div>
                     <div>
-                        <h2 class="text-base font-semibold tracking-tight text-slate-950">Version Selection</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Pick a base and target. The real changes are generated by the backend job.</p>
+                        <h2 class="text-base font-semibold tracking-tight">Version Selection</h2>
+                        <p class="text-xs text-muted-foreground mt-0.5">Pick a base and target. We'll detect changes immediately.</p>
                     </div>
                 </div>
 
-                <div class="grid items-end gap-3 md:grid-cols-[1fr_auto_1fr]">
-                    <div>
-                        <label class="text-sm font-semibold text-slate-700">Base version</label>
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium leading-none">Base version</label>
                         <select
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition focus:border-[#7FB7C9] focus:ring-4 focus:ring-[#7FB7C9]/15 disabled:bg-slate-50 disabled:text-slate-400"
+                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             x-model="form.base"
                             :disabled="isLoadingVersions || allRepoVersions.length === 0"
                             @change="handleVersionChange()"
@@ -145,17 +141,19 @@
                                 <option :value="version.unique_key" x-text="version.typeLabel + ' · ' + version.name"></option>
                             </template>
                         </select>
-                        <p class="mt-1 text-[11px] text-slate-400">Usually the currently deployed version.</p>
+                        <p class="text-[11px] text-muted-foreground">Suggested: last deployed version</p>
                     </div>
 
-                    <div class="hidden items-center justify-center pb-3 md:flex">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#7FB7C9]/15 text-[#3A7E92]">→</div>
+                    <div class="hidden md:flex items-center justify-center pb-8">
+                        <div class="h-9 w-9 rounded-full brand-soft-bg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right h-4 w-4 text-primary"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="text-sm font-semibold text-slate-700">Target version</label>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium leading-none">Target version</label>
                         <select
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition focus:border-[#7FB7C9] focus:ring-4 focus:ring-[#7FB7C9]/15 disabled:bg-slate-50 disabled:text-slate-400"
+                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             x-model="form.head"
                             :disabled="isLoadingVersions || allRepoVersions.length === 0"
                             @change="handleVersionChange()"
@@ -165,62 +163,50 @@
                                 <option :value="version.unique_key" x-text="version.typeLabel + ' · ' + version.name"></option>
                             </template>
                         </select>
-                        <p class="mt-1 text-[11px] text-slate-400">Usually the latest target tag or branch.</p>
+                        <p class="text-[11px] text-muted-foreground">Suggested: latest tag</p>
                     </div>
                 </div>
 
                 <template x-if="isLoadingVersions">
-                    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    <div class="mt-4 rounded-md border border-border bg-secondary/30 px-3 py-2 text-sm text-muted-foreground">
                         Loading branches, tags, and releases...
                     </div>
                 </template>
 
                 <template x-if="identicalVersions">
-                    <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div class="mt-4 rounded-md border border-failed/30 bg-failed/10 px-3 py-2 text-sm text-failed">
                         Base and target cannot be identical. Choose two different versions.
                     </div>
                 </template>
 
                 <template x-if="duplicatePackage">
-                    <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <div class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
                         A package with this repository, environment, base, and target already exists.
                     </div>
                 </template>
 
-                <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <div class="flex items-center justify-between gap-3">
-                        <div>
-                            <p class="text-sm font-semibold text-slate-800">Detected changes</p>
-                            <p class="mt-1 text-xs text-slate-500">
-                                Your current backend calculates this during package generation. Add a compare-preendpoint later if you want true pre-generation counts.
-                            </p>
+                <div class="mt-5 animate-fade-in" x-show="form.base && form.head && !identicalVersions">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-sm font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles h-4 w-4 text-primary"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+                            Detected changes
                         </div>
-                        <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">Preview pending</span>
+                        <span class="text-xs text-muted-foreground">Calculating...</span>
                     </div>
-
-                    <div class="mt-4 grid grid-cols-3 gap-3">
-                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                            <p class="text-xs font-semibold text-emerald-700">Added</p>
-                            <p class="mt-1 text-2xl font-bold text-emerald-800">—</p>
-                        </div>
-                        <div class="rounded-2xl border border-blue-200 bg-blue-50 p-3">
-                            <p class="text-xs font-semibold text-blue-700">Modified</p>
-                            <p class="mt-1 text-2xl font-bold text-blue-800">—</p>
-                        </div>
-                        <div class="rounded-2xl border border-red-200 bg-red-50 p-3">
-                            <p class="text-xs font-semibold text-red-700">Deleted</p>
-                            <p class="mt-1 text-2xl font-bold text-red-800">—</p>
-                        </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="rounded-xl border p-3.5 border-success/25 bg-success/8"><div class="flex items-center gap-2 text-xs font-medium text-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus2 h-4 w-4"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M3 15h6"></path><path d="M6 12v6"></path></svg> Added</div><div class="mt-1.5 text-2xl font-semibold tabular-nums">—</div></div>
+                        <div class="rounded-xl border p-3.5 border-running/25 bg-running/8"><div class="flex items-center gap-2 text-xs font-medium text-running"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-pen-line h-4 w-4"><path d="m18 5-2.414-2.414A2 2 0 0 0 14.172 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"></path><path d="M21.378 12.626a1 1 0 0 0-3.004-3.004l-4.01 4.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"></path><path d="M8 18h1"></path></svg> Modified</div><div class="mt-1.5 text-2xl font-semibold tabular-nums">—</div></div>
+                        <div class="rounded-xl border p-3.5 border-failed/25 bg-failed/8"><div class="flex items-center gap-2 text-xs font-medium text-failed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-minus h-4 w-4"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M9 15h6"></path></svg> Deleted</div><div class="mt-1.5 text-2xl font-semibold tabular-nums">—</div></div>
                     </div>
                 </div>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
-                <div class="mb-5 flex items-start gap-3">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7FB7C9]/15 text-sm font-bold text-[#3A7E92]">3</div>
+            <section class="section-card">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg brand-soft-bg text-sm font-semibold text-primary">3</div>
                     <div>
-                        <h2 class="text-base font-semibold tracking-tight text-slate-950">Environment & Package Settings</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Keep it simple, with advanced controls hidden.</p>
+                        <h2 class="text-base font-semibold tracking-tight">Environment & Package Settings</h2>
+                        <p class="text-xs text-muted-foreground mt-0.5">Where will this package be applied?</p>
                     </div>
                 </div>
 
@@ -228,39 +214,40 @@
                     <template x-for="env in ['DEV', 'QA', 'PROD']" :key="env">
                         <button
                             type="button"
-                            class="rounded-2xl border p-4 text-left transition"
-                            :class="form.environment === env ? 'border-[#7FB7C9] bg-[#7FB7C9]/10 shadow-sm' : 'border-slate-200 bg-white hover:border-[#7FB7C9]/40'"
+                            class="rounded-xl border p-4 text-left transition-base"
+                            :class="form.environment === env ? 'border-primary/50 brand-soft-bg shadow-soft' : 'border-border hover:border-primary/30 hover:bg-secondary/40'"
                             @click="form.environment = env; confirmedProd = false; updatePackageName(); checkDuplicate();"
                         >
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="rounded-full px-2.5 py-1 text-xs font-bold"
-                                    :class="env === 'DEV' ? 'bg-blue-50 text-blue-700' : env === 'QA' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'"
-                                    x-text="env"></span>
-                                <span x-show="form.environment === env" class="text-[#3A7E92]">✓</span>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wider"
+                                      :class="env === 'DEV' ? 'bg-running/10 text-running border-running/30' : env === 'QA' ? 'bg-queued/10 text-queued border-queued/30' : 'bg-failed/10 text-failed border-failed/30'">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span><span x-text="env"></span>
+                                </span>
+                                <svg x-show="form.environment === env" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check h-4 w-4 text-primary"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
                             </div>
-                            <p class="mt-2 text-sm font-semibold text-slate-800" x-text="env === 'DEV' ? 'Development' : env === 'QA' ? 'Quality assurance' : 'Production'"></p>
-                            <p class="mt-1 text-[11px] text-slate-500" x-text="env === 'DEV' ? 'Fastest flow' : env === 'QA' ? 'Review before deploy' : 'Extra confirmation'"></p>
+                            <div class="text-sm font-medium" x-text="env === 'DEV' ? 'Development' : env === 'QA' ? 'Quality assurance' : 'Production'"></div>
+                            <div class="text-[11px] text-muted-foreground mt-1" x-text="env === 'DEV' ? 'Fast deploy, no confirmation' : env === 'QA' ? 'Moderate confirmation' : 'Confirmation required'"></div>
                         </button>
                     </template>
                 </div>
 
-                <div class="mt-5">
-                    <label class="text-sm font-semibold text-slate-700">Package name</label>
+                <div class="mt-5 space-y-2">
+                    <label class="text-sm font-medium leading-none">Package name</label>
                     <input
                         type="text"
-                        class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#7FB7C9] focus:ring-4 focus:ring-[#7FB7C9]/15"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
                         x-model="form.customName"
                         :placeholder="autoPackageName || 'Auto-generated when versions are picked'"
                     >
-                    <p class="mt-1 text-[11px] text-slate-400">Leave empty to use the auto-generated name.</p>
+                    <p class="text-[11px] text-muted-foreground">Leave empty to use the auto-generated name.</p>
                 </div>
 
                 <template x-if="form.environment === 'PROD'">
-                    <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
-                        <p class="text-sm font-semibold text-red-700">Production safety check</p>
-                        <p class="mt-1 text-xs text-slate-600">Review the summary, then confirm to enable generation.</p>
-                        <label class="mt-3 flex items-center gap-2 text-sm text-slate-700">
-                            <input type="checkbox" class="rounded border-slate-300 text-[#7FB7C9] focus:ring-[#7FB7C9]" x-model="confirmedProd">
+                    <div class="mt-5 rounded-md border border-failed/30 bg-failed/10 p-4">
+                        <p class="text-sm font-semibold text-failed">Production safety check</p>
+                        <p class="mt-1 text-xs text-muted-foreground">Review the summary, then confirm to enable generation.</p>
+                        <label class="mt-3 flex items-center gap-2 text-sm text-foreground">
+                            <input type="checkbox" class="rounded border-input text-primary focus:ring-primary" x-model="confirmedProd">
                             I understand this package targets production.
                         </label>
                     </div>
@@ -269,29 +256,29 @@
                 <div class="mt-5">
                     <button
                         type="button"
-                        class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-900"
+                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
                         @click="showAdvanced = !showAdvanced"
                     >
-                        <span x-text="showAdvanced ? '⌃' : '⌄'"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down h-4 w-4 transition-transform" :class="showAdvanced ? 'rotate-180' : ''"><path d="m6 9 6 6 6-6"></path></svg>
                         Advanced settings
                     </button>
 
-                    <div x-show="showAdvanced" class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div x-show="showAdvanced" class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
                         <div class="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label class="text-sm font-semibold text-slate-700">Output format</label>
-                                <select class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" x-model="form.format">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium leading-none">Output format</label>
+                                <select class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" x-model="form.format">
                                     <option value=".zip">ZIP</option>
                                     <option value=".tar.gz">TAR.GZ</option>
                                     <option value="both">Both</option>
                                 </select>
                             </div>
-                            <label class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                            <label class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
                                 <span>
-                                    <span class="block text-sm font-semibold text-slate-800">Generate rollback package</span>
-                                    <span class="block text-[11px] text-slate-500">Your backend currently generates update and rollback together.</span>
+                                    <span class="block text-sm font-medium leading-none">Generate rollback package</span>
+                                    <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently generates update and rollback together.</span>
                                 </span>
-                                <input type="checkbox" class="rounded border-slate-300 text-[#7FB7C9] focus:ring-[#7FB7C9]" x-model="form.rollback" checked>
+                                <input type="checkbox" class="rounded border-input text-primary focus:ring-primary" x-model="form.rollback" checked>
                             </label>
                         </div>
                     </div>
@@ -300,40 +287,48 @@
         </div>
 
         <aside class="space-y-5 xl:sticky xl:top-20 xl:self-start">
-            <section class="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+            <section class="section-card">
                 <div class="mb-4 flex items-center gap-2">
-                    <div class="h-2.5 w-2.5 rounded-full bg-[linear-gradient(135deg,#C7A3B1,#7FB7C9,#8D93C7)]"></div>
-                    <h3 class="text-sm font-bold text-slate-900">Live summary</h3>
+                    <div class="h-2.5 w-2.5 rounded-full brand-gradient-bg"></div>
+                    <h3 class="text-sm font-semibold tracking-tight">Live summary</h3>
                 </div>
 
                 <div class="space-y-3 text-sm">
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-slate-500">Repository</span><span class="max-w-[60%] truncate font-semibold text-slate-800" x-text="selectedRepositoryLabel || '—'"></span></div>
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-slate-500">Base</span><span class="max-w-[60%] truncate font-mono text-xs font-semibold text-slate-800" x-text="selectedBaseLabel || '—'"></span></div>
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-slate-500">Target</span><span class="max-w-[60%] truncate font-mono text-xs font-semibold text-slate-800" x-text="selectedHeadLabel || '—'"></span></div>
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-slate-500">Environment</span><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700" x-text="form.environment"></span></div>
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-slate-500">Rollback</span><span class="font-semibold text-slate-800" x-text="form.rollback ? 'Included' : 'Skipped'"></span></div>
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-slate-500">Format</span><span class="font-semibold text-slate-800" x-text="form.format === 'both' ? 'Both' : form.format.toUpperCase()"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Repository</span><span class="max-w-[60%] truncate font-medium" x-text="selectedRepositoryLabel || '—'"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Base</span><span class="max-w-[60%] truncate font-mono text-xs font-medium" x-text="selectedBaseLabel || '—'"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Target</span><span class="max-w-[60%] truncate font-mono text-xs font-medium" x-text="selectedHeadLabel || '—'"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Environment</span><span class="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold" x-text="form.environment"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Rollback</span><span class="font-medium" x-text="form.rollback ? 'Included' : 'Skipped'"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Format</span><span class="font-medium" x-text="form.format === 'both' ? 'Both' : form.format.toUpperCase()"></span></div>
                 </div>
 
-                <div class="my-4 h-px bg-slate-200"></div>
+                <div class="my-4 h-px bg-border/50"></div>
 
                 <div>
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Package name</p>
-                    <p class="mt-2 break-all font-mono text-[11px] leading-relaxed text-slate-700" x-text="finalPackageName || '—'"></p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Package name</p>
+                    <p class="mt-2 break-all font-mono text-xs leading-relaxed" x-text="finalPackageName || '—'"></p>
                 </div>
 
                 <button
                     type="button"
-                    class="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#C7A3B1,#7FB7C9,#8D93C7)] px-5 text-base font-bold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+                    class="mt-5 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-8 w-full h-12 text-base font-semibold brand-gradient-bg shadow-soft transition-colors hover:brightness-105 active:brightness-95 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
                     :disabled="!canGenerate || isQueuing"
                     @click="startPackaging()"
                 >
-                    <span x-show="!isQueuing">⚡</span>
-                    <span x-show="isQueuing" class="animate-spin">⟳</span>
+                    <span x-show="isQueuing" class="animate-spin">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 h-4 w-4">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                        </svg>
+                    </span>
+                    <span x-show="!isQueuing">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap h-4 w-4">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
+                    </span>
                     <span x-text="isQueuing ? 'Queuing...' : 'Generate Package'"></span>
                 </button>
 
-                <p x-show="!canGenerate && form.environment === 'PROD'" class="mt-2 text-center text-[11px] text-slate-500">
+                <p x-show="!canGenerate && form.environment === 'PROD'" class="mt-2 text-center text-[10px] text-muted-foreground">
                     Confirm production safety to continue.
                 </p>
             </section>
@@ -341,42 +336,42 @@
     </div>
 
     <div x-show="phase === 'progress'" x-cloak class="mx-auto max-w-3xl">
-        <section class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-sm backdrop-blur">
+        <section class="section-card">
             <div class="mb-6 flex items-start justify-between gap-4">
                 <div>
                     <div class="mb-1 flex items-center gap-2">
-                        <span class="inline-block h-3 w-3 animate-pulse rounded-full bg-[#7FB7C9]"></span>
-                        <span class="text-sm font-bold text-[#3A7E92]">Generating package</span>
+                        <span class="inline-block h-3 w-3 animate-pulse-soft rounded-full bg-primary/80"></span>
+                        <span class="text-sm font-semibold tracking-tight text-primary">Generating package</span>
                     </div>
-                    <h2 class="break-all text-xl font-bold tracking-tight text-slate-950" x-text="finalPackageName"></h2>
-                    <p class="mt-1 text-sm text-slate-500">
+                    <h2 class="break-all text-xl font-bold tracking-tight" x-text="finalPackageName"></h2>
+                    <p class="mt-1 text-sm text-muted-foreground">
                         <span x-text="selectedRepositoryLabel"></span>
                         <span> · </span>
                         <span x-text="form.environment"></span>
                     </p>
                 </div>
 
-                <button type="button" class="rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900" @click="cancelJob()">
+                <button type="button" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground px-3 text-sm font-medium shadow-sm transition-colors" @click="cancelJob()">
                     Cancel
                 </button>
             </div>
 
             <div class="mb-6">
                 <div class="mb-2 flex items-center justify-between text-sm">
-                    <span class="font-semibold text-slate-800" x-text="packagingMessage || activeStageLabel"></span>
-                    <span class="font-mono text-slate-500" x-text="Math.floor(packagingProgress) + '%'"></span>
+                    <span class="font-medium" x-text="packagingMessage || activeStageLabel"></span>
+                    <span class="font-mono text-muted-foreground" x-text="Math.floor(packagingProgress) + '%'"></span>
                 </div>
-                <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div class="h-full rounded-full bg-[linear-gradient(135deg,#C7A3B1,#7FB7C9,#8D93C7)] transition-all" :style="`width:${packagingProgress}%`"></div>
+                <div class="h-2 overflow-hidden rounded-full bg-secondary">
+                    <div class="h-full rounded-full bg-primary transition-all duration-500" :style="`width:${packagingProgress}%`"></div>
                 </div>
             </div>
 
             <ol class="space-y-2.5">
                 <template x-for="stage in stages" :key="stage.key">
                     <li class="flex items-center gap-3 text-sm">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-bold"
-                            :class="stage.value <= packagingProgress ? 'border-transparent bg-[#7FB7C9] text-white' : 'border-slate-200 text-slate-400'">✓</span>
-                        <span :class="stage.value <= packagingProgress ? 'font-semibold text-slate-800' : 'text-slate-500'" x-text="stage.label"></span>
+                        <span class="flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold transition-colors"
+                            :class="stage.value <= packagingProgress ? 'border-transparent bg-primary text-primary-foreground' : 'border-border text-muted-foreground'">✓</span>
+                        <span :class="stage.value <= packagingProgress ? 'font-medium' : 'text-muted-foreground'" x-text="stage.label"></span>
                     </li>
                 </template>
             </ol>
@@ -384,21 +379,23 @@
     </div>
 
     <div x-show="phase === 'done'" x-cloak class="mx-auto max-w-3xl">
-        <section class="rounded-3xl border border-slate-200 bg-white/90 p-8 text-center shadow-sm backdrop-blur">
-            <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#C7A3B1,#7FB7C9,#8D93C7)] text-3xl text-white shadow-sm">✓</div>
-            <h2 class="text-2xl font-bold tracking-tight text-slate-950">Package ready</h2>
-            <p class="mt-2 break-all text-sm text-slate-500" x-text="finalPackageName"></p>
+        <section class="section-card text-center">
+            <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl brand-soft-bg text-3xl text-primary shadow-soft">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-8 w-8"><path d="M20 6 9 17l-5-5"></path></svg>
+            </div>
+            <h2 class="text-2xl font-semibold tracking-tight">Package ready</h2>
+            <p class="mt-2 break-all text-sm text-muted-foreground" x-text="finalPackageName"></p>
 
             <div class="mt-6 grid grid-cols-3 gap-3">
-                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-lg font-bold" x-text="packagingResult?.zip_size || '—'"></p><p class="mt-1 text-xs text-slate-500">ZIP size</p></div>
-                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-lg font-bold" x-text="packagingResult?.targz_size || '—'"></p><p class="mt-1 text-xs text-slate-500">TAR.GZ size</p></div>
-                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-lg font-bold" x-text="packagingResult?.summary?.total_changes ?? '—'"></p><p class="mt-1 text-xs text-slate-500">Changes</p></div>
+                <div class="rounded-xl border border-border bg-secondary/20 p-4"><p class="text-lg font-semibold tracking-tight" x-text="packagingResult?.zip_size || '—'"></p><p class="mt-1 text-xs text-muted-foreground">ZIP size</p></div>
+                <div class="rounded-xl border border-border bg-secondary/20 p-4"><p class="text-lg font-semibold tracking-tight" x-text="packagingResult?.targz_size || '—'"></p><p class="mt-1 text-xs text-muted-foreground">TAR.GZ size</p></div>
+                <div class="rounded-xl border border-border bg-secondary/20 p-4"><p class="text-lg font-semibold tracking-tight" x-text="packagingResult?.summary?.total_changes ?? '—'"></p><p class="mt-1 text-xs text-muted-foreground">Changes</p></div>
             </div>
 
             <div class="mt-7 flex flex-col justify-center gap-2 sm:flex-row">
-                <button type="button" class="rounded-2xl bg-[linear-gradient(135deg,#C7A3B1,#7FB7C9,#8D93C7)] px-5 py-3 text-sm font-bold text-white shadow-sm">Deploy Package</button>
-                <button type="button" class="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50" @click="downloadPackage(form.format)">Download</button>
-                <button type="button" class="rounded-2xl px-5 py-3 text-sm font-bold text-slate-500 hover:bg-slate-50" @click="resetForm()">Create Another</button>
+                <button type="button" class="inline-flex h-9 items-center justify-center rounded-md bg-primary text-primary-foreground px-4 text-sm font-medium shadow hover:bg-primary/90 transition-colors">Deploy Package</button>
+                <button type="button" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 text-sm font-medium shadow-sm transition-colors" @click="downloadPackage(form.format)">Download</button>
+                <button type="button" class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground hover:bg-secondary/80 transition-colors" @click="resetForm()">Create Another</button>
             </div>
         </section>
     </div>

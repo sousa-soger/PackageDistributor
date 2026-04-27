@@ -4,17 +4,19 @@
 
         {{-- Page title slot --}}
         <div class="flex-1 min-w-0">
-            @isset($title)
+            @hasSection('title')
                 <div class="flex flex-col leading-tight">
                     <h1 class="text-base font-semibold tracking-tight truncate" style="color: hsl(var(--foreground));">
-                        {{ $title }}
+                        @yield('title')
                     </h1>
-                    @isset($subtitle)
-                        <p class="text-xs truncate" style="color: hsl(var(--muted-foreground));">{{ $subtitle }}</p>
-                    @endisset
+                    @hasSection('subtitle')
+                        <p class="text-xs truncate" style="color: hsl(var(--muted-foreground));">@yield('subtitle')</p>
+                    @endif
                 </div>
-            @endisset
+            @endif
         </div>
+
+        @yield('topbar_actions')
 
         {{-- Search --}}
         <div class="hidden md:flex relative w-72">

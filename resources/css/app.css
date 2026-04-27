@@ -8,6 +8,47 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
+
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
+
+    --color-success: hsl(var(--success));
+    --color-running: hsl(var(--running));
+    --color-queued: hsl(var(--queued));
+    --color-failed: hsl(var(--failed));
+    --color-inactive: hsl(var(--inactive));
+
+    --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --animate-fade-in: fade-in 0.3s ease-out;
+    --animate-pulse-soft: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-soft {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.05); }
+    }
 }
 
 /* ── Cybix-Craft Design System ────────────────────────────── */
@@ -45,15 +86,18 @@
     --radius: 0.85rem;
 
     /* Brand gradients */
-    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-teal)), hsl(var(--brand-iris)));
+    --gradient-brand: linear-gradient(135deg, #FFD6E8, #C8F7F4, #E6D5FF);
+    --gradient-brand-vivid: linear-gradient(135deg, #C7A3B1, #7FB7C9, #8D93C7);
     --gradient-brand-soft: linear-gradient(135deg, hsl(var(--brand-rose) / 0.18), hsl(var(--brand-teal) / 0.18), hsl(var(--brand-iris) / 0.22));
     --gradient-surface: linear-gradient(180deg, hsl(220 30% 99%), hsl(220 30% 96%));
     --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.85), hsl(220 30% 98% / 0.65));
+    --on-brand: 232 30% 28%;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px hsl(222 35% 12% / 0.04), 0 1px 1px hsl(222 35% 12% / 0.03);
     --shadow-md: 0 4px 14px -4px hsl(232 32% 40% / 0.10), 0 2px 6px -2px hsl(222 35% 12% / 0.05);
     --shadow-lg: 0 18px 40px -18px hsl(232 32% 40% / 0.25), 0 6px 16px -8px hsl(222 35% 12% / 0.08);
+    --shadow-soft: 0px 4px 20px hsl(0 0% 0% / 0.05);
 
     /* Sidebar tokens */
     --sidebar-bg: 0 0% 100%;
@@ -91,13 +135,16 @@
     --border: 226 22% 18%;
     --input: 226 22% 18%;
     --ring: 232 50% 72%;
-    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-teal)), hsl(var(--brand-iris)));
+    --gradient-brand: linear-gradient(135deg, #C7A3B1, #7FB7C9, #8D93C7);
+    --gradient-brand-vivid: linear-gradient(135deg, #C7A3B1, #7FB7C9, #8D93C7);
     --gradient-brand-soft: linear-gradient(135deg, hsl(var(--brand-rose) / 0.16), hsl(var(--brand-teal) / 0.16), hsl(var(--brand-iris) / 0.20));
+    --on-brand: 0 0% 100%;
     --gradient-surface: linear-gradient(180deg, hsl(226 32% 9%), hsl(226 32% 6%));
     --gradient-glass: linear-gradient(135deg, hsl(226 28% 14% / 0.85), hsl(226 28% 10% / 0.65));
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.4);
     --shadow-md: 0 4px 14px -4px hsl(0 0% 0% / 0.5), 0 2px 6px -2px hsl(0 0% 0% / 0.35);
     --shadow-lg: 0 18px 40px -18px hsl(0 0% 0% / 0.7), 0 6px 16px -8px hsl(0 0% 0% / 0.4);
+    --shadow-soft: 0px 4px 20px hsl(0 0% 0% / 0.4);
     --sidebar-bg: 226 30% 8%;
     --sidebar-fg: 220 20% 85%;
     --sidebar-accent: 226 25% 14%;
@@ -127,13 +174,16 @@
     }
 
     .brand-gradient-text {
-        background: var(--gradient-brand);
+        background: var(--gradient-brand-vivid);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
     }
 
-    .brand-gradient-bg { background: var(--gradient-brand); }
+    .brand-gradient-bg {
+        background: var(--gradient-brand);
+        color: hsl(var(--on-brand));
+    }
     .brand-soft-bg     { background: var(--gradient-brand-soft); }
 
     .section-card {
