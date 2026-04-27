@@ -1,13 +1,17 @@
 <x-head-html/>
 
-    <body class="bg-[#f5f7fb] text-slate-800 min-h-screen">
-        <div class="flex min-h-screen">
+    <body class="min-h-screen antialiased" style="background-color: hsl(var(--background)); color: hsl(var(--foreground));">
+        <div class="flex min-h-screen w-full" style="background-image: var(--gradient-surface);">
 
-            <x-sidebar/> <!-- page sidebar from ui.sidebar.blade.php -->
+            <x-sidebar />
 
-            <main class="flex-1">
-                @yield('content')
-            </main>
+            <div class="flex-1 min-w-0 flex flex-col">
+                <x-topbar />
+
+                <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                    @yield('content')
+                </main>
+            </div>
 
         </div>
 

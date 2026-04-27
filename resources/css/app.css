@@ -10,6 +10,145 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* ── Cybix-Craft Design System ────────────────────────────── */
+:root {
+    /* Surfaces */
+    --background: 220 30% 97%;
+    --foreground: 222 35% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 35% 12%;
+
+    /* Brand */
+    --primary: 232 32% 67%;
+    --primary-foreground: 0 0% 100%;
+    --brand-rose: 343 28% 71%;
+    --brand-teal: 195 39% 64%;
+    --brand-iris: 232 32% 67%;
+
+    --secondary: 220 25% 94%;
+    --secondary-foreground: 222 35% 18%;
+    --muted: 220 25% 94%;
+    --muted-foreground: 220 12% 46%;
+    --accent: 232 40% 96%;
+    --accent-foreground: 232 32% 35%;
+
+    /* Status */
+    --success: 152 55% 42%;
+    --running: 212 90% 56%;
+    --queued: 38 92% 52%;
+    --failed: 0 75% 58%;
+    --inactive: 215 16% 55%;
+
+    --border: 220 20% 89%;
+    --input: 220 20% 89%;
+    --ring: 232 32% 67%;
+    --radius: 0.85rem;
+
+    /* Brand gradients */
+    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-teal)), hsl(var(--brand-iris)));
+    --gradient-brand-soft: linear-gradient(135deg, hsl(var(--brand-rose) / 0.18), hsl(var(--brand-teal) / 0.18), hsl(var(--brand-iris) / 0.22));
+    --gradient-surface: linear-gradient(180deg, hsl(220 30% 99%), hsl(220 30% 96%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.85), hsl(220 30% 98% / 0.65));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px hsl(222 35% 12% / 0.04), 0 1px 1px hsl(222 35% 12% / 0.03);
+    --shadow-md: 0 4px 14px -4px hsl(232 32% 40% / 0.10), 0 2px 6px -2px hsl(222 35% 12% / 0.05);
+    --shadow-lg: 0 18px 40px -18px hsl(232 32% 40% / 0.25), 0 6px 16px -8px hsl(222 35% 12% / 0.08);
+
+    /* Sidebar tokens */
+    --sidebar-bg: 0 0% 100%;
+    --sidebar-fg: 222 25% 25%;
+    --sidebar-accent: 232 40% 96%;
+    --sidebar-accent-fg: 232 32% 35%;
+    --sidebar-border: 220 20% 92%;
+
+    /* Motion */
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+    --background: 226 32% 7%;
+    --foreground: 220 25% 95%;
+    --card: 226 28% 10%;
+    --card-foreground: 220 25% 95%;
+    --primary: 232 50% 72%;
+    --primary-foreground: 226 32% 10%;
+    --brand-rose: 343 38% 74%;
+    --brand-teal: 195 45% 68%;
+    --brand-iris: 232 50% 74%;
+    --secondary: 226 22% 16%;
+    --secondary-foreground: 220 25% 95%;
+    --muted: 226 22% 16%;
+    --muted-foreground: 220 12% 65%;
+    --accent: 232 30% 20%;
+    --accent-foreground: 232 50% 85%;
+    --success: 152 50% 52%;
+    --running: 212 90% 64%;
+    --queued: 38 92% 60%;
+    --failed: 0 70% 62%;
+    --inactive: 215 14% 60%;
+    --border: 226 22% 18%;
+    --input: 226 22% 18%;
+    --ring: 232 50% 72%;
+    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-teal)), hsl(var(--brand-iris)));
+    --gradient-brand-soft: linear-gradient(135deg, hsl(var(--brand-rose) / 0.16), hsl(var(--brand-teal) / 0.16), hsl(var(--brand-iris) / 0.20));
+    --gradient-surface: linear-gradient(180deg, hsl(226 32% 9%), hsl(226 32% 6%));
+    --gradient-glass: linear-gradient(135deg, hsl(226 28% 14% / 0.85), hsl(226 28% 10% / 0.65));
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.4);
+    --shadow-md: 0 4px 14px -4px hsl(0 0% 0% / 0.5), 0 2px 6px -2px hsl(0 0% 0% / 0.35);
+    --shadow-lg: 0 18px 40px -18px hsl(0 0% 0% / 0.7), 0 6px 16px -8px hsl(0 0% 0% / 0.4);
+    --sidebar-bg: 226 30% 8%;
+    --sidebar-fg: 220 20% 85%;
+    --sidebar-accent: 226 25% 14%;
+    --sidebar-accent-fg: 232 50% 85%;
+    --sidebar-border: 226 22% 16%;
+}
+
+@layer base {
+    body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        background-image:
+            radial-gradient(ellipse 80% 50% at 50% -10%, hsl(var(--brand-iris) / 0.10), transparent 60%),
+            radial-gradient(ellipse 50% 40% at 100% 20%, hsl(var(--brand-rose) / 0.08), transparent 60%);
+        background-attachment: fixed;
+    }
+}
+
+@layer components {
+    .glass-panel {
+        background: var(--gradient-glass);
+        backdrop-filter: blur(14px) saturate(140%);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border) / 0.7);
+        box-shadow: var(--shadow-md);
+    }
+
+    .brand-gradient-text {
+        background: var(--gradient-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .brand-gradient-bg { background: var(--gradient-brand); }
+    .brand-soft-bg     { background: var(--gradient-brand-soft); }
+
+    .section-card {
+        background-color: hsl(var(--card));
+        border-radius: calc(var(--radius) * 1.25);
+        border: 1px solid hsl(var(--border) / 0.7);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow var(--transition-base), transform var(--transition-base);
+    }
+    .section-card:hover { box-shadow: var(--shadow-md); }
+
+    .status-dot { display: inline-block; height: 0.5rem; width: 0.5rem; border-radius: 9999px; }
+}
+
 @layer components {
     .nav-item-modern {
         @apply flex items-center gap-3 px-2 py-1.5 rounded-xl transition-all duration-200 ease-in-out text-slate-600 relative no-underline border border-transparent;
