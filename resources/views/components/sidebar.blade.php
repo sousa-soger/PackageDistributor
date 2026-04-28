@@ -146,10 +146,10 @@
             </div>
             <ul class="space-y-0.5">
                 <li>
-                    <a href="{{ route('repositories') }}"
+                    <a href="{{ route('team') }}"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
-                            {{ request()->routeIs('repositories') ? 'sidebar-active' : 'sidebar-link' }}">
-                        @if(request()->routeIs('repositories'))
+                            {{ request()->routeIs('team') ? 'sidebar-active' : 'sidebar-link' }}">
+                        @if(request()->routeIs('team'))
                             <span class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full brand-gradient-bg"></span>
                         @endif
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users h-4 w-4">

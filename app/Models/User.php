@@ -68,4 +68,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Repository::class);
     }
+    
+    public function isTeamOwnerOrAdmin($team = null): bool
+    {
+        return in_array($this->team_role ?? 'viewer', ['owner', 'maintainer']);
+    }
 }

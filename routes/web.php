@@ -6,6 +6,7 @@ use App\Http\Controllers\GitHubController;
 use App\Http\Controllers\GitLabOAuthController;
 use App\Http\Controllers\GitLabProjectController;
 use App\Http\Controllers\RepositoryController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\PackageController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/repositories', [RepositoryController::class, 'store'])->name('repositories.store');
     Route::post('/repositories/{repository}/sync', [RepositoryController::class, 'sync'])->name('repositories.sync');
     Route::delete('/repositories/{repository}', [RepositoryController::class, 'destroy'])->name('repositories.destroy');
+
+    Route::get('/team', [TeamController::class, 'index'])->name('team');
+    Route::post('/team/invite', [TeamController::class, 'invite'])->name('team.members.invite');
+    Route::patch('/team/members/{member}/role', [TeamController::class, 'updateRole'])->name('team.members.update-role');
+    Route::delete('/team/members/{member}', [TeamController::class, 'removeMember'])->name('team.members.remove');
 
     Route::get('/projects', [GitLabProjectController::class, 'index'])
         ->name('projects');
