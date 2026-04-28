@@ -250,7 +250,7 @@
               </div>
             </div>
 
-            <template x-if="provider.authMethod === 'oauth'">
+            <template x-if="provider.authMethod === 'github'">
               <div class="space-y-2" role="radiogroup">
                 <label class="flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors"
                        :style="authMethod === 'oauth' ? 'border-color:hsl(var(--primary)/0.4);background:hsl(var(--accent))' : 'border-color:hsl(var(--border)/0.7)'">
@@ -283,15 +283,36 @@
               </div>
             </template>
 
-            <template x-if="provider.authMethod === 'token'">
+            <template x-if="provider.authMethod === 'gitlab'">
               <div class="space-y-2">
-                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Project Access Token</label>
-                <input type="password" x-model="token" placeholder="glpat-••••••••••••"
-                       class="flex h-9 w-full rounded-md border text-sm shadow-sm transition-colors focus-visible:outline-none"
-                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem">
-                <p class="text-xs" style="color:hsl(var(--muted-foreground))">
-                  Required scopes: <code class="font-mono bg-background px-1 rounded border">read_repository</code>.
-                </p>
+                <label class="flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors"
+                       :style="authMethod === 'oauth' ? 'border-color:hsl(var(--primary)/0.4);background:hsl(var(--accent))' : 'border-color:hsl(var(--border)/0.7)'">
+                  <input type="radio" value="oauth" x-model="authMethod" class="mt-1" />
+                  <div class="flex-1">
+                    <div class="text-sm font-medium flex items-center gap-2" style="color:hsl(var(--foreground))">
+                      <svg class="h-4 w-4" style="color:hsl(var(--success))" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> 
+                      Sign in with GitLab
+                    </div>
+                    <div class="text-xs mt-1" style="color:hsl(var(--muted-foreground))">
+                      Cybix will request <code class="font-mono bg-background px-1 rounded border">repo</code> read access. You can revoke any time.
+                    </div>
+                  </div>
+                </label>
+
+                <label class="flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors"
+                       :style="authMethod === 'pat' ? 'border-color:hsl(var(--primary)/0.4);background:hsl(var(--accent))' : 'border-color:hsl(var(--border)/0.7)'">
+                  <input type="radio" value="pat" x-model="authMethod" class="mt-1" />
+                  <div class="flex-1 space-y-2">
+                    <div class="text-sm font-medium flex items-center gap-2" style="color:hsl(var(--foreground))">
+                      <svg class="h-4 w-4" style="color:hsl(var(--primary))" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                      GitLab Personal Access Token (glpat)
+                    </div>
+                    <input type="password" x-model="token" placeholder="glpat_••••••••••••"
+                           class="flex h-9 w-full rounded-md border text-sm shadow-sm transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                           style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem"
+                           :disabled="authMethod !== 'pat'">
+                  </div>
+                </label>
               </div>
             </template>
 
@@ -334,7 +355,7 @@
         <template x-if="step === 'details' && provider">
           <div class="space-y-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Project</label>
+              <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Project Name</label>
               <select x-model="projectId" class="flex h-9 w-full items-center justify-between rounded-md border text-sm shadow-sm focus:outline-none"
                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
                 <option value="">Select a project</option>
@@ -499,7 +520,7 @@ function repositoriesPage() {
         id: 'github',
         name: 'GitHub',
         description: 'Connect a public or private GitHub repository via OAuth.',
-        authMethod: 'oauth',
+        authMethod: 'github',
         authLabel: 'OAuth (recommended) or Personal Access Token',
         icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>`,
       },
@@ -507,7 +528,7 @@ function repositoriesPage() {
         id: 'gitlab',
         name: 'GitLab',
         description: 'Connect a GitLab.com or self-hosted GitLab repository.',
-        authMethod: 'token',
+        authMethod: 'gitlab',
         authLabel: 'Project Access Token',
         icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path></svg>`,
       },

@@ -215,6 +215,42 @@
     [x-cloak] { display: none !important; }
 
     .status-dot { display: inline-block; height: 0.5rem; width: 0.5rem; border-radius: 9999px; }
+
+    /* Role gradient swatches */
+    .role-swatch-owner      { background: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-iris))); }
+    .role-swatch-maintainer { background: linear-gradient(135deg, hsl(var(--brand-iris)), hsl(var(--brand-teal))); }
+    .role-swatch-creator    { background: linear-gradient(135deg, hsl(var(--brand-teal)), hsl(var(--brand-iris))); }
+    .role-swatch-deployer   { background: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-teal))); }
+    .role-swatch-viewer     { background: linear-gradient(135deg, hsl(var(--brand-iris)), hsl(var(--brand-rose))); }
+
+    /* Team avatar colours */
+    .team-avatar-0 { background: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-iris))); }
+    .team-avatar-1 { background: linear-gradient(135deg, hsl(var(--brand-teal)), hsl(var(--brand-iris))); }
+    .team-avatar-2 { background: linear-gradient(135deg, hsl(var(--brand-iris)), hsl(var(--brand-rose))); }
+    .team-avatar-3 { background: linear-gradient(135deg, hsl(var(--brand-rose)), hsl(var(--brand-teal))); }
+
+    /* Inline role select styling */
+    .role-select {
+        height: 2rem;
+        width: 8.5rem;
+        padding: 0 0.625rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: calc(var(--radius) * 0.6);
+        border: 1px solid hsl(var(--border) / 0.7);
+        background: var(--gradient-brand-soft);
+        color: hsl(var(--foreground));
+        cursor: pointer;
+        outline: none;
+        transition: border-color var(--transition-base);
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.5rem center;
+        padding-right: 1.75rem;
+    }
+    .role-select:focus { border-color: hsl(var(--primary) / 0.6); }
 }
 
 @layer components {

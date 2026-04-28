@@ -33,6 +33,8 @@ class User extends Authenticatable
         'gitlab_refresh_token',
         'gitlab_token_expires_at',
         'gitlab_connected_at',
+        'team_role',
+        'team_status',
     ];
 
     /**
