@@ -49,6 +49,10 @@
         0%, 100% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.7; transform: scale(1.05); }
     }
+    @keyframes slide-up {
+        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
 }
 
 /* ── Cybix-Craft Design System ────────────────────────────── */
@@ -195,6 +199,20 @@
         transition: box-shadow var(--transition-base), transform var(--transition-base);
     }
     .section-card:hover { box-shadow: var(--shadow-md); }
+
+    .shadow-soft     { box-shadow: var(--shadow-md); }
+    .shadow-elevated { box-shadow: var(--shadow-lg); }
+
+    .transition-base   { transition: all var(--transition-base); }
+    .transition-spring { transition: all var(--transition-spring); }
+
+    .step-line        { flex: 1; height: 1px; background: hsl(var(--border)); }
+    .step-line.active { background: var(--gradient-brand); }
+
+    .animate-fade-in  { animation: fade-in 220ms ease-out both; }
+    .animate-slide-up { animation: slide-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+    [x-cloak] { display: none !important; }
 
     .status-dot { display: inline-block; height: 0.5rem; width: 0.5rem; border-radius: 9999px; }
 }

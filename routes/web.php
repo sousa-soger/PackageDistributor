@@ -5,6 +5,7 @@ use App\Http\Controllers\DeploymentPackageController;
 use App\Http\Controllers\GitHubController;
 use App\Http\Controllers\GitLabOAuthController;
 use App\Http\Controllers\GitLabProjectController;
+use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\PackageController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,11 @@ Route::view('/user-auth', 'user-auth')->name('user-auth');
 
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home')->name('home');
+
+    Route::get('/repositories', [RepositoryController::class, 'index'])->name('repositories');
+    Route::post('/repositories', [RepositoryController::class, 'store'])->name('repositories.store');
+    Route::post('/repositories/{repository}/sync', [RepositoryController::class, 'sync'])->name('repositories.sync');
+    Route::delete('/repositories/{repository}', [RepositoryController::class, 'destroy'])->name('repositories.destroy');
 
     Route::get('/projects', [GitLabProjectController::class, 'index'])
         ->name('projects');

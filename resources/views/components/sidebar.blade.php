@@ -30,6 +30,7 @@
             </div>
             <ul class="space-y-0.5">
                 {{-- Dashboard --}}
+                {{-- 
                 <li>
                     <a href="{{ route('home') }}"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
@@ -44,6 +45,7 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+                --}}
                 {{-- Create Package --}}
                 <li>
                     <a href="{{ route('create-package') }}"
@@ -109,15 +111,18 @@
             </div>
             <ul class="space-y-0.5">
                 <li>
-                    <a href="#"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 sidebar-link opacity-50 cursor-not-allowed">
+                    <a href="{{ route('repositories') }}"
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
+                            {{ request()->routeIs('repositories') ? 'sidebar-active' : 'sidebar-link' }}">
+                        @if(request()->routeIs('repositories'))
+                            <span class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full brand-gradient-bg"></span>
+                        @endif
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch h-4 w-4">
                             <line x1="6" x2="6" y1="3" y2="15"></line>
                             <circle cx="18" cy="6" r="3"></circle>
                             <circle cx="6" cy="18" r="3"></circle>
                             <path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                         <span>Repositories</span>
-                        <span class="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded brand-soft-bg" style="color:hsl(var(--brand-iris))">Soon</span>
                     </a>
                 </li>
                 <li>
@@ -140,6 +145,22 @@
                 Governance
             </div>
             <ul class="space-y-0.5">
+                <li>
+                    <a href="{{ route('repositories') }}"
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
+                            {{ request()->routeIs('repositories') ? 'sidebar-active' : 'sidebar-link' }}">
+                        @if(request()->routeIs('repositories'))
+                            <span class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full brand-gradient-bg"></span>
+                        @endif
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users h-4 w-4">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Teams & Roles</span>
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('settings') }}"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
