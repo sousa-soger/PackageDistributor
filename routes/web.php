@@ -1,13 +1,15 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeploymentPackageController;
 use App\Http\Controllers\GitHubController;
 use App\Http\Controllers\GitLabOAuthController;
 use App\Http\Controllers\GitLabProjectController;
+use App\Http\Controllers\PackageController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TeamController;
-use App\Http\Controllers\PackageController;
 use Illuminate\Support\Facades\Route;
 
 // ** Route for Sidebar nav but only logged in user can view
@@ -26,8 +28,19 @@ Route::middleware('auth')->group(function () {
     Route::patch('/team/members/{member}/role', [TeamController::class, 'updateRole'])->name('team.members.update-role');
     Route::delete('/team/members/{member}', [TeamController::class, 'removeMember'])->name('team.members.remove');
 
-    Route::get('/projects', [GitLabProjectController::class, 'index'])
+    Route::get('/projects', [ProjectController::class, 'index'])
         ->name('projects');
+    Route::post('/projects', [ProjectController::class, 'store'])
+        ->name('projects.store');
+    Route::patch('/projects/{project}', [ProjectController::class, 'update'])
+        ->name('projects.update');
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])
+        ->name('projects.destroy');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+    Route::post('/dashboard', [ProjectController::class, 'store'])
+        ->name('dashboard.store');
     Route::get('/gitlab/oauth/redirect', [GitLabOAuthController::class, 'redirect'])
         ->name('gitlab.oauth.redirect');
     Route::get('/gitlab/oauth/callback', [GitLabOAuthController::class, 'callback'])

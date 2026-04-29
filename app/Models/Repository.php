@@ -9,6 +9,7 @@ class Repository extends Model
 {
     protected $fillable = [
         'user_id',
+        'project_id',
         'provider',
         'name',
         'display_name',
@@ -27,10 +28,10 @@ class Repository extends Model
     ];
 
     protected $casts = [
-        'branches'       => 'array',
-        'tags'           => 'array',
+        'branches' => 'array',
+        'tags' => 'array',
         'last_synced_at' => 'datetime',
-        'access_token'   => 'encrypted',
+        'access_token' => 'encrypted',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────
@@ -38,6 +39,11 @@ class Repository extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     // ── Accessors ────────────────────────────────────────────────────────────

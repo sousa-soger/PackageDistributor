@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 
 class DeploymentJob extends Model
 {
     protected $fillable = [
         'user_id',
+        'project_id',
         'batch_id',
         'repo',
         'vcs_provider',
@@ -37,6 +39,11 @@ class DeploymentJob extends Model
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
 
     // ── Cache key helpers ────────────────────────────────────────────────────
 

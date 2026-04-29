@@ -1,35 +1,53 @@
 @extends('layouts.app')
 
-@section('title', 'Repositories')
-@section('subtitle', 'GitHub, GitLab, company servers and local repositories.')
+@section('title', 'Projects')
+@section('subtitle', 'Create and organize projects, see their repositories and the teams behind them.')
 
 @section('topbar_actions')
     <div
-        x-data="connectRepositoryModal({
-            gitlabConnected: @js($gitlabConnected),
-            gitlabOauthUrl: '{{ route('gitlab.oauth.redirect') }}'
-        })"
-        @open-connect-repository.window="open()"
+        x-data="{
+            showModal: @js($errors->any()),
+            modalMode: 'create',
+            selectedColor: @js(old('color', $colorOptions[0] ?? 'from-brand-rose to-brand-iris')),
+            editId: null,
+            editName: '',
+            editDescription: '',
+            openCreate() {
+                this.modalMode = 'create';
+                this.editId = null;
+                this.editName = '';
+                this.editDescription = '';
+                this.selectedColor = @js($colorOptions[0] ?? 'from-brand-rose to-brand-iris');
+                this.showModal = true;
+            },
+            openEdit(project) {
+                this.modalMode = 'edit';
+                this.editId = project.id;
+                this.editName = project.name;
+                this.editDescription = project.description === 'No description added yet.' ? '' : project.description;
+                this.selectedColor = project.color;
+                this.showModal = true;
+            },
+        }"
+        @open-create-project.window="openCreate()"
+        @open-edit-project.window="openEdit($event.detail)"
     >
         <button
-            @click="open()"
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft hover:shadow-glow hover:brightness-[1.03] active:brightness-95 transition-base h-9 rounded-md px-3"
+            type="button"
+            @click="openCreate()"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft hover:brightness-[1.03] active:brightness-95 transition-base h-9 rounded-md px-3"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package-plus h-4 w-4">
-                <path d="M16 16h6"></path>
-                <path d="M19 13v6"></path>
-                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"></path>
-                <path d="m7.5 4.27 9 5.15"></path>
-                <polyline points="3.29 7 12 12 20.71 7"></polyline>
-                <line x1="12" x2="12" y1="22" y2="12"></line>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"/><path d="M12 5v14"/>
             </svg>
-            Connect Repository
+            New Project
         </button>
 
+        {{-- Create / Edit Modal --}}
         <template x-teleport="body">
-            <div x-show="show" x-cloak class="relative z-50">
+            <div x-show="showModal" x-cloak class="relative z-50">
                 <div
-                    x-show="show"
+                    x-show="showModal"
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
@@ -41,133 +59,71 @@
 
                 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
                     <div
-                        x-show="show"
-                        @click.away="close()"
-                        @keydown.escape.window="close()"
+                        x-show="showModal"
+                        @click.away="showModal = false"
+                        @keydown.escape.window="showModal = false"
                         x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave="ease-in duration-200"
                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                        class="w-full max-w-xl grid gap-4 border border-border bg-background shadow-lg sm:rounded-lg p-0 overflow-hidden relative"
+                        class="w-full max-w-2xl border border-border bg-background shadow-lg sm:rounded-2xl overflow-hidden"
                         role="dialog"
                         aria-modal="true"
                     >
                         <div class="brand-soft-bg px-6 py-5 border-b border-border/60">
-                            <div class="flex flex-col space-y-1.5 text-center sm:text-left">
-                                <h2 class="font-semibold tracking-tight text-xl">Connect Repository</h2>
-                                <p class="text-sm text-muted-foreground">This Laravel build is wired for GitLab OAuth today. The other providers are kept as UI placeholders from the original Cybix Craft page.</p>
-                            </div>
-                        </div>
-
-                        <div class="px-6 py-5 max-h-[60vh] overflow-y-auto">
-                            <div class="space-y-2">
-                                <p class="text-sm text-muted-foreground mb-3">Pick a source for your repository.</p>
-
-                                <template x-if="gitlabConnected">
-                                    <div class="rounded-xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
-                                        GitLab is already connected for this account. Use the page below to browse repositories or disconnect.
-                                    </div>
-                                </template>
-
-                                <a
-                                    x-show="!gitlabConnected"
-                                    :href="gitlabOauthUrl"
-                                    class="w-full text-left flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 hover:shadow-soft hover:border-primary/40 transition-base group"
-                                >
-                                    <div class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center text-primary shrink-0 transition-base group-hover:-translate-y-0.5">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gitlab h-5 w-5">
-                                            <path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-semibold">GitLab</div>
-                                        <div class="text-xs text-muted-foreground truncate">Connect a GitLab.com or self-hosted GitLab repository with OAuth.</div>
-                                    </div>
-                                    <div class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">live</div>
-                                </a>
-
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h2 class="text-xl font-semibold tracking-tight" x-text="modalMode === 'edit' ? 'Edit Project' : 'Create Project'"></h2>
+                                    <p class="mt-1 text-sm text-muted-foreground">
+                                        <span x-show="modalMode === 'create'">Create a project bucket, then link repositories to it from the repositories page.</span>
+                                        <span x-show="modalMode === 'edit'">Update the project name, description, or accent colour.</span>
+                                    </p>
+                                </div>
                                 <button
                                     type="button"
-                                    x-show="gitlabConnected"
-                                    disabled
-                                    class="w-full text-left flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 p-3 text-success cursor-not-allowed"
+                                    @click="showModal = false"
+                                    class="rounded-sm opacity-70 ring-offset-background transition-colors hover:bg-muted hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 p-1.5"
                                 >
-                                    <div class="h-10 w-10 rounded-lg bg-white/70 flex items-center justify-center shrink-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gitlab h-5 w-5">
-                                            <path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-semibold">GitLab</div>
-                                        <div class="text-xs text-success/80 truncate">Already connected for this account.</div>
-                                    </div>
-                                    <div class="text-[10px] font-medium uppercase tracking-wider">connected</div>
-                                </button>
-
-                                <button type="button" disabled class="w-full text-left flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 opacity-60 cursor-not-allowed">
-                                    <div class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center text-primary shrink-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github h-5 w-5">
-                                            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
-                                            <path d="M9 18c-4.51 2-5-2-7-2"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-semibold">GitHub</div>
-                                        <div class="text-xs text-muted-foreground truncate">Kept from the original design, but not wired into this page yet.</div>
-                                    </div>
-                                    <div class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">soon</div>
-                                </button>
-
-                                <button type="button" disabled class="w-full text-left flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 opacity-60 cursor-not-allowed">
-                                    <div class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center text-primary shrink-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-server h-5 w-5">
-                                            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
-                                            <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
-                                            <line x1="6" x2="6.01" y1="6" y2="6"></line>
-                                            <line x1="6" x2="6.01" y1="18" y2="18"></line>
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-semibold">Company Server</div>
-                                        <div class="text-xs text-muted-foreground truncate">UI scaffold kept for later SSH repository support.</div>
-                                    </div>
-                                    <div class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">soon</div>
-                                </button>
-
-                                <button type="button" disabled class="w-full text-left flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 opacity-60 cursor-not-allowed">
-                                    <div class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center text-primary shrink-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hard-drive h-5 w-5">
-                                            <line x1="22" x2="2" y1="12" y2="12"></line>
-                                            <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-                                            <line x1="6" x2="6.01" y1="16" y2="16"></line>
-                                            <line x1="10" x2="10.01" y1="16" y2="16"></line>
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-semibold">Local PC</div>
-                                        <div class="text-xs text-muted-foreground truncate">Reserved for future local repository indexing.</div>
-                                    </div>
-                                    <div class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">soon</div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                                    </svg>
+                                    <span class="sr-only">Close</span>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="flex flex-col-reverse sm:flex-row sm:space-x-2 px-6 py-4 border-t border-border/60 bg-muted/30 sm:justify-between gap-2">
-                            <span class="text-xs text-muted-foreground">Compatible Blade port of the Cybix Craft repositories screen.</span>
-                            <div class="flex items-center gap-2">
-                                <button @click="close()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">Close</button>
+                        {{-- Create form --}}
+                        <form
+                            x-show="modalMode === 'create'"
+                            method="POST"
+                            action="{{ route('projects.store') }}"
+                            class="px-6 py-5 space-y-5"
+                        >
+                            @csrf
+                            @include('_partials.project-form-fields')
+                            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-border/60 pt-4">
+                                <button type="button" @click="showModal = false" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">Cancel</button>
+                                <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md brand-gradient-bg px-4 text-sm font-medium text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03]">Save Project</button>
                             </div>
-                        </div>
+                        </form>
 
-                        <button @click="close()" type="button" class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-colors hover:bg-muted hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none p-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x h-4 w-4">
-                                <path d="M18 6 6 18"></path>
-                                <path d="m6 6 12 12"></path>
-                            </svg>
-                            <span class="sr-only">Close</span>
-                        </button>
+                        {{-- Edit form --}}
+                        <form
+                            x-show="modalMode === 'edit'"
+                            method="POST"
+                            :action="`/projects/${editId}`"
+                            class="px-6 py-5 space-y-5"
+                        >
+                            @csrf
+                            @method('PATCH')
+                            @include('_partials.project-form-fields')
+                            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-border/60 pt-4">
+                                <button type="button" @click="showModal = false" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">Cancel</button>
+                                <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md brand-gradient-bg px-4 text-sm font-medium text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03]">Update Project</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -176,551 +132,379 @@
 @endsection
 
 @section('content')
+    {{-- Safelist gradient classes --}}
+    <div class="hidden from-brand-rose to-brand-iris from-brand-teal to-brand-iris from-brand-iris to-brand-teal to-brand-rose to-brand-teal"></div>
+
     <div
         class="space-y-6"
-        x-data="repositoriesPage({
-            gitlabConnected: @js($gitlabConnected),
-            gitlabUsername: @js($gitlabUsername),
-            gitlabName: @js(auth()->user()->gitlab_name),
-            gitlabAvatar: @js(auth()->user()->gitlab_avatar),
-            gitlabConnectedAt: @js(auth()->user()->gitlab_connected_at?->toIso8601String()),
-            gitlabProjectsUrl: '{{ route('gitlab.projects') }}',
-            gitlabExploreUrl: '{{ route('gitlab.explore') }}'
+        x-data="projectsPage({
+            projects: @js($projects),
+            teamMembers: @js($teamMembers),
         })"
-        x-init="init()"
     >
-        <section x-show="!gitlabConnected" x-cloak class="section-card overflow-hidden">
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
-                <div class="space-y-4">
-                    <span class="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Repositories
-                    </span>
-                    <div class="space-y-2">
-                        <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight">Turn the Cybix Craft repository page into a real Laravel screen.</h2>
-                        <p class="max-w-2xl text-sm text-muted-foreground">Your layout is ready, but this page needs a live GitLab connection before it can replace the original mock repository cards. Once connected, the grid below will be fed by your existing Laravel routes instead of hardcoded sample data.</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button
-                            type="button"
-                            @click="window.dispatchEvent(new CustomEvent('open-connect-repository'))"
-                            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft hover:shadow-glow hover:brightness-[1.03] active:brightness-95 transition-base h-10 rounded-md px-4"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-                                <path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path>
-                            </svg>
-                            Connect GitLab
-                        </button>
-                        <span class="text-xs text-muted-foreground">GitHub, SSH, and local repository flows are still UI placeholders on this page for now.</span>
-                    </div>
-                </div>
-
-                <div class="relative">
-                    <div class="absolute inset-0 rounded-[2rem] brand-soft-bg blur-3xl opacity-70"></div>
-                    <div class="relative section-card p-5 bg-background/85 backdrop-blur-sm">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="rounded-2xl border border-border/70 bg-card px-4 py-3">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Laravel</div>
-                                <div class="mt-1 text-sm font-semibold">Blade-ready layout</div>
-                                <div class="mt-1 text-xs text-muted-foreground">Topbar, sidebar, gradients, and repository card styles already match your app shell.</div>
-                            </div>
-                            <div class="rounded-2xl border border-border/70 bg-card px-4 py-3">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data source</div>
-                                <div class="mt-1 text-sm font-semibold">GitLab routes</div>
-                                <div class="mt-1 text-xs text-muted-foreground">Uses `/gitlab/projects` and `/gitlab/explore` instead of the React mock arrays.</div>
-                            </div>
-                            <div class="rounded-2xl border border-border/70 bg-card px-4 py-3 sm:col-span-2">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Next state</div>
-                                <div class="mt-1 text-sm font-semibold">Browse real repositories after OAuth</div>
-                                <div class="mt-1 text-xs text-muted-foreground">The repository grid, filters, and account summary activate as soon as GitLab is connected.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        {{-- Search header --}}
+        <div class="mb-5 relative max-w-md">
+            <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                <svg class="h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/>
+                </svg>
             </div>
-        </section>
+            <input
+                type="search"
+                x-model="search"
+                placeholder="Search projects…"
+                class="w-full rounded-xl border border-border/70 bg-background py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20"
+            >
+        </div>
 
-        <div x-show="gitlabConnected" x-cloak class="space-y-6 animate-fade-in">
-            <section class="section-card overflow-hidden">
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-                    <div class="flex items-start gap-4">
-                        <div class="h-14 w-14 rounded-2xl brand-soft-bg flex items-center justify-center overflow-hidden shadow-soft shrink-0">
-                            <template x-if="gitlabAvatar">
-                                <img :src="gitlabAvatar" :alt="accountDisplayName" class="h-full w-full object-cover">
-                            </template>
-                            <template x-if="!gitlabAvatar">
-                                <span class="text-base font-semibold text-primary" x-text="accountInitials"></span>
-                            </template>
-                        </div>
+        {{-- Empty state: no projects --}}
+        <div x-show="projects.length === 0" x-cloak class="section-card p-10 text-center">
+            <div class="mx-auto h-12 w-12 rounded-xl brand-soft-bg flex items-center justify-center mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                </svg>
+            </div>
+            <div class="text-sm font-semibold">No projects found</div>
+            <p class="text-xs text-muted-foreground mt-1">Create your first project to start grouping repositories.</p>
+            <button
+                type="button"
+                @click="window.dispatchEvent(new CustomEvent('open-create-project'))"
+                class="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-md brand-gradient-bg px-4 text-sm font-medium text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03]"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                New Project
+            </button>
+        </div>
 
-                        <div class="min-w-0 space-y-2">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="text-xl font-semibold tracking-tight">GitLab connection is live</h2>
-                                <span class="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-success">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                                    Active
-                                </span>
-                            </div>
-                            <p class="text-sm text-muted-foreground">
-                                Signed in as <span class="font-medium text-foreground" x-text="accountDisplayName"></span>
-                                <template x-if="gitlabUsername">
-                                    <span class="text-muted-foreground">(<span x-text="'@' + gitlabUsername"></span>)</span>
-                                </template>
-                                <template x-if="gitlabConnectedAt">
-                                    <span class="text-muted-foreground">. Connected <span x-text="formattedConnectedAt"></span>.</span>
-                                </template>
-                            </p>
-                            <p class="text-xs text-muted-foreground">This Blade page now mirrors the Cybix Craft repositories screen, but it is backed by your Laravel GitLab routes and filters.</p>
-                        </div>
-                    </div>
+        {{-- Empty state: search returned nothing --}}
+        <div x-show="projects.length > 0 && filteredProjects.length === 0" x-cloak class="section-card text-center py-12">
+            <h3 class="text-lg font-semibold">No projects match your search</h3>
+            <p class="mt-2 text-sm text-muted-foreground">Try a different keyword or clear the search field.</p>
+            <button
+                type="button"
+                @click="clearSearch()"
+                class="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+                Clear Search
+            </button>
+        </div>
 
-                    <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-                        <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/70 px-3 py-1.5 text-xs font-medium text-foreground/80">
-                            <span x-text="allRepositories.length"></span>
-                            repositories
-                        </span>
-                        <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/70 px-3 py-1.5 text-xs font-medium text-foreground/80">
-                            <span x-text="personalCount"></span>
-                            personal
-                        </span>
-                        <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/70 px-3 py-1.5 text-xs font-medium text-foreground/80">
-                            <span x-text="sharedCount"></span>
-                            shared
-                        </span>
-                        <form action="{{ route('gitlab.oauth.disconnect') }}" method="POST" class="inline-flex">
-                            @csrf
-                            <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-                                Disconnect
-                            </button>
-                        </form>
-                    </div>
-                </div>
+        {{-- Project cards grid --}}
+        {{-- Each card wrapper uses display:contents when active so the placeholder + article
+             become direct grid children — this lets col-span-full actually span the full row. --}}
+{{-- Project cards grid --}}
+<div
+    x-show="filteredProjects.length > 0"
+    x-cloak
+    class="space-y-4"
+>
+    {{-- We render rows manually so the expanded panel can inject between rows --}}
+    <template x-for="(row, rowIndex) in projectRows" :key="rowIndex">
+        <div class="space-y-4">
+            {{-- The row of cards --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+                <template x-for="project in row" :key="project.id">
+                    <article
+                        @click="selectedId !== project.id && setSelected(project.id)"
+                        :class="selectedId === project.id
+                            ? 'p-5 ring-[1px] ring-primary shadow-[0_0_0_4px_hsl(var(--primary)/ 0.3)] opacity-60 pointer-events-none'
+                            : 'p-5 cursor-pointer hover:shadow-soft'"
+                        class="section-card text-left group relative overflow-hidden transition-all duration-300"
+                    >
+                        {{-- Background glow --}}
+                        <div
+                            class="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br opacity-20 blur-2xl pointer-events-none"
+                            :class="project.color"
+                        ></div>
 
-                <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-                    <div class="space-y-3">
                         <div class="relative">
-                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                                <svg class="h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"></path>
-                                </svg>
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <div
+                                    class="rounded-lg bg-gradient-to-br shadow-soft flex items-center justify-center shrink-0 h-10 w-10"
+                                    :class="project.color"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 on-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                        <path d="M8 10v4"></path><path d="M12 10v2"></path><path d="M16 10v6"></path>
+                                    </svg>
+                                </div>
+                                <div
+                                    class="flex items-center gap-1 transition-all opacity-0 group-hover:opacity-100"
+                                    @click.stop
+                                >
+                                    <button type="button" @click="window.dispatchEvent(new CustomEvent('open-edit-project', { detail: project }))" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors" title="Edit project">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                    </button>
+                                    <button type="button" @click="deleteId = project.id; deleteName = project.name; showDeleteDialog = true;" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-failed hover:bg-failed/10 transition-colors" title="Delete project">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
                             </div>
-                            <input
-                                type="search"
-                                x-model="search"
-                                placeholder="Search repositories by path, name, or description..."
-                                class="w-full rounded-xl border border-border/70 bg-background py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20"
-                            >
+                            <div class="text-sm font-semibold" x-text="project.name"></div>
+                            <div class="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[32px]" x-text="project.description"></div>
+                            <div class="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
+                                <span class="inline-flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                                    <span x-text="project.repoCount + ' repos'"></span>
+                                </span>
+                                <span class="inline-flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    <span x-text="teamMembers.length + ' members'"></span>
+                                </span>
+                                <span class="ml-auto" x-text="project.lastDeployedAt"></span>
+                            </div>
                         </div>
-
-                        <div class="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                @click="activeFilter = 'all'"
-                                :class="activeFilter === 'all' ? 'brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft' : 'border border-border bg-background text-muted-foreground hover:bg-secondary/50'"
-                                class="inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-base"
-                            >
-                                All
-                            </button>
-                            <button
-                                type="button"
-                                @click="activeFilter = 'personal'"
-                                :class="activeFilter === 'personal' ? 'brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft' : 'border border-border bg-background text-muted-foreground hover:bg-secondary/50'"
-                                class="inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-base"
-                            >
-                                Personal
-                            </button>
-                            <button
-                                type="button"
-                                @click="activeFilter = 'shared'"
-                                :class="activeFilter === 'shared' ? 'brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft' : 'border border-border bg-background text-muted-foreground hover:bg-secondary/50'"
-                                class="inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-base"
-                            >
-                                Shared
-                            </button>
-                        </div>
-                    </div>
-
-                    <label class="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 shadow-sm">
-                        <input type="checkbox" x-model="showExplore" class="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-ring">
-                        <span class="space-y-1">
-                            <span class="block text-sm font-medium">Include discoverable internal projects</span>
-                            <span class="block text-xs text-muted-foreground">Loads GitLab projects you can see even when you are not a direct member.</span>
-                        </span>
-                    </label>
-                </div>
-
-                <div x-show="showExplore && loadingExplore" x-cloak class="mt-4 rounded-xl border border-queued/30 bg-queued/10 px-4 py-3 text-sm text-queued">
-                    Loading discoverable internal repositories...
-                </div>
-            </section>
-
-            <div x-show="error" x-cloak class="rounded-2xl border border-failed/30 bg-failed/10 px-4 py-3 text-sm text-failed flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span x-text="error"></span>
-                <button
-                    type="button"
-                    @click="loadRepositories()"
-                    class="inline-flex h-9 items-center justify-center rounded-md border border-failed/30 bg-background px-3 text-sm font-medium text-failed transition-colors hover:bg-failed/5"
-                >
-                    Try again
-                </button>
-            </div>
-
-            <div x-show="loading && memberRepositories.length === 0" x-cloak class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <template x-for="index in 6" :key="'skeleton-' + index">
-                    <div class="section-card p-5 animate-pulse space-y-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="h-10 w-10 rounded-lg bg-secondary"></div>
-                            <div class="h-6 w-20 rounded-md bg-secondary"></div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="h-4 w-3/4 rounded bg-secondary"></div>
-                            <div class="h-3 w-1/2 rounded bg-secondary"></div>
-                            <div class="h-3 w-full rounded bg-secondary"></div>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <div class="h-5 w-20 rounded bg-secondary"></div>
-                            <div class="h-5 w-24 rounded bg-secondary"></div>
-                            <div class="h-5 w-28 rounded bg-secondary"></div>
-                        </div>
-                        <div class="h-3 w-1/3 rounded bg-secondary"></div>
-                    </div>
+                    </article>
                 </template>
             </div>
 
-            <div x-show="!loading && filteredRepositories.length === 0" x-cloak class="section-card text-center py-12">
-                <div class="mx-auto h-12 w-12 rounded-2xl brand-soft-bg flex items-center justify-center text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5 12 3l9 4.5M3 7.5V16.5L12 21m-9-13.5L12 12m9-4.5V16.5L12 21m0-9v9"></path>
+            {{-- Expanded panel: renders below this row if selected project is in this row --}}
+<template x-if="selectedProjectInRow(row)">
+    <article
+        class="section-card text-left relative overflow-hidden ring-primary shadow-soft p-0 z-10"
+    >
+        {{-- Background glow --}}
+        <div
+            class="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br opacity-20 blur-2xl pointer-events-none"
+            :class="selectedProjectInRow(row).color"
+        ></div>
+
+        {{-- Header --}}
+        <div class="relative p-5 border-b border-border/60 brand-soft-bg">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div
+                    class="rounded-lg bg-gradient-to-br shadow-soft flex items-center justify-center shrink-0 h-12 w-12"
+                    :class="selectedProjectInRow(row).color"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 on-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                        <path d="M8 10v4"></path><path d="M12 10v2"></path><path d="M16 10v6"></path>
                     </svg>
                 </div>
-                <h3 class="mt-4 text-lg font-semibold">No repositories match the current filters</h3>
-                <p class="mt-2 text-sm text-muted-foreground">Try another search term, switch to a different filter, or disable discoverable internal projects.</p>
+                <div class="flex items-center gap-1" @click.stop>
+                    <button type="button"
+                        @click="window.dispatchEvent(new CustomEvent('open-edit-project', { detail: selectedProjectInRow(row) }))"
+                        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors" title="Edit project">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </button>
+                    <button type="button"
+                        @click="deleteId = selectedProjectInRow(row).id; deleteName = selectedProjectInRow(row).name; showDeleteDialog = true;"
+                        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-failed hover:bg-failed/10 transition-colors" title="Delete project">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                    <button type="button" @click="selectedId = null"
+                        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors" title="Collapse">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="text-base font-semibold" x-text="selectedProjectInRow(row).name"></div>
+            <div class="text-xs text-muted-foreground mt-1" x-text="selectedProjectInRow(row).description"></div>
+            <div class="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span class="inline-flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                    <span x-text="selectedProjectInRow(row).repoCount + ' repos'"></span>
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span x-text="teamMembers.length + ' members'"></span>
+                </span>
+                <span class="ml-auto" x-text="selectedProjectInRow(row).lastDeployedAt"></span>
+            </div>
+        </div>
+
+        {{-- Repos + Team panels --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/60">
+            {{-- Repositories panel --}}
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold inline-flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                        Connected repositories
+                    </h4>
+                    <span class="text-[11px] text-muted-foreground" x-text="selectedProjectInRow(row).repositories.length"></span>
+                </div>
+                <template x-if="selectedProjectInRow(row).repositories.length === 0">
+                    <p class="text-xs text-muted-foreground py-6 text-center">No repositories connected to this project yet.</p>
+                </template>
+                <template x-if="selectedProjectInRow(row).repositories.length > 0">
+                    <ul class="space-y-2">
+                        <template x-for="repo in selectedProjectInRow(row).repositories" :key="repo.id">
+                            <li class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                <div class="h-8 w-8 rounded-md brand-soft-bg flex items-center justify-center text-primary shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs font-semibold font-mono truncate" x-text="repo.name"></div>
+                                    <div class="text-[11px] text-muted-foreground" x-text="`${repo.branchCount} branches · ${repo.tagCount} tags · default ${repo.defaultBranch}`"></div>
+                                </div>
+                                <span
+                                    class="text-[10px] font-medium px-2 py-0.5 rounded-md border whitespace-nowrap"
+                                    :class="{
+                                        'bg-success/10 text-success border-success/30': repo.status === 'connected',
+                                        'bg-queued/10 text-queued border-queued/30': repo.status === 'expired',
+                                        'bg-failed/10 text-failed border-failed/30': repo.status !== 'connected' && repo.status !== 'expired',
+                                    }"
+                                    x-text="repo.status === 'connected' ? 'Connected' : repo.status === 'expired' ? 'Expired' : 'Needs auth'"
+                                ></span>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
             </div>
 
-            <div x-show="filteredRepositories.length > 0" x-cloak class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <template x-for="repo in filteredRepositories" :key="repo.source + '-' + repo.id">
-                    <div class="section-card p-5">
-                        <div class="flex items-start justify-between gap-3 mb-3">
-                            <div class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center text-primary shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path>
-                                </svg>
-                            </div>
-
-                            <span
-                                class="text-[11px] font-medium px-2 py-0.5 rounded-md border"
-                                :class="statusClasses(repo)"
-                                x-text="statusLabel(repo)"
-                            ></span>
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <div class="text-sm font-semibold truncate" :title="repo.path" x-text="repo.path"></div>
-                            <div class="text-xs text-muted-foreground truncate" :title="repo.name" x-text="repo.name"></div>
-                        </div>
-
-                        <p
-                            class="mt-3 text-xs text-muted-foreground h-10 overflow-hidden"
-                            :title="repo.description || 'No description provided.'"
-                            x-text="repo.description || 'No description provided.'"
-                        ></p>
-
-                        <div class="mt-3 flex flex-wrap gap-1.5">
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground" x-text="categoryLabel(repo.category)"></span>
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground" x-text="visibilityLabel(repo.visibility)"></span>
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground" x-text="defaultBranchLabel(repo)"></span>
-                        </div>
-
-                        <div class="mt-4 flex items-center justify-between gap-3 text-xs">
-                            <span class="text-muted-foreground" x-text="'Updated ' + timeAgo(repo.lastActivity)"></span>
-                            <a
-                                :href="repo.web_url"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex items-center gap-1 text-primary font-medium hover:underline"
-                            >
-                                Open
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M7 7h10v10"></path>
-                                    <path d="M7 17 17 7"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
+            {{-- Team members panel --}}
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold inline-flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Teams involved
+                    </h4>
+                    <span class="text-[11px] text-muted-foreground" x-text="teamMembers.length"></span>
+                </div>
+                <template x-if="teamMembers.length === 0">
+                    <p class="text-xs text-muted-foreground py-6 text-center">No team members have been assigned yet.</p>
+                </template>
+                <template x-if="teamMembers.length > 0">
+                    <ul class="space-y-2">
+                        <template x-for="member in teamMembers" :key="member.id">
+                            <li class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0" x-text="member.initials"></div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs font-semibold truncate" x-text="member.name"></div>
+                                    <div class="text-[11px] text-muted-foreground capitalize" x-text="member.role"></div>
+                                </div>
+                                <span class="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-1.5 2.74-1.5 4.5 1.76 0 3.24 0 4.5-1.5"/><path d="m12 15-3-3a21.7 21.7 0 0 1 3-7.5c2.1-3.27 5.13-4.5 9-4.5 0 3.87-1.23 6.9-4.5 9a21.7 21.7 0 0 1-7.5 3"/><path d="M9 12H4.5C3 12 2 13 2 14.5c0 1.34.63 2.77 1.5 3.5L6 20.5c.73.87 2.16 1.5 3.5 1.5C11 22 12 21 12 19.5V15"/><path d="M9 9V4.5C9 3 10 2 11.5 2c1.34 0 2.77.63 3.5 1.5L17.5 6c.87.73 1.5 2.16 1.5 3.5C19 11 18 12 16.5 12H12"/></svg>
+                                    active
+                                </span>
+                            </li>
+                        </template>
+                    </ul>
                 </template>
             </div>
         </div>
+    </article>
+</template>
+        </div>
+    </template>
+</div>
+
+        {{-- Delete confirmation dialog --}}
+        <template x-teleport="body">
+            <div x-show="showDeleteDialog" x-cloak class="relative z-50">
+                <div
+                    x-show="showDeleteDialog"
+                    x-transition:enter="ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-background/80 backdrop-blur-sm"
+                ></div>
+
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        x-show="showDeleteDialog"
+                        @keydown.escape.window="showDeleteDialog = false"
+                        x-transition:enter="ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="w-full max-w-md border border-border bg-background rounded-2xl shadow-lg p-6"
+                        role="alertdialog"
+                        aria-modal="true"
+                    >
+                        <h2 class="text-lg font-semibold">Delete this project?</h2>
+                        <p class="mt-2 text-sm text-muted-foreground">
+                            This removes <strong x-text="deleteName"></strong> from the workspace. Connected repositories and packages will keep their history but will no longer be grouped under it.
+                        </p>
+                        <div class="mt-5 flex justify-end gap-2">
+                            <button
+                                type="button"
+                                @click="showDeleteDialog = false"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+                            >
+                                Cancel
+                            </button>
+                            <form :action="`/projects/${deleteId}`" method="POST" @submit="showDeleteDialog = false">
+                                @csrf
+                                @method('DELETE')
+                                <button
+                                    type="submit"
+                                    class="inline-flex h-9 items-center justify-center rounded-md bg-failed px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-failed/90"
+                                >
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 @endsection
 
 @push('scripts')
 <script>
-function connectRepositoryModal({ gitlabConnected, gitlabOauthUrl }) {
+function projectsPage({ projects, teamMembers }) {
     return {
-        show: false,
-        gitlabConnected,
-        gitlabOauthUrl,
-
-        open() {
-            this.show = true;
-        },
-
-        close() {
-            this.show = false;
-        },
-    };
-}
-
-function repositoriesPage({
-    gitlabConnected,
-    gitlabUsername,
-    gitlabName,
-    gitlabAvatar,
-    gitlabConnectedAt,
-    gitlabProjectsUrl,
-    gitlabExploreUrl,
-}) {
-    return {
-        gitlabConnected,
-        gitlabUsername,
-        gitlabName,
-        gitlabAvatar,
-        gitlabConnectedAt,
-        gitlabProjectsUrl,
-        gitlabExploreUrl,
-
-        loading: false,
-        loadingExplore: false,
-        error: '',
         search: '',
-        activeFilter: 'all',
-        showExplore: false,
-        memberRepositories: [],
-        exploreRepositories: [],
+        projects,
+        teamMembers,
+        selectedId: null,
+        showDeleteDialog: false,
+        deleteId: null,
+        deleteName: '',
+        colCount: 3, // updated reactively
+
+        get filteredProjects() {
+            const query = this.search.trim().toLowerCase();
+            if (!query) return this.projects;
+            return this.projects.filter(p =>
+                p.name.toLowerCase().includes(query) ||
+                p.slug.toLowerCase().includes(query) ||
+                p.description.toLowerCase().includes(query)
+            );
+        },
+
+        // Splits filteredProjects into rows of colCount
+        get projectRows() {
+            const cols = this.colCount;
+            const rows = [];
+            const list = this.filteredProjects;
+            for (let i = 0; i < list.length; i += cols) {
+                rows.push(list.slice(i, i + cols));
+            }
+            return rows;
+        },
+
+        // Returns the selected project if it lives in this row, else null
+        selectedProjectInRow(row) {
+            if (!this.selectedId) return null;
+            return row.find(p => p.id === this.selectedId) ?? null;
+        },
+
+        // Call this on mount + resize to sync colCount with actual CSS breakpoints
+        updateColCount() {
+            const w = window.innerWidth;
+            if (w >= 1280) this.colCount = 3;       // xl:grid-cols-3
+            else if (w >= 640) this.colCount = 2;   // sm:grid-cols-2
+            else this.colCount = 1;
+        },
+
+        setSelected(id) {
+            this.selectedId = id;
+        },
+
+        clearSearch() { this.search = ''; },
 
         init() {
-            if (!this.gitlabConnected) {
-                return;
-            }
-
-            this.loadRepositories();
-
-            this.$watch('showExplore', (value) => {
-                if (value && this.exploreRepositories.length === 0 && !this.loadingExplore) {
-                    this.loadExploreRepositories();
-                }
-            });
-        },
-
-        get accountDisplayName() {
-            return this.gitlabName || this.gitlabUsername || 'GitLab account';
-        },
-
-        get accountInitials() {
-            const source = this.accountDisplayName.trim();
-
-            if (!source) {
-                return 'GL';
-            }
-
-            return source
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((part) => part.charAt(0).toUpperCase())
-                .join('');
-        },
-
-        get formattedConnectedAt() {
-            if (!this.gitlabConnectedAt) {
-                return '';
-            }
-
-            return new Date(this.gitlabConnectedAt).toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            });
-        },
-
-        get allRepositories() {
-            if (!this.showExplore) {
-                return this.memberRepositories;
-            }
-
-            return [...this.memberRepositories, ...this.exploreRepositories];
-        },
-
-        get filteredRepositories() {
-            const query = this.search.trim().toLowerCase();
-
-            return this.allRepositories.filter((repo) => {
-                const matchesSearch = !query ||
-                    repo.path.toLowerCase().includes(query) ||
-                    repo.name.toLowerCase().includes(query) ||
-                    (repo.description || '').toLowerCase().includes(query);
-
-                const matchesFilter = this.activeFilter === 'all' || repo.category === this.activeFilter;
-
-                return matchesSearch && matchesFilter;
-            });
-        },
-
-        get personalCount() {
-            return this.allRepositories.filter((repo) => repo.category === 'personal').length;
-        },
-
-        get sharedCount() {
-            return this.allRepositories.filter((repo) => repo.category === 'shared').length;
-        },
-
-        async loadRepositories() {
-            this.loading = true;
-            this.error = '';
-
-            try {
-                const response = await fetch(this.gitlabProjectsUrl, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to load GitLab repositories.');
-                }
-
-                this.memberRepositories = data;
-
-                if (this.showExplore && this.exploreRepositories.length === 0) {
-                    await this.loadExploreRepositories();
-                }
-            } catch (error) {
-                this.error = error.message || 'Failed to load GitLab repositories.';
-                this.memberRepositories = [];
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        async loadExploreRepositories() {
-            this.loadingExplore = true;
-            this.error = '';
-
-            try {
-                const response = await fetch(this.gitlabExploreUrl, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to load discoverable repositories.');
-                }
-
-                const memberIds = new Set(this.memberRepositories.map((repo) => repo.id));
-                this.exploreRepositories = data.filter((repo) => !memberIds.has(repo.id));
-            } catch (error) {
-                this.error = error.message || 'Failed to load discoverable repositories.';
-                this.exploreRepositories = [];
-            } finally {
-                this.loadingExplore = false;
-            }
-        },
-
-        statusLabel(repo) {
-            if (repo.source === 'explore') {
-                return 'Visible';
-            }
-
-            return this.accessLevelLabel(repo.access_level);
-        },
-
-        statusClasses(repo) {
-            if (repo.source === 'explore') {
-                return 'bg-queued/10 text-queued border-queued/30';
-            }
-
-            if (repo.access_level >= 40) {
-                return 'bg-success/10 text-success border-success/30';
-            }
-
-            if (repo.access_level >= 30) {
-                return 'bg-running/10 text-running border-running/30';
-            }
-
-            return 'bg-secondary text-muted-foreground border-border';
-        },
-
-        accessLevelLabel(level) {
-            const labels = {
-                10: 'Guest',
-                20: 'Reporter',
-                30: 'Developer',
-                40: 'Maintainer',
-                50: 'Owner',
-            };
-
-            return labels[level] || 'Connected';
-        },
-
-        categoryLabel(category) {
-            return category === 'personal' ? 'Personal' : 'Shared';
-        },
-
-        visibilityLabel(visibility) {
-            if (!visibility) {
-                return 'Unknown';
-            }
-
-            return visibility.charAt(0).toUpperCase() + visibility.slice(1);
-        },
-
-        defaultBranchLabel(repo) {
-            return repo.default_branch ? `default: ${repo.default_branch}` : 'default: n/a';
-        },
-
-        timeAgo(dateString) {
-            if (!dateString) {
-                return 'recently';
-            }
-
-            const now = new Date();
-            const then = new Date(dateString);
-            const seconds = Math.floor((now - then) / 1000);
-
-            if (seconds < 60) {
-                return 'just now';
-            }
-
-            const minutes = Math.floor(seconds / 60);
-
-            if (minutes < 60) {
-                return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-            }
-
-            const hours = Math.floor(minutes / 60);
-
-            if (hours < 24) {
-                return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-            }
-
-            const days = Math.floor(hours / 24);
-
-            if (days < 30) {
-                return `${days} day${days === 1 ? '' : 's'} ago`;
-            }
-
-            const months = Math.floor(days / 30);
-
-            if (months < 12) {
-                return `${months} month${months === 1 ? '' : 's'} ago`;
-            }
-
-            const years = Math.floor(months / 12);
-
-            return `${years} year${years === 1 ? '' : 's'} ago`;
+            this.updateColCount();
+            window.addEventListener('resize', () => this.updateColCount());
         },
     };
 }

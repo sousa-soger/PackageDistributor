@@ -6,6 +6,7 @@ use App\Models\Repository;
 use App\Services\GitHubService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class RepositoryController extends Controller
 {
@@ -28,25 +29,32 @@ class RepositoryController extends Controller
         $provider = $request->input('provider');
 
         // Validate based on provider
-        $rules = ['provider' => 'required|in:github,gitlab,company-server,local-pc'];
+        $rules = [
+            'provider' => 'required|in:github,gitlab,company-server,local-pc',
+            'project_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('projects', 'id')->where(fn ($query) => $query->where('user_id', auth()->id())),
+            ],
+        ];
 
         match ($provider) {
             'github' => $rules += [
                 'name' => 'required|string|max:255',
             ],
             'gitlab' => $rules += [
-                'name'         => 'required|string|max:255',
+                'name' => 'required|string|max:255',
                 'access_token' => 'nullable|string|max:500',
             ],
             'company-server', 'local-pc' => $rules += [
-                'name'            => 'required|string|max:255',
-                'display_name'    => 'nullable|string|max:255',
-                'url'             => 'nullable|url|max:500',
-                'server_host'     => 'nullable|string|max:255',
-                'server_path'     => 'nullable|string|max:500',
+                'name' => 'required|string|max:255',
+                'display_name' => 'nullable|string|max:255',
+                'url' => 'nullable|url|max:500',
+                'server_host' => 'nullable|string|max:255',
+                'server_path' => 'nullable|string|max:500',
                 'server_protocol' => 'nullable|in:SSH,SFTP,HTTP,HTTPS',
-                'username'        => 'nullable|string|max:255',
-                'access_token'    => 'nullable|string|max:500',
+                'username' => 'nullable|string|max:255',
+                'access_token' => 'nullable|string|max:500',
             ],
             default => null
         };
@@ -82,12 +90,12 @@ class RepositoryController extends Controller
                 ], 422);
             }
 
-            $repoData    = $repoResponse->json();
+            $repoData = $repoResponse->json();
             $defaultBranch = $repoData['default_branch'] ?? 'main';
-            $externalId  = (string) ($repoData['id'] ?? '');
+            $externalId = (string) ($repoData['id'] ?? '');
 
             $branchesRes = $github->getBranches($owner, $repo);
-            $tagsRes     = $github->getTags($owner, $repo);
+            $tagsRes = $github->getTags($owner, $repo);
 
             if ($branchesRes->ok()) {
                 $branches = collect($branchesRes->json())->pluck('name')->all();
@@ -111,9 +119,9 @@ class RepositoryController extends Controller
                     ->get("{$baseUrl}/api/v4/projects/{$encodedPath}");
 
                 if ($repoRes->ok()) {
-                    $repoData    = $repoRes->json();
+                    $repoData = $repoRes->json();
                     $defaultBranch = $repoData['default_branch'] ?? 'main';
-                    $externalId  = (string) ($repoData['id'] ?? '');
+                    $externalId = (string) ($repoData['id'] ?? '');
 
                     $branchesRes = Http::withToken($token)
                         ->get("{$baseUrl}/api/v4/projects/{$repoData['id']}/repository/branches");
@@ -133,25 +141,26 @@ class RepositoryController extends Controller
         }
 
         $repository = auth()->user()->repositories()->create([
-            'provider'        => $provider,
-            'name'            => $validated['name'],
-            'display_name'    => $validated['display_name'] ?? null,
-            'url'             => $validated['url'] ?? null,
-            'external_id'     => $externalId,
-            'default_branch'  => $defaultBranch,
-            'branches'        => $branches,
-            'tags'            => $tags,
-            'status'          => $status,
-            'server_host'     => $validated['server_host'] ?? null,
-            'server_path'     => $validated['server_path'] ?? null,
+            'project_id' => $validated['project_id'] ?? null,
+            'provider' => $provider,
+            'name' => $validated['name'],
+            'display_name' => $validated['display_name'] ?? null,
+            'url' => $validated['url'] ?? null,
+            'external_id' => $externalId,
+            'default_branch' => $defaultBranch,
+            'branches' => $branches,
+            'tags' => $tags,
+            'status' => $status,
+            'server_host' => $validated['server_host'] ?? null,
+            'server_path' => $validated['server_path'] ?? null,
             'server_protocol' => $validated['server_protocol'] ?? null,
-            'username'        => $validated['username'] ?? null,
-            'access_token'    => $validated['access_token'] ?? null,
-            'last_synced_at'  => now(),
+            'username' => $validated['username'] ?? null,
+            'access_token' => $validated['access_token'] ?? null,
+            'last_synced_at' => now(),
         ]);
 
         return response()->json([
-            'message'    => 'Repository connected successfully.',
+            'message' => 'Repository connected successfully.',
             'repository' => $repository,
         ], 201);
     }
@@ -166,7 +175,7 @@ class RepositoryController extends Controller
             [$owner, $repo] = $this->parseOwnerRepo($repository->name);
 
             $branchesRes = $github->getBranches($owner, $repo);
-            $tagsRes     = $github->getTags($owner, $repo);
+            $tagsRes = $github->getTags($owner, $repo);
 
             $branches = $branchesRes->ok()
                 ? collect($branchesRes->json())->pluck('name')->all()
@@ -177,15 +186,15 @@ class RepositoryController extends Controller
                 : $repository->tags;
 
             $repository->update([
-                'branches'       => $branches,
-                'tags'           => $tags,
-                'status'         => 'connected',
+                'branches' => $branches,
+                'tags' => $tags,
+                'status' => 'connected',
                 'last_synced_at' => now(),
             ]);
         }
 
         return response()->json([
-            'message'    => 'Repository synced.',
+            'message' => 'Repository synced.',
             'repository' => $repository->fresh(),
         ]);
     }
@@ -205,6 +214,7 @@ class RepositoryController extends Controller
     protected function parseOwnerRepo(string $name): array
     {
         $parts = explode('/', $name, 2);
+
         return count($parts) === 2 ? $parts : ['', $name];
     }
 }
