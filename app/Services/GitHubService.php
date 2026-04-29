@@ -10,7 +10,7 @@ class GitHubService
 {
     protected string $baseUrl = 'https://api.github.com';
 
-    protected function client()
+    protected function client(?string $token = null)
     {
         $headers = [
             'Accept' => 'application/vnd.github+json',
@@ -18,7 +18,7 @@ class GitHubService
             'User-Agent' => 'Laravel-App',
         ];
 
-        $token = config('services.github.token');
+        $token ??= config('services.github.token');
         if (! empty($token)) {
             $headers['Authorization'] = 'Bearer '.$token;
         }
@@ -26,32 +26,32 @@ class GitHubService
         return Http::withHeaders($headers);
     }
 
-    public function getRepository(string $owner, string $repo): Response
+    public function getRepository(string $owner, string $repo, ?string $token = null): Response
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}");
+        return $this->client($token)->get("{$this->baseUrl}/repos/{$owner}/{$repo}");
     }
 
-    public function getBranches(string $owner, string $repo): Response
+    public function getBranches(string $owner, string $repo, ?string $token = null): Response
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/branches");
+        return $this->client($token)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/branches");
     }
 
-    public function getTags(string $owner, string $repo): Response
+    public function getTags(string $owner, string $repo, ?string $token = null): Response
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/tags");
+        return $this->client($token)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/tags");
     }
 
-    public function getReleases(string $owner, string $repo): Response
+    public function getReleases(string $owner, string $repo, ?string $token = null): Response
     {
-        return $this->client()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/releases");
+        return $this->client($token)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/releases");
     }
 
     /**
      * @return array<string, mixed>|null Decoded JSON file contents, or null if missing or not successful
      */
-    public function getFile(string $owner, string $repo, string $path, string $ref = 'main'): ?array
+    public function getFile(string $owner, string $repo, string $path, string $ref = 'main', ?string $token = null): ?array
     {
-        $response = $this->client()->get(
+        $response = $this->client($token)->get(
             "{$this->baseUrl}/repos/{$owner}/{$repo}/contents/{$path}",
             ['ref' => $ref]
         );
@@ -73,9 +73,9 @@ class GitHubService
     /**
      * @return array<string, mixed>
      */
-    public function compare(string $owner, string $repo, string $base, string $head): array
+    public function compare(string $owner, string $repo, string $base, string $head, ?string $token = null): array
     {
-        $response = $this->client()->get(
+        $response = $this->client($token)->get(
             "{$this->baseUrl}/repos/{$owner}/{$repo}/compare/{$base}...{$head}"
         );
 

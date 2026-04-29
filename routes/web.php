@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeploymentPackageController;
 use App\Http\Controllers\GitHubController;
+use App\Http\Controllers\GitHubOAuthController;
 use App\Http\Controllers\GitLabOAuthController;
 use App\Http\Controllers\GitLabProjectController;
 use App\Http\Controllers\PackageController;
@@ -24,9 +25,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/repositories/{repository}', [RepositoryController::class, 'destroy'])->name('repositories.destroy');
 
     Route::get('/team', [TeamController::class, 'index'])->name('team');
-    Route::post('/team/invite', [TeamController::class, 'invite'])->name('team.members.invite');
-    Route::patch('/team/members/{member}/role', [TeamController::class, 'updateRole'])->name('team.members.update-role');
-    Route::delete('/team/members/{member}', [TeamController::class, 'removeMember'])->name('team.members.remove');
+    Route::get('/team/directory-users/search', [TeamController::class, 'searchDirectoryUsers'])->name('team.directory-users.search');
+    Route::post('/team', [TeamController::class, 'store'])->name('team.store');
+    Route::patch('/team/{team}', [TeamController::class, 'update'])->name('team.update');
+    Route::post('/team/{team}/invite', [TeamController::class, 'invite'])->name('team.members.invite');
+    Route::patch('/team/{team}/members/{member}/role', [TeamController::class, 'updateRole'])->name('team.members.update-role');
+    Route::delete('/team/{team}/members/{member}', [TeamController::class, 'removeMember'])->name('team.members.remove');
+    Route::post('/team/{team}/projects', [TeamController::class, 'assignProject'])->name('team.projects.assign');
+    Route::delete('/team/{team}/projects/{project}', [TeamController::class, 'removeProject'])->name('team.projects.remove');
 
     Route::get('/projects', [ProjectController::class, 'index'])
         ->name('projects');
@@ -41,6 +47,12 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard');
     Route::post('/dashboard', [ProjectController::class, 'store'])
         ->name('dashboard.store');
+    Route::get('/github/oauth/redirect', [GitHubOAuthController::class, 'redirect'])
+        ->name('github.oauth.redirect');
+    Route::get('/github/oauth/callback', [GitHubOAuthController::class, 'callback'])
+        ->name('github.oauth.callback');
+    Route::post('/github/oauth/disconnect', [GitHubOAuthController::class, 'disconnect'])
+        ->name('github.oauth.disconnect');
     Route::get('/gitlab/oauth/redirect', [GitLabOAuthController::class, 'redirect'])
         ->name('gitlab.oauth.redirect');
     Route::get('/gitlab/oauth/callback', [GitLabOAuthController::class, 'callback'])

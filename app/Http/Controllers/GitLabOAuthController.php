@@ -13,8 +13,13 @@ class GitLabOAuthController extends Controller
             ->setHost(config('services.gitlab.base_url'));
     }
 
-    public function redirect()
+    public function redirect(Request $request)
     {
+        $request->session()->put(
+            'gitlab_oauth_redirect_to',
+            $request->query('return_to', 'projects')
+        );
+
         return $this->gitlabDriver()
             ->scopes([
                 'api',
@@ -43,8 +48,13 @@ class GitLabOAuthController extends Controller
             'gitlab_connected_at' => now(),
         ]);
 
+        $routeName = $request->session()->pull('gitlab_oauth_redirect_to', 'projects');
+        $routeParameters = $routeName === 'repositories'
+            ? ['oauth_provider' => 'gitlab']
+            : [];
+
         return redirect()
-            ->route('projects')
+            ->route($routeName, $routeParameters)
             ->with('success', 'GitLab connected successfully.');
     }
 

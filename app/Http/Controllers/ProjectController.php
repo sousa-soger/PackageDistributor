@@ -37,20 +37,29 @@ class ProjectController extends Controller
                 ])->values(),
             ])->values();
 
-        // Gather workspace team members so the expanded card can show "teams"
-        $teamMembers = User::whereIn('id', array_unique(array_merge(
-            [$user->id],
-            User::whereNotNull('team_role')->pluck('id')->toArray()
-        )))->get()->map(fn (User $u) => [
-            'id' => $u->id,
-            'name' => $u->name,
-            'role' => $u->id === $user->id ? 'owner' : ($u->team_role ?? 'viewer'),
-            'status' => $u->team_status ?? 'active',
-            'initials' => collect(explode(' ', $u->name))
-                ->map(fn ($w) => strtoupper($w[0] ?? ''))
-                ->take(2)
-                ->implode(''),
-        ])->values();
+        $teamIds = $user->teams()->pluck('teams.id');
+
+        $teamMemberIds = $teamIds->isEmpty()
+            ? collect([$user->id])
+            : User::whereHas('teams', fn ($query) => $query->whereIn('teams.id', $teamIds))
+                ->pluck('users.id')
+                ->push($user->id)
+                ->unique()
+                ->values();
+
+        $teamMembers = User::whereIn('id', $teamMemberIds)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'role' => $u->id === $user->id ? 'owner' : 'member',
+                'status' => 'active',
+                'initials' => collect(explode(' ', $u->name))
+                    ->map(fn ($w) => strtoupper($w[0] ?? ''))
+                    ->take(2)
+                    ->implode(''),
+            ])->values();
 
         return view('projects', [
             'projects' => $projects,

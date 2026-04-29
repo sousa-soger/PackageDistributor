@@ -71,10 +71,17 @@
         </button>
 
         {{-- Avatar --}}
-        <div class="h-9 w-9 rounded-full brand-gradient-bg ring-2 flex items-center justify-center text-white text-xs font-bold shrink-0"
-            style="ring-color: hsl(var(--border));">
-            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-        </div>
+        @if(Auth::user()->avatar_url)
+            <img src="{{ Auth::user()->avatar_url }}"
+                alt="{{ Auth::user()->name }}"
+                class="h-9 w-9 rounded-full object-cover ring-2 shrink-0"
+                style="ring-color: hsl(var(--border));">
+        @else
+            <div class="h-9 w-9 rounded-full brand-gradient-bg ring-2 flex items-center justify-center text-white text-xs font-bold shrink-0"
+                style="ring-color: hsl(var(--border));">
+                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+            </div>
+        @endif
 
     </div>
 </header>

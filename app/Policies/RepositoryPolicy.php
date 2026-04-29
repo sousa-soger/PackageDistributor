@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Repository;
 use App\Models\User;
 
 class RepositoryPolicy

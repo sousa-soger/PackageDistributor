@@ -147,7 +147,7 @@
             </div>
 
             {{-- to try for login only --}}
-            <footer class="pt-6 text-sm text-slate-500" x-show="{{ config('ldap.enabled')}}" x-cloak>
+            <footer class="pt-6 text-sm text-slate-500" >
                 <button onclick="document.getElementById('registerModal').classList.remove('hidden')" class="px-4 py-2 rounded-lg bg-white outline text-black hover:bg-blue-700 transition">
                     Register User
                 </button>
