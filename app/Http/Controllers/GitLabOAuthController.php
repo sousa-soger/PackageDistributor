@@ -39,7 +39,6 @@ class GitLabOAuthController extends Controller
             'gitlab_username' => $gitlabUser->getNickname(),
             'gitlab_name' => $gitlabUser->getName(),
             'gitlab_email' => $gitlabUser->getEmail(),
-            'gitlab_avatar' => $gitlabUser->getAvatar(),
             'gitlab_token' => $gitlabUser->token,
             'gitlab_refresh_token' => $gitlabUser->refreshToken,
             'gitlab_token_expires_at' => $gitlabUser->expiresIn
@@ -65,7 +64,6 @@ class GitLabOAuthController extends Controller
             'gitlab_username' => null,
             'gitlab_name' => null,
             'gitlab_email' => null,
-            'gitlab_avatar' => null,
             'gitlab_token' => null,
             'gitlab_refresh_token' => null,
             'gitlab_token_expires_at' => null,

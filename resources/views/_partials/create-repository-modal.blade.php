@@ -11,7 +11,7 @@
 <div x-data="connectRepoModal({
     oauthConnections: @js($oauthConnections ?? []),
     oauthProvider: @js(request('oauth_provider')),
-    projects: @js($projects ?? []),
+    projects: @js($repositoryProjectOptions ?? $projects ?? []),
 })"
 x-init="init()">
   <template x-teleport="body">
@@ -286,7 +286,6 @@ x-init="init()">
                     <button @click="step = 'details'"
                             :disabled="!canSubmitAuth"
                             class="brand-gradient-bg shadow-soft inline-flex items-center justify-center rounded-md text-sm font-medium transition-base h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                            style="color:hsl(var(--primary-foreground))"
                             onmouseenter="if(!this.disabled) this.classList.add('shadow-md')"
                             onmouseleave="this.classList.remove('shadow-md')">
                         Continue
@@ -297,7 +296,6 @@ x-init="init()">
                     <button @click="handleVerify()"
                             :disabled="!canSubmitDetails"
                             class="brand-gradient-bg shadow-soft inline-flex items-center justify-center rounded-md text-sm font-medium transition-base h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                            style="color:hsl(var(--primary-foreground))"
                             onmouseenter="if(!this.disabled) this.classList.add('shadow-md')"
                             onmouseleave="this.classList.remove('shadow-md')">
                         Verify &amp; connect
@@ -307,7 +305,6 @@ x-init="init()">
                 <template x-if="step === 'done'">
                     <button @click="handleFinish()"
                             class="brand-gradient-bg shadow-soft inline-flex items-center justify-center rounded-md text-sm font-medium transition-base h-9 px-3"
-                            style="color:hsl(var(--primary-foreground))"
                             onmouseenter="this.classList.add('shadow-md')"
                             onmouseleave="this.classList.remove('shadow-md')">
                         Done

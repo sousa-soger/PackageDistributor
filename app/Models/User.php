@@ -30,7 +30,6 @@ class User extends Authenticatable
         'github_username',
         'github_name',
         'github_email',
-        'github_avatar',
         'github_token',
         'github_refresh_token',
         'github_token_expires_at',
@@ -40,7 +39,6 @@ class User extends Authenticatable
         'gitlab_username',
         'gitlab_name',
         'gitlab_email',
-        'gitlab_avatar',
         'gitlab_token',
         'gitlab_refresh_token',
         'gitlab_token_expires_at',
@@ -101,6 +99,13 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function involvedProjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class)
+            ->withPivot(['source', 'ldap_identifier', 'role'])
+            ->withTimestamps();
+    }
+
     public function ownedTeams(): HasMany
     {
         return $this->hasMany(Team::class, 'owner_user_id');
@@ -139,7 +144,7 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->ldap_photo ?: $this->github_avatar ?: $this->gitlab_avatar;
+        return $this->ldap_photo;
     }
 
     public function getDisplayUsernameAttribute(): ?string

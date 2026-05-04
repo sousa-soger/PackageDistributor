@@ -1,7 +1,12 @@
 <?php
 
-test('the application returns a successful response', function () {
-    $response = $this->get('/');
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-    $response->assertStatus(200);
+uses(RefreshDatabase::class);
+
+test('an authenticated user can view the home page', function () {
+    $response = $this->actingAs(User::factory()->create())->get('/');
+
+    $response->assertOk();
 });

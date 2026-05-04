@@ -139,7 +139,8 @@
         class="space-y-6"
         x-data="projectsPage({
             projects: @js($projects),
-            teamMembers: @js($teamMembers),
+            csrfToken: @js(csrf_token()),
+            ldapSearchUrl: @js(route('ldap.users.search')),
         })"
     >
         {{-- Search header --}}
@@ -230,6 +231,8 @@
                                 </div>
                                 <div
                                     class="flex items-center gap-1 transition-all opacity-0 group-hover:opacity-100"
+                                    x-show="project.canManageProject"
+                                    x-cloak
                                     @click.stop
                                 >
                                     <button type="button" @click="window.dispatchEvent(new CustomEvent('open-edit-project', { detail: project }))" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors" title="Edit project">
@@ -249,7 +252,7 @@
                                 </span>
                                 <span class="inline-flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                    <span x-text="teamMembers.length + ' members'"></span>
+                                    <span x-text="involvedLabel(project)"></span>
                                 </span>
                                 <span class="ml-auto" x-text="project.lastDeployedAt"></span>
                             </div>
@@ -283,11 +286,13 @@
                 </div>
                 <div class="flex items-center gap-1" @click.stop>
                     <button type="button"
+                        x-show="selectedProjectInRow(row).canManageProject"
                         @click="window.dispatchEvent(new CustomEvent('open-edit-project', { detail: selectedProjectInRow(row) }))"
                         class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors" title="Edit project">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                     </button>
                     <button type="button"
+                        x-show="selectedProjectInRow(row).canManageProject"
                         @click="deleteId = selectedProjectInRow(row).id; deleteName = selectedProjectInRow(row).name; showDeleteDialog = true;"
                         class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-failed hover:bg-failed/10 transition-colors" title="Delete project">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -307,7 +312,7 @@
                 </span>
                 <span class="inline-flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <span x-text="teamMembers.length + ' members'"></span>
+                    <span x-text="involvedLabel(selectedProjectInRow(row))"></span>
                 </span>
                 <span class="ml-auto" x-text="selectedProjectInRow(row).lastDeployedAt"></span>
             </div>
@@ -324,8 +329,8 @@
                     </h4>
                     <span class="text-[11px] text-muted-foreground" x-text="selectedProjectInRow(row).repositories.length"></span>
                 </div>
-                <template x-if="selectedProjectInRow(row).repositories.length === 0">
-                    <button @click="openCreateRepositoryModal()"
+                <template x-if="selectedProjectInRow(row).repositories.length === 0 && selectedProjectInRow(row).canManageProject">
+                    <button @click="openCreateRepositoryModal(selectedProjectInRow(row).id)"
                                 class="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-3 text-xs transition-base"
                                 style="border-color:hsl(var(--border)/0.70);color:hsl(var(--muted-foreground))"
                                 onmouseenter="this.style.borderColor='hsl(var(--primary)/0.5)';this.style.color='hsl(var(--primary))';this.style.background='hsl(var(--secondary)/0.3)'"
@@ -336,13 +341,15 @@
                         New Repository
                     </button>
                 </template>
+                <template x-if="selectedProjectInRow(row).repositories.length === 0 && !selectedProjectInRow(row).canManageProject">
+                    <p class="text-xs text-muted-foreground py-6 text-center">No repositories connected yet.</p>
+                </template>
                 <template x-if="selectedProjectInRow(row).repositories.length > 0">
                     <ul class="space-y-2">
                         <template x-for="repo in selectedProjectInRow(row).repositories" :key="repo.id">
                             <li class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
-                                <div class="h-8 w-8 rounded-md brand-soft-bg flex items-center justify-center text-primary shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                                </div>
+                                <div class="h-8 w-8 rounded-md brand-soft-bg flex items-center justify-center text-primary shrink-0"
+                                     x-html="providerIcon(repo.provider)"></div>
                                 <div class="min-w-0 flex-1">
                                     <div class="text-xs font-semibold font-mono truncate" x-text="repo.name"></div>
                                     <div class="text-[11px] text-muted-foreground" x-text="`${repo.branchCount} branches · ${repo.tagCount} tags · default ${repo.defaultBranch}`"></div>
@@ -362,35 +369,152 @@
                 </template>
             </div>
 
-            {{-- Team members panel --}}
-            <div class="p-5">
+            {{-- Teams involved panel --}}
+            <div class="p-5" @click.stop>
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="text-sm font-semibold inline-flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         Teams involved
                     </h4>
-                    <span class="text-[11px] text-muted-foreground" x-text="teamMembers.length"></span>
+                    <span class="text-[11px] text-muted-foreground" x-text="involvedCount(selectedProjectInRow(row))"></span>
                 </div>
-                <template x-if="teamMembers.length === 0">
-                    <p class="text-xs text-muted-foreground py-6 text-center">No team members have been assigned yet.</p>
+
+                <div
+                    x-show="selectedProjectInRow(row).membersError"
+                    x-text="selectedProjectInRow(row).membersError"
+                    class="mb-3 rounded-lg border px-3 py-2 text-xs"
+                    style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)"
+                ></div>
+
+                <template x-if="selectedProjectInRow(row).canManageMembers">
+                    <div class="mb-4 space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                            <select
+                                x-model="selectedProjectInRow(row).teamToAdd"
+                                class="h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20"
+                            >
+                                <option value="">Add an existing team</option>
+                                <template x-for="team in selectedProjectInRow(row).availableTeams" :key="`available-team-${team.id}`">
+                                    <option :value="String(team.id)" x-text="`${team.name} (${team.memberCount})`"></option>
+                                </template>
+                            </select>
+                            <button
+                                type="button"
+                                @click="addProjectTeam(selectedProjectInRow(row))"
+                                :disabled="!selectedProjectInRow(row).teamToAdd || selectedProjectInRow(row).teamSaving"
+                                class="inline-flex h-9 items-center justify-center rounded-md brand-gradient-bg px-3 text-xs font-semibold text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03] disabled:opacity-50 disabled:cursor-not-allowed"
+                                x-text="selectedProjectInRow(row).teamSaving ? 'Adding...' : 'Add team'"
+                            ></button>
+                        </div>
+
+                        <div class="relative">
+                            <input
+                                type="search"
+                                x-model="selectedProjectInRow(row).userSearch"
+                                @input.debounce.300ms="searchProjectUsers(selectedProjectInRow(row))"
+                                placeholder="Search LDAP users"
+                                class="w-full h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20"
+                            >
+                            <div x-show="selectedProjectInRow(row).userSearchLoading" class="mt-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
+                                Searching company LDAP...
+                            </div>
+                            <div
+                                x-show="selectedProjectInRow(row).userSearchError"
+                                x-text="selectedProjectInRow(row).userSearchError"
+                                class="mt-2 rounded-lg border px-3 py-2 text-xs"
+                                style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)"
+                            ></div>
+                            <div x-show="selectedProjectInRow(row).userSuggestions.length > 0" x-cloak class="mt-2 max-h-56 overflow-y-auto space-y-2">
+                                <template x-for="user in selectedProjectInRow(row).userSuggestions" :key="user.username || user.email">
+                                    <button
+                                        type="button"
+                                        @click="!user.already_member && addProjectUser(selectedProjectInRow(row), user)"
+                                        :disabled="user.already_member || selectedProjectInRow(row).userSaving"
+                                        class="w-full flex items-center gap-3 rounded-lg border border-border/60 p-2 text-left transition-base hover:shadow-soft disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        <template x-if="user.avatar">
+                                            <img :src="user.avatar" :alt="user.name" class="h-8 w-8 rounded-full object-cover border border-border/70 shrink-0">
+                                        </template>
+                                        <template x-if="!user.avatar">
+                                            <div class="h-8 w-8 rounded-full brand-gradient-bg flex items-center justify-center text-[10px] font-semibold on-brand shrink-0" x-text="userInitials(user.name, user.username)"></div>
+                                        </template>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block text-xs font-semibold truncate" x-text="user.name"></span>
+                                            <span class="block text-[11px] text-muted-foreground truncate" x-text="userSubtitle(user)"></span>
+                                        </span>
+                                        <span class="text-[10px] font-semibold px-2 py-1 rounded-md border" :class="user.already_member ? 'border-border text-muted-foreground' : 'border-primary/30 text-primary'" x-text="user.already_member ? 'On project' : 'Add'"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </template>
-                <template x-if="teamMembers.length > 0">
-                    <ul class="space-y-2">
-                        <template x-for="member in teamMembers" :key="member.id">
-                            <li class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
-                                <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0" x-text="member.initials"></div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="text-xs font-semibold truncate" x-text="member.name"></div>
-                                    <div class="text-[11px] text-muted-foreground capitalize" x-text="member.role"></div>
-                                </div>
-                                <span class="text-[11px] text-muted-foreground inline-flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-1.5 2.74-1.5 4.5 1.76 0 3.24 0 4.5-1.5"/><path d="m12 15-3-3a21.7 21.7 0 0 1 3-7.5c2.1-3.27 5.13-4.5 9-4.5 0 3.87-1.23 6.9-4.5 9a21.7 21.7 0 0 1-7.5 3"/><path d="M9 12H4.5C3 12 2 13 2 14.5c0 1.34.63 2.77 1.5 3.5L6 20.5c.73.87 2.16 1.5 3.5 1.5C11 22 12 21 12 19.5V15"/><path d="M9 9V4.5C9 3 10 2 11.5 2c1.34 0 2.77.63 3.5 1.5L17.5 6c.87.73 1.5 2.16 1.5 3.5C19 11 18 12 16.5 12H12"/></svg>
-                                    active
-                                </span>
-                            </li>
-                        </template>
-                    </ul>
+
+                <template x-if="involvedCount(selectedProjectInRow(row)) === 0">
+                    <p class="text-xs text-muted-foreground py-6 text-center">No teams or users assigned yet.</p>
                 </template>
+
+                <div x-show="involvedCount(selectedProjectInRow(row)) > 0" class="space-y-4">
+                    <template x-if="selectedProjectInRow(row).teams.length > 0">
+                        <div>
+                            <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Teams</div>
+                            <ul class="space-y-2">
+                                <template x-for="team in selectedProjectInRow(row).teams" :key="`team-${team.id}`">
+                                    <li class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                        <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0" x-text="team.initials"></div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-xs font-semibold truncate" x-text="team.name"></div>
+                                            <div class="text-[11px] text-muted-foreground truncate" x-text="`/${team.slug} - ${team.memberCount} members`"></div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            x-show="selectedProjectInRow(row).canManageMembers"
+                                            @click="removeProjectTeam(selectedProjectInRow(row), team)"
+                                            :disabled="selectedProjectInRow(row).removingTeamId === team.id"
+                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-failed hover:bg-failed/10 transition-colors disabled:opacity-50"
+                                            title="Remove team"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                        </button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+
+                    <template x-if="selectedProjectInRow(row).users.length > 0">
+                        <div>
+                            <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Individual users</div>
+                            <ul class="space-y-2">
+                                <template x-for="user in selectedProjectInRow(row).users" :key="`user-${user.id}`">
+                                    <li class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                        <template x-if="user.avatar">
+                                            <img :src="user.avatar" :alt="user.name" class="h-9 w-9 rounded-full object-cover border border-border/70 shrink-0">
+                                        </template>
+                                        <template x-if="!user.avatar">
+                                            <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0" x-text="user.initials"></div>
+                                        </template>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-xs font-semibold truncate" x-text="user.name"></div>
+                                            <div class="text-[11px] text-muted-foreground truncate" x-text="userSubtitle(user)"></div>
+                                        </div>
+                                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground capitalize" x-text="user.role"></span>
+                                        <button
+                                            type="button"
+                                            x-show="selectedProjectInRow(row).canManageMembers"
+                                            @click="removeProjectUser(selectedProjectInRow(row), user)"
+                                            :disabled="selectedProjectInRow(row).removingUserId === user.id"
+                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-failed hover:bg-failed/10 transition-colors disabled:opacity-50"
+                                            title="Remove user"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                        </button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </article>
@@ -461,16 +585,17 @@
 
 @push('scripts')
 <script>
-function projectsPage({ projects, teamMembers }) {
+function projectsPage({ projects, csrfToken, ldapSearchUrl }) {
     return {
         search: '',
         projects,
-        teamMembers,
+        csrfToken,
+        ldapSearchUrl,
         selectedId: null,
         showDeleteDialog: false,
         deleteId: null,
         deleteName: '',
-        colCount: 3, // updated reactively
+        colCount: 3,
 
         get filteredProjects() {
             const query = this.search.trim().toLowerCase();
@@ -482,7 +607,6 @@ function projectsPage({ projects, teamMembers }) {
             );
         },
 
-        // Splits filteredProjects into rows of colCount
         get projectRows() {
             const cols = this.colCount;
             const rows = [];
@@ -493,17 +617,15 @@ function projectsPage({ projects, teamMembers }) {
             return rows;
         },
 
-        // Returns the selected project if it lives in this row, else null
         selectedProjectInRow(row) {
             if (!this.selectedId) return null;
             return row.find(p => p.id === this.selectedId) ?? null;
         },
 
-        // Call this on mount + resize to sync colCount with actual CSS breakpoints
         updateColCount() {
             const w = window.innerWidth;
-            if (w >= 1280) this.colCount = 3;       // xl:grid-cols-3
-            else if (w >= 640) this.colCount = 2;   // sm:grid-cols-2
+            if (w >= 1280) this.colCount = 3;
+            else if (w >= 640) this.colCount = 2;
             else this.colCount = 1;
         },
 
@@ -511,14 +633,237 @@ function projectsPage({ projects, teamMembers }) {
             this.selectedId = id;
         },
 
-        clearSearch() { this.search = ''; },
+        clearSearch() {
+            this.search = '';
+        },
 
         openCreateRepositoryModal(projectId = null) {
             const detail = projectId ? { projectId } : {};
             window.dispatchEvent(new CustomEvent('open-repo-modal', { detail }));
         },
 
+        involvedCount(project) {
+            if (!project) return 0;
+            return (project.teams?.length ?? 0) + (project.users?.length ?? 0);
+        },
+
+        involvedLabel(project) {
+            const count = this.involvedCount(project);
+            return `${count} involved`;
+        },
+
+        normalizeProject(project) {
+            return {
+                ...project,
+                teams: Array.isArray(project.teams) ? project.teams : [],
+                users: Array.isArray(project.users) ? project.users : [],
+                availableTeams: Array.isArray(project.availableTeams) ? project.availableTeams : [],
+                memberCount: Number(project.memberCount ?? 0),
+                canManageMembers: Boolean(project.canManageMembers),
+                canManageProject: Boolean(project.canManageProject),
+                teamToAdd: '',
+                teamSaving: false,
+                userSearch: '',
+                userSuggestions: [],
+                userSearchLoading: false,
+                userSearchError: '',
+                userSearchNonce: 0,
+                userSaving: false,
+                removingTeamId: null,
+                removingUserId: null,
+                membersError: '',
+            };
+        },
+
+        applyMembersPayload(project, payload) {
+            project.teams = Array.isArray(payload.teams) ? payload.teams : [];
+            project.users = Array.isArray(payload.users) ? payload.users : [];
+            project.availableTeams = Array.isArray(payload.availableTeams) ? payload.availableTeams : [];
+            project.memberCount = Number(payload.memberCount ?? this.involvedCount(project));
+            project.canManageMembers = Boolean(payload.canManageMembers);
+            project.teamToAdd = '';
+            project.userSearch = '';
+            project.userSuggestions = [];
+            project.userSearchError = '';
+            project.membersError = '';
+        },
+
+        async requestJson(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(options.headers ?? {}),
+                },
+            });
+
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(payload.message || 'Request failed.');
+            }
+
+            return payload;
+        },
+
+        async addProjectTeam(project) {
+            if (!project?.teamToAdd || project.teamSaving) return;
+
+            project.teamSaving = true;
+            project.membersError = '';
+
+            try {
+                const payload = await this.requestJson(`/projects/${project.id}/teams`, {
+                    method: 'POST',
+                    body: JSON.stringify({ team_id: project.teamToAdd }),
+                });
+                this.applyMembersPayload(project, payload);
+                this.toast('success', 'Team added to project.');
+            } catch (error) {
+                project.membersError = error.message || 'Could not add that team.';
+            } finally {
+                project.teamSaving = false;
+            }
+        },
+
+        async removeProjectTeam(project, team) {
+            if (!project || !team || project.removingTeamId) return;
+
+            project.removingTeamId = team.id;
+            project.membersError = '';
+
+            try {
+                const payload = await this.requestJson(`/projects/${project.id}/teams/${team.id}`, {
+                    method: 'DELETE',
+                });
+                this.applyMembersPayload(project, payload);
+                this.toast('success', 'Team removed from project.');
+            } catch (error) {
+                project.membersError = error.message || 'Could not remove that team.';
+            } finally {
+                project.removingTeamId = null;
+            }
+        },
+
+        async searchProjectUsers(project) {
+            if (!project) return;
+
+            const query = project.userSearch.trim();
+            const nonce = ++project.userSearchNonce;
+            project.userSearchError = '';
+
+            if (query.length < 2) {
+                project.userSuggestions = [];
+                project.userSearchLoading = false;
+                return;
+            }
+
+            project.userSearchLoading = true;
+
+            try {
+                const params = new URLSearchParams({
+                    q: query,
+                    project_id: String(project.id),
+                });
+                const payload = await this.requestJson(`${this.ldapSearchUrl}?${params.toString()}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (nonce === project.userSearchNonce) {
+                    project.userSuggestions = Array.isArray(payload.users) ? payload.users : [];
+                }
+            } catch (error) {
+                if (nonce === project.userSearchNonce) {
+                    project.userSuggestions = [];
+                    project.userSearchError = error.message || 'Could not load LDAP suggestions right now.';
+                }
+            } finally {
+                if (nonce === project.userSearchNonce) {
+                    project.userSearchLoading = false;
+                }
+            }
+        },
+
+        async addProjectUser(project, user) {
+            if (!project || !user || user.already_member || project.userSaving) return;
+
+            project.userSaving = true;
+            project.membersError = '';
+
+            try {
+                const payload = await this.requestJson(`/projects/${project.id}/users`, {
+                    method: 'POST',
+                    body: JSON.stringify({ username: user.username || user.email }),
+                });
+                this.applyMembersPayload(project, payload);
+                this.toast('success', 'User added to project.');
+            } catch (error) {
+                project.membersError = error.message || 'Could not add that user.';
+            } finally {
+                project.userSaving = false;
+            }
+        },
+
+        async removeProjectUser(project, user) {
+            if (!project || !user || project.removingUserId) return;
+
+            project.removingUserId = user.id;
+            project.membersError = '';
+
+            try {
+                const payload = await this.requestJson(`/projects/${project.id}/users/${user.id}`, {
+                    method: 'DELETE',
+                });
+                this.applyMembersPayload(project, payload);
+                this.toast('success', 'User removed from project.');
+            } catch (error) {
+                project.membersError = error.message || 'Could not remove that user.';
+            } finally {
+                project.removingUserId = null;
+            }
+        },
+
+        userInitials(name, username) {
+            const base = (name || username || '?').trim();
+            const parts = base.split(/\s+/).filter(Boolean);
+            if (parts.length === 0) return '?';
+            return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('');
+        },
+
+        userSubtitle(user) {
+            const username = user.username ? `@${user.username}` : '';
+            const email = user.email || '';
+            return [username, email].filter(Boolean).join(' - ');
+        },
+
+        toast(type, message) {
+            window.dispatchEvent(new CustomEvent('toast', { detail: { type, message } }));
+        },
+
+        providerIcon(provider) {
+            const s = 'class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+            if (provider === 'github') {
+                return `<svg ${s}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
+            }
+            if (provider === 'gitlab') {
+                return `<svg ${s}><path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"/></svg>`;
+            }
+            if (provider === 'company-server') {
+                return `<svg ${s}><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>`;
+            }
+            if (provider === 'local-pc') {
+                return `<svg ${s}><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>`;
+            }
+            // fallback: generic git branch icon
+            return `<svg ${s}><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`;
+        },
+
         init() {
+            this.projects = this.projects.map((project) => this.normalizeProject(project));
             this.updateColCount();
             window.addEventListener('resize', () => this.updateColCount());
         },

@@ -38,7 +38,6 @@ class GitHubOAuthController extends Controller
             'github_username' => $githubUser->getNickname(),
             'github_name' => $githubUser->getName(),
             'github_email' => $githubUser->getEmail(),
-            'github_avatar' => $githubUser->getAvatar(),
             'github_token' => $githubUser->token,
             'github_refresh_token' => $githubUser->refreshToken,
             'github_token_expires_at' => $githubUser->expiresIn
@@ -64,7 +63,6 @@ class GitHubOAuthController extends Controller
             'github_username' => null,
             'github_name' => null,
             'github_email' => null,
-            'github_avatar' => null,
             'github_token' => null,
             'github_refresh_token' => null,
             'github_token_expires_at' => null,

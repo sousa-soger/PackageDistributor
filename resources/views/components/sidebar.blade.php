@@ -208,33 +208,6 @@
         </p>
     </div>
 
-    {{-- User footer --}}
-    <div class="px-4 py-4" style="border-top: 1px solid hsl(var(--sidebar-border));">
-        <div class="flex items-center gap-3">
-            <div class="h-8 w-8 rounded-full brand-gradient-bg flex items-center justify-center shrink-0 text-white text-xs font-bold ring-2"
-                style="ring-color: hsl(var(--border));">
-                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-sm font-semibold truncate" style="color: hsl(var(--foreground));">
-                    {{ Auth::user()->name }}
-                </p>
-                <p class="text-xs truncate" style="color: hsl(var(--muted-foreground));">{{ Auth::user()->email }}</p>
-            </div>
-            <form method="POST" action="{{ route('logout.user') }}">
-                @csrf
-                <button type="submit" title="Logout"
-                    class="p-1.5 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600"
-                    style="color: hsl(var(--muted-foreground));">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                </button>
-            </form>
-        </div>
-    </div>
-
 </aside>
 
 <style>

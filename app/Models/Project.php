@@ -47,6 +47,13 @@ class Project extends Model
             ->withTimestamps();
     }
 
+    public function involvedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot(['source', 'ldap_identifier', 'role'])
+            ->withTimestamps();
+    }
+
     public function deploymentJobs(): HasMany
     {
         return $this->hasMany(DeploymentJob::class);

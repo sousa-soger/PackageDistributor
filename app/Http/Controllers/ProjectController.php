@@ -3,67 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Models\User;
+use App\Services\ProjectInvolvementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ProjectInvolvementService $involvement)
     {
         $user = $request->user();
+        $teamOptions = $involvement->teamOptionsForUser($user);
 
-        $projects = $user->projects()
-            ->with('repositories')
+        $projects = $involvement->visibleProjectsFor($user)
+            ->with([
+                'repositories',
+                'teams' => fn ($query) => $query->withCount('members')->orderBy('name'),
+                'involvedUsers' => fn ($query) => $query->orderBy('name'),
+            ])
             ->orderBy('name')
             ->get()
+            ->map(fn (Project $project) => $involvement->projectCardPayload($project, $user, $teamOptions))
+            ->values();
+
+        $repositoryProjectOptions = $user->projects()
+            ->orderBy('name')
+            ->get(['id', 'name'])
             ->map(fn (Project $project) => [
                 'id' => $project->id,
                 'name' => $project->name,
-                'slug' => $project->slug,
-                'description' => $project->description ?: 'No description added yet.',
-                'color' => $project->color ?: Project::DEFAULT_COLOR,
-                'repoCount' => $project->repositories->count(),
-                'lastDeployedAt' => $project->last_deployed_at?->diffForHumans() ?? '—',
-                'repositories' => $project->repositories->map(fn ($r) => [
-                    'id' => $r->id,
-                    'name' => $r->display_name ?? $r->name,
-                    'provider' => $r->provider,
-                    'defaultBranch' => $r->default_branch ?? 'main',
-                    'branchCount' => count($r->branches ?? []),
-                    'tagCount' => count($r->tags ?? []),
-                    'status' => $r->status ?? 'connected',
-                ])->values(),
-            ])->values();
-
-        $teamIds = $user->teams()->pluck('teams.id');
-
-        $teamMemberIds = $teamIds->isEmpty()
-            ? collect([$user->id])
-            : User::whereHas('teams', fn ($query) => $query->whereIn('teams.id', $teamIds))
-                ->pluck('users.id')
-                ->push($user->id)
-                ->unique()
-                ->values();
-
-        $teamMembers = User::whereIn('id', $teamMemberIds)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (User $u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'role' => $u->id === $user->id ? 'owner' : 'member',
-                'status' => 'active',
-                'initials' => collect(explode(' ', $u->name))
-                    ->map(fn ($w) => strtoupper($w[0] ?? ''))
-                    ->take(2)
-                    ->implode(''),
-            ])->values();
+            ])
+            ->values();
 
         return view('projects', [
             'projects' => $projects,
-            'teamMembers' => $teamMembers,
+            'oauthConnections' => [
+                'github' => (bool) $user->github_token,
+                'gitlab' => (bool) $user->gitlab_token,
+            ],
+            'repositoryProjectOptions' => $repositoryProjectOptions,
             'colorOptions' => Project::COLOR_OPTIONS,
         ]);
     }

@@ -9,7 +9,9 @@ use App\Http\Controllers\GitLabOAuthController;
 use App\Http\Controllers\GitLabProjectController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectInvolvementController;
 use App\Http\Controllers\RepositoryController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +28,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/team', [TeamController::class, 'index'])->name('team');
     Route::get('/team/directory-users/search', [TeamController::class, 'searchDirectoryUsers'])->name('team.directory-users.search');
+    Route::get('/ldap/users/search', [ProjectInvolvementController::class, 'searchLdapUsers'])->name('ldap.users.search');
     Route::post('/team', [TeamController::class, 'store'])->name('team.store');
     Route::patch('/team/{team}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/{team}', [TeamController::class, 'destroy'])->name('team.destroy');
@@ -43,6 +46,16 @@ Route::middleware('auth')->group(function () {
         ->name('projects.update');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])
         ->name('projects.destroy');
+    Route::get('/projects/{project}/members', [ProjectInvolvementController::class, 'show'])
+        ->name('projects.members.show');
+    Route::post('/projects/{project}/teams', [ProjectInvolvementController::class, 'storeTeam'])
+        ->name('projects.teams.store');
+    Route::delete('/projects/{project}/teams/{team}', [ProjectInvolvementController::class, 'destroyTeam'])
+        ->name('projects.teams.destroy');
+    Route::post('/projects/{project}/users', [ProjectInvolvementController::class, 'storeUser'])
+        ->name('projects.users.store');
+    Route::delete('/projects/{project}/users/{user}', [ProjectInvolvementController::class, 'destroyUser'])
+        ->name('projects.users.destroy');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -85,7 +98,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/packages/queue', [PackageController::class, 'queuedPackages'])
         ->name('packages.queue');
 
-    Route::view('/settings', 'settings')->name('settings');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 });
 
 // ** Route for auth

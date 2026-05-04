@@ -119,14 +119,14 @@
                 <div role="separator" class="-mx-1 my-1 h-px" style="background:hsl(var(--muted))"></div>
 
                 {{-- View profile --}}
-                <div role="menuitem" tabindex="-1"
+                <a href="{{ route('settings') }}" role="menuitem" tabindex="-1"
                     class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent"
                     style="color:hsl(var(--foreground))">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
                     View profile
-                </div>
+                </a>
                 <div role="separator" class="-mx-1 my-1 h-px" style="background:hsl(var(--muted))"></div>
 
                 {{-- Quick connect --}}
