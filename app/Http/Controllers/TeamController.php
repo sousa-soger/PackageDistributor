@@ -28,14 +28,26 @@ class TeamController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $this->ensurePersonalTeam($user);
-
         $teams = $user->teams()
             ->withCount('members')
             ->orderBy('name')
             ->get();
 
         $selectedTeam = $this->resolveCurrentTeam($request, $teams);
+
+        if (! $selectedTeam) {
+            return view('team', [
+                'availableProjects' => collect(),
+                'canDeleteTeam' => false,
+                'canManageTeam' => false,
+                'currentTeam' => null,
+                'currentUserRole' => null,
+                'members' => collect(),
+                'roles' => self::$roles,
+                'teamProjects' => collect(),
+                'teams' => $teams,
+            ]);
+        }
 
         $currentTeam = $user->teams()
             ->whereKey($selectedTeam->id)
@@ -73,9 +85,11 @@ class TeamController extends Controller
 
         $currentUserRole = $this->membershipRole($currentTeam, $user);
         $canManageTeam = in_array($currentUserRole, ['owner', 'maintainer'], true);
+        $canDeleteTeam = $currentUserRole === 'owner';
 
         return view('team', [
             'availableProjects' => $availableProjects,
+            'canDeleteTeam' => $canDeleteTeam,
             'canManageTeam' => $canManageTeam,
             'currentTeam' => $currentTeam,
             'currentUserRole' => $currentUserRole,
@@ -194,6 +208,26 @@ class TeamController extends Controller
         return redirect()
             ->route('team', ['team' => $team->id])
             ->with('success', 'Team details updated.');
+    }
+
+    public function destroy(Request $request, Team $team): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        abort_unless(
+            $this->membershipRole($team, $user) === 'owner',
+            403,
+            'Only team owners can delete this team.'
+        );
+
+        $teamName = $team->name;
+
+        $team->delete();
+
+        return redirect()
+            ->route('team')
+            ->with('success', "{$teamName} was deleted.");
     }
 
     public function invite(Request $request, Team $team, LdapService $ldap): RedirectResponse
@@ -405,34 +439,15 @@ class TeamController extends Controller
         );
     }
 
-    protected function ensurePersonalTeam(User $user): void
+    protected function resolveCurrentTeam(Request $request, Collection $teams): ?Team
     {
-        if ($user->teams()->exists()) {
-            return;
+        if ($teams->isEmpty()) {
+            return null;
         }
 
-        $team = Team::create([
-            'owner_user_id' => $user->id,
-            'name' => "{$user->name}'s Team",
-            'slug' => $this->uniqueTeamSlug("{$user->name} team"),
-        ]);
-
-        $team->members()->attach($user->id, [
-            'invited_by_user_id' => $user->id,
-            'role' => 'owner',
-            'status' => 'active',
-        ]);
-    }
-
-    protected function resolveCurrentTeam(Request $request, Collection $teams): Team
-    {
         $selectedTeamId = (int) $request->query('team', 0);
 
-        $selectedTeam = $teams->firstWhere('id', $selectedTeamId) ?? $teams->first();
-
-        abort_unless($selectedTeam instanceof Team, 404, 'No team could be resolved for this user.');
-
-        return $selectedTeam;
+        return $teams->firstWhere('id', $selectedTeamId) ?? $teams->first();
     }
 
     protected function membershipRole(Team $team, User $user): ?string

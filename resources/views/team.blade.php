@@ -6,28 +6,29 @@
 @section('content')
 @php
   $currentUser = auth()->user();
-  $teamName = $currentTeam->name;
-  $teamSlug = $currentTeam->slug;
-  $teamInitial = strtoupper(substr($teamName, 0, 1));
+  $teamName = $currentTeam?->name ?? '';
+  $teamSlug = $currentTeam?->slug ?? '';
+  $teamInitial = $teamName !== '' ? strtoupper(substr($teamName, 0, 1)) : 'T';
 @endphp
 
 <div class="animate-fade-in px-4 sm:px-6 lg:px-8 py-6 lg:py-8"
      x-data="teamPage({
        formContext: @js(old('form_context')),
-       currentTeamName: @js($currentTeam->name),
-       currentTeamSlug: @js($currentTeam->slug),
-       currentTeamId: @js($currentTeam->id),
+       currentTeamName: @js($currentTeam?->name),
+       currentTeamSlug: @js($currentTeam?->slug),
+       currentTeamId: @js($currentTeam?->id),
        directorySearchUrl: @js(route('team.directory-users.search')),
        inviteUsername: @js(old('username', '')),
        teamMode: @js(old('team_mode', 'create')),
        teamName: @js(old('name')),
        teamSlug: @js(old('slug')),
        teamStoreUrl: @js(route('team.store')),
-       teamUpdateUrl: @js(route('team.update', $currentTeam)),
+       teamUpdateUrl: @js($currentTeam ? route('team.update', $currentTeam) : ''),
        selectedProjectId: @js((string) old('project_id', ''))
      })"
      x-init="init()">
 
+  @if($teams->isNotEmpty())
   <div class="lg:hidden -mx-1 mb-4 overflow-x-auto">
     <div class="flex items-center gap-2 px-1 h-12">
       @foreach($teams as $team)
@@ -54,7 +55,45 @@
       </button>
     </div>
   </div>
+  @endif
 
+  @if($teams->isEmpty())
+    @if(session('success'))
+      <div class="rounded-xl px-4 py-3 text-xs font-medium animate-fade-in mb-5"
+           style="background:hsl(var(--success)/0.08);border:1px solid hsl(var(--success)/0.25);color:hsl(var(--success))">
+        {{ session('success') }}
+      </div>
+    @endif
+
+    @if(session('error'))
+      <div class="rounded-xl px-4 py-3 text-xs font-medium animate-fade-in mb-5"
+           style="background:hsl(var(--failed)/0.08);border:1px solid hsl(var(--failed)/0.25);color:hsl(var(--failed))">
+        {{ session('error') }}
+      </div>
+    @endif
+
+    <div class="section-card p-12 text-center">
+      <div class="mx-auto mb-5 h-16 w-16 rounded-2xl brand-soft-bg flex items-center justify-center">
+        <svg class="h-8 w-8" style="color:hsl(var(--primary))"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+      <p class="text-sm font-semibold" style="color:hsl(var(--foreground))">No teams yet</p>
+      <p class="text-xs mt-1 max-w-sm mx-auto leading-relaxed" style="color:hsl(var(--muted-foreground))">
+        Create your first team to group members, assign projects, and manage who can build or deploy packages.
+      </p>
+      <button @click="openCreateTeamModal()"
+              class="inline-flex items-center gap-1.5 mt-5 px-4 py-2 rounded-lg text-sm font-semibold transition-base hover:opacity-90"
+              style="background:var(--gradient-brand)">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        Create Team
+      </button>
+    </div>
+  @else
   <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
     <aside class="hidden lg:block">
       <div class="section-card p-3 sticky top-4">
@@ -156,6 +195,24 @@
               Edit team
             </button>
           @endif
+          @if($canDeleteTeam)
+            <form method="POST" action="{{ route('team.destroy', $currentTeam) }}" class="hidden sm:block">
+              @csrf
+              @method('DELETE')
+              <button type="submit"
+                      onclick="return confirm('Delete {{ addslashes($teamName) }}? This will remove the team for all members.')"
+                      class="shrink-0 h-8 w-8 rounded-md grid place-items-center transition-base"
+                      style="color:hsl(var(--failed)/0.80)"
+                      title="Delete team"
+                      onmouseenter="this.style.background='hsl(var(--failed)/0.10)'"
+                      onmouseleave="this.style.background=''">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </form>
+          @endif
         </div>
       </div>
 
@@ -165,7 +222,7 @@
           <div class="text-sm font-semibold" style="color:hsl(var(--foreground))">Members</div>
           @if($canManageTeam)
             <button @click="inviteModal = true"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white shadow-soft transition-base hover:opacity-90"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-soft transition-base hover:opacity-90"
                     style="background:var(--gradient-brand)">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -331,10 +388,8 @@
           <div class="text-sm font-semibold" style="color:hsl(var(--foreground))">Projects</div>
           @if($canManageTeam)
             <button @click="assignProjectModal = true"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-base"
-                    style="color:hsl(var(--muted-foreground))"
-                    onmouseenter="this.style.background='hsl(var(--secondary))'"
-                    onmouseleave="this.style.background=''">
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-soft transition-base hover:opacity-90"
+                    style="background:var(--gradient-brand)">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -358,7 +413,7 @@
             </div>
             @if($canManageTeam)
               <button @click="assignProjectModal = true"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-base hover:opacity-90"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-soft transition-base hover:opacity-90"
                       style="background:var(--gradient-brand)">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round"
@@ -443,7 +498,9 @@
       </div>
     </div>
   </div>
+  @endif
 
+  @if($currentTeam)
   <div x-show="inviteModal" x-cloak
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0"
@@ -615,7 +672,7 @@
             Cancel
           </button>
           <button type="submit"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-base hover:opacity-90"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-base hover:opacity-90"
                   style="background:var(--gradient-brand)">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -627,6 +684,7 @@
       </form>
     </div>
   </div>
+  @endif
 
   <div x-show="createTeamModal" x-cloak
        x-transition:enter="transition ease-out duration-200"
@@ -701,7 +759,7 @@
             Cancel
           </button>
           <button type="submit"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-base hover:opacity-90"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-base hover:opacity-90"
                   style="background:var(--gradient-brand)">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -714,6 +772,7 @@
     </div>
   </div>
 
+  @if($currentTeam)
   <div x-show="assignProjectModal" x-cloak
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0"
@@ -796,6 +855,7 @@
       </form>
     </div>
   </div>
+  @endif
 </div>
 @endsection
 

@@ -325,7 +325,16 @@
                     <span class="text-[11px] text-muted-foreground" x-text="selectedProjectInRow(row).repositories.length"></span>
                 </div>
                 <template x-if="selectedProjectInRow(row).repositories.length === 0">
-                    <p class="text-xs text-muted-foreground py-6 text-center">No repositories connected to this project yet.</p>
+                    <button @click="openCreateRepositoryModal()"
+                                class="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-3 text-xs transition-base"
+                                style="border-color:hsl(var(--border)/0.70);color:hsl(var(--muted-foreground))"
+                                onmouseenter="this.style.borderColor='hsl(var(--primary)/0.5)';this.style.color='hsl(var(--primary))';this.style.background='hsl(var(--secondary)/0.3)'"
+                                onmouseleave="this.style.borderColor='hsl(var(--border)/0.70)';this.style.color='hsl(var(--muted-foreground))';this.style.background=''">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        New Repository
+                    </button>
                 </template>
                 <template x-if="selectedProjectInRow(row).repositories.length > 0">
                     <ul class="space-y-2">
@@ -446,6 +455,8 @@
             </div>
         </template>
     </div>
+
+    @include('_partials.create-repository-modal')
 @endsection
 
 @push('scripts')
@@ -501,6 +512,11 @@ function projectsPage({ projects, teamMembers }) {
         },
 
         clearSearch() { this.search = ''; },
+
+        openCreateRepositoryModal(projectId = null) {
+            const detail = projectId ? { projectId } : {};
+            window.dispatchEvent(new CustomEvent('open-repo-modal', { detail }));
+        },
 
         init() {
             this.updateColCount();

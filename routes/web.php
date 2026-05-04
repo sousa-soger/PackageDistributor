@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/team/directory-users/search', [TeamController::class, 'searchDirectoryUsers'])->name('team.directory-users.search');
     Route::post('/team', [TeamController::class, 'store'])->name('team.store');
     Route::patch('/team/{team}', [TeamController::class, 'update'])->name('team.update');
+    Route::delete('/team/{team}', [TeamController::class, 'destroy'])->name('team.destroy');
     Route::post('/team/{team}/invite', [TeamController::class, 'invite'])->name('team.members.invite');
     Route::patch('/team/{team}/members/{member}/role', [TeamController::class, 'updateRole'])->name('team.members.update-role');
     Route::delete('/team/{team}/members/{member}', [TeamController::class, 'removeMember'])->name('team.members.remove');
