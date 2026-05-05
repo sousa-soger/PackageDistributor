@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('source', 40)->default('ldap');
             $table->string('ldap_identifier')->nullable();
-            $table->string('role', 40)->default('member');
+            $table->string('role', 40)->default('viewer');
             $table->timestamps();
 
             $table->unique(['project_id', 'user_id']);

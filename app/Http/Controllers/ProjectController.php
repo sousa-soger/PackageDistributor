@@ -18,6 +18,7 @@ class ProjectController extends Controller
         $projects = $involvement->visibleProjectsFor($user)
             ->with([
                 'repositories',
+                'user',
                 'teams' => fn ($query) => $query->withCount('members')->orderBy('name'),
                 'involvedUsers' => fn ($query) => $query->orderBy('name'),
             ])
@@ -41,6 +42,7 @@ class ProjectController extends Controller
                 'github' => (bool) $user->github_token,
                 'gitlab' => (bool) $user->gitlab_token,
             ],
+            'projectRoleOptions' => $involvement->projectRoleOptions(),
             'repositoryProjectOptions' => $repositoryProjectOptions,
             'colorOptions' => Project::COLOR_OPTIONS,
         ]);

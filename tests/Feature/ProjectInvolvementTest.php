@@ -36,17 +36,34 @@ function projectInvolvementTeamFor(User $owner, array $attributes = []): Team
 
 test('project owner can add and remove teams from a project', function () {
     $owner = User::factory()->create();
+    $member = User::factory()->create();
     $project = projectInvolvementProjectFor($owner);
     $team = projectInvolvementTeamFor($owner);
 
+    $team->members()->attach($member->id, [
+        'role' => 'viewer',
+        'status' => 'active',
+    ]);
+
     $this->actingAs($owner)
-        ->postJson(route('projects.teams.store', $project), ['team_id' => $team->id])
+        ->postJson(route('projects.teams.store', $project), [
+            'role' => 'deployer',
+            'team_id' => $team->id,
+        ])
         ->assertOk()
-        ->assertJsonPath('teams.0.id', $team->id);
+        ->assertJsonPath('teams.0.id', $team->id)
+        ->assertJsonPath('teams.0.members.0.id', $member->id)
+        ->assertJsonPath('teams.0.members.0.role', 'deployer');
 
     $this->assertDatabaseHas('project_team', [
         'project_id' => $project->id,
         'team_id' => $team->id,
+    ]);
+    $this->assertDatabaseHas('project_user', [
+        'project_id' => $project->id,
+        'role' => 'deployer',
+        'source' => 'team',
+        'user_id' => $member->id,
     ]);
 
     $this->actingAs($owner)
@@ -57,6 +74,11 @@ test('project owner can add and remove teams from a project', function () {
     $this->assertDatabaseMissing('project_team', [
         'project_id' => $project->id,
         'team_id' => $team->id,
+    ]);
+    $this->assertDatabaseMissing('project_user', [
+        'project_id' => $project->id,
+        'source' => 'team',
+        'user_id' => $member->id,
     ]);
 });
 
@@ -140,12 +162,17 @@ test('project owner can add and remove an LDAP user from a project', function ()
     });
 
     $this->actingAs($owner)
-        ->postJson(route('projects.users.store', $project), ['username' => 'jdoe'])
+        ->postJson(route('projects.users.store', $project), [
+            'role' => 'creator',
+            'username' => 'jdoe',
+        ])
         ->assertOk()
-        ->assertJsonPath('users.0.id', $ldapUser->id);
+        ->assertJsonPath('users.0.id', $ldapUser->id)
+        ->assertJsonPath('users.0.role', 'creator');
 
     $this->assertDatabaseHas('project_user', [
         'project_id' => $project->id,
+        'role' => 'creator',
         'user_id' => $ldapUser->id,
         'source' => 'ldap',
         'ldap_identifier' => 'jdoe',
@@ -159,6 +186,51 @@ test('project owner can add and remove an LDAP user from a project', function ()
     $this->assertDatabaseMissing('project_user', [
         'project_id' => $project->id,
         'user_id' => $ldapUser->id,
+    ]);
+});
+
+test('project owner can change project-specific roles for team and individual users', function () {
+    $owner = User::factory()->create();
+    $teamMember = User::factory()->create();
+    $directMember = User::factory()->create([
+        'ldap_username' => 'direct',
+    ]);
+    $project = projectInvolvementProjectFor($owner);
+    $team = projectInvolvementTeamFor($owner);
+
+    $team->members()->attach($teamMember->id, [
+        'role' => 'viewer',
+        'status' => 'active',
+    ]);
+    $project->teams()->attach($team->id);
+    $project->involvedUsers()->attach($directMember->id, [
+        'source' => 'ldap',
+        'ldap_identifier' => 'direct',
+        'role' => 'viewer',
+    ]);
+
+    $this->actingAs($owner)
+        ->patchJson(route('projects.users.update-role', [$project, $teamMember]), ['role' => 'maintainer'])
+        ->assertOk()
+        ->assertJsonPath('teams.0.members.0.role', 'maintainer');
+
+    $this->assertDatabaseHas('project_user', [
+        'project_id' => $project->id,
+        'role' => 'maintainer',
+        'source' => 'team',
+        'user_id' => $teamMember->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->patchJson(route('projects.users.update-role', [$project, $directMember]), ['role' => 'deployer'])
+        ->assertOk()
+        ->assertJsonPath('users.0.role', 'deployer');
+
+    $this->assertDatabaseHas('project_user', [
+        'project_id' => $project->id,
+        'role' => 'deployer',
+        'source' => 'ldap',
+        'user_id' => $directMember->id,
     ]);
 });
 
@@ -224,4 +296,22 @@ test('LDAP search returns matching company users and marks existing project user
         ->assertOk()
         ->assertJsonPath('users.0.username', 'jdoe')
         ->assertJsonPath('users.0.already_member', true);
+});
+
+test('projects and teams pages render the option one role UX', function () {
+    $owner = User::factory()->create();
+    projectInvolvementProjectFor($owner);
+    projectInvolvementTeamFor($owner);
+
+    $this->actingAs($owner)
+        ->get(route('projects'))
+        ->assertOk()
+        ->assertSee('People and Roles')
+        ->assertSee('Add an existing team');
+
+    $this->actingAs($owner)
+        ->get(route('team'))
+        ->assertOk()
+        ->assertSee('Team access')
+        ->assertDontSee('Role permissions');
 });

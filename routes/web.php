@@ -54,6 +54,8 @@ Route::middleware('auth')->group(function () {
         ->name('projects.teams.destroy');
     Route::post('/projects/{project}/users', [ProjectInvolvementController::class, 'storeUser'])
         ->name('projects.users.store');
+    Route::patch('/projects/{project}/users/{user}/role', [ProjectInvolvementController::class, 'updateUserRole'])
+        ->name('projects.users.update-role');
     Route::delete('/projects/{project}/users/{user}', [ProjectInvolvementController::class, 'destroyUser'])
         ->name('projects.users.destroy');
 

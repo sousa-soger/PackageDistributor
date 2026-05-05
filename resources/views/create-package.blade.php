@@ -252,7 +252,7 @@
                         </label>
                     </div>
                 </template>
-
+                {{-- 
                 <div class="mt-5">
                     <button
                         type="button"
@@ -283,6 +283,7 @@
                         </div>
                     </div>
                 </div>
+                --}}
             </section>
         </div>
 

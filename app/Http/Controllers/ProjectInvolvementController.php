@@ -9,6 +9,7 @@ use App\Services\LdapService;
 use App\Services\ProjectInvolvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ProjectInvolvementController extends Controller
@@ -26,6 +27,7 @@ class ProjectInvolvementController extends Controller
 
         $validated = $request->validate([
             'team_id' => ['required', 'integer', Rule::exists('teams', 'id')],
+            'role' => ['nullable', Rule::in($involvement->projectRoleKeys())],
         ]);
 
         $team = $involvement->teamOptionsForUser($request->user())
@@ -37,7 +39,21 @@ class ProjectInvolvementController extends Controller
             ], 422);
         }
 
+        $team->loadMissing('members');
         $project->teams()->syncWithoutDetaching([$team->id]);
+
+        $role = $validated['role'] ?? ProjectInvolvementService::DEFAULT_PROJECT_ROLE;
+        foreach ($team->members as $member) {
+            if ($member->id === $project->user_id || $project->involvedUsers()->whereKey($member->id)->exists()) {
+                continue;
+            }
+
+            $project->involvedUsers()->attach($member->id, [
+                'source' => 'team',
+                'ldap_identifier' => $member->ldap_username,
+                'role' => $role,
+            ]);
+        }
 
         return response()->json($involvement->membersPayload($project->fresh(), $request->user()));
     }
@@ -53,6 +69,21 @@ class ProjectInvolvementController extends Controller
         }
 
         $project->teams()->detach($team->id);
+        $teamMemberIds = $team->members()->pluck('users.id');
+
+        foreach ($teamMemberIds as $memberId) {
+            $stillOnProjectViaTeam = $project->teams()
+                ->whereHas('members', fn ($query) => $query->whereKey($memberId))
+                ->exists();
+
+            if (! $stillOnProjectViaTeam) {
+                DB::table('project_user')
+                    ->where('project_id', $project->id)
+                    ->where('user_id', $memberId)
+                    ->where('source', 'team')
+                    ->delete();
+            }
+        }
 
         return response()->json($involvement->membersPayload($project->fresh(), $request->user()));
     }
@@ -70,7 +101,15 @@ class ProjectInvolvementController extends Controller
         if (! empty($validated['project_id'])) {
             $project = Project::findOrFail((int) $validated['project_id']);
             $this->authorize('manageMembers', $project);
-            $projectMemberIds = $project->involvedUsers()->pluck('users.id')->all();
+            $projectMemberIds = $project->involvedUsers()->pluck('users.id')
+                ->merge(
+                    User::query()
+                        ->whereHas('teams.projects', fn ($query) => $query->whereKey($project->id))
+                        ->pluck('users.id')
+                )
+                ->unique()
+                ->values()
+                ->all();
         }
 
         $query = trim((string) ($validated['q'] ?? ''));
@@ -126,7 +165,7 @@ class ProjectInvolvementController extends Controller
         $this->authorize('manageMembers', $project);
 
         $validated = $request->validate([
-            'role' => ['nullable', Rule::in(['member', 'viewer', 'maintainer'])],
+            'role' => ['nullable', Rule::in($involvement->projectRoleKeys())],
             'username' => ['required', 'string', 'max:255'],
         ]);
 
@@ -155,13 +194,53 @@ class ProjectInvolvementController extends Controller
         $pivot = [
             'source' => 'ldap',
             'ldap_identifier' => $directoryUser['username'] ?? $validated['username'],
-            'role' => $validated['role'] ?? 'member',
+            'role' => $validated['role'] ?? ProjectInvolvementService::DEFAULT_PROJECT_ROLE,
         ];
 
         if ($project->involvedUsers()->whereKey($member->id)->exists()) {
             $project->involvedUsers()->updateExistingPivot($member->id, $pivot);
         } else {
             $project->involvedUsers()->attach($member->id, $pivot);
+        }
+
+        return response()->json($involvement->membersPayload($project->fresh(), $request->user()));
+    }
+
+    public function updateUserRole(Request $request, Project $project, User $user, ProjectInvolvementService $involvement): JsonResponse
+    {
+        $this->authorize('manageMembers', $project);
+
+        $validated = $request->validate([
+            'role' => ['required', Rule::in($involvement->projectRoleKeys())],
+        ]);
+
+        if ($user->id === $project->user_id) {
+            return response()->json([
+                'message' => 'The project owner keeps the Owner role.',
+            ], 422);
+        }
+
+        $hasProjectUserRow = $project->involvedUsers()->whereKey($user->id)->exists();
+        $isAssignedViaTeam = $project->teams()
+            ->whereHas('members', fn ($query) => $query->whereKey($user->id))
+            ->exists();
+
+        if (! $hasProjectUserRow && ! $isAssignedViaTeam) {
+            return response()->json([
+                'message' => 'That user is not assigned to this project.',
+            ], 404);
+        }
+
+        if ($hasProjectUserRow) {
+            $project->involvedUsers()->updateExistingPivot($user->id, [
+                'role' => $validated['role'],
+            ]);
+        } else {
+            $project->involvedUsers()->attach($user->id, [
+                'source' => 'team',
+                'ldap_identifier' => $user->ldap_username,
+                'role' => $validated['role'],
+            ]);
         }
 
         return response()->json($involvement->membersPayload($project->fresh(), $request->user()));
@@ -175,6 +254,13 @@ class ProjectInvolvementController extends Controller
             return response()->json([
                 'message' => 'That user is not assigned to this project.',
             ], 404);
+        }
+
+        $projectUser = $project->involvedUsers()->whereKey($user->id)->first();
+        if (($projectUser?->pivot?->source ?? null) === 'team') {
+            return response()->json([
+                'message' => 'Remove the team assignment to remove this team member from the project.',
+            ], 422);
         }
 
         $project->involvedUsers()->detach($user->id);

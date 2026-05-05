@@ -10,6 +10,15 @@ use Illuminate\Support\Collection;
 
 class ProjectInvolvementService
 {
+    public const PROJECT_ROLES = [
+        ['key' => 'maintainer', 'label' => 'Maintainer'],
+        ['key' => 'creator', 'label' => 'Package Creator'],
+        ['key' => 'deployer', 'label' => 'Deployer'],
+        ['key' => 'viewer', 'label' => 'Viewer'],
+    ];
+
+    public const DEFAULT_PROJECT_ROLE = 'viewer';
+
     public function visibleProjectsFor(User $user): Builder
     {
         $teamIds = $user->teams()->pluck('teams.id');
@@ -31,6 +40,8 @@ class ProjectInvolvementService
 
         $canManageMembers = $viewer->can('manageMembers', $project);
 
+        $owner = $project->user;
+
         return [
             'id' => $project->id,
             'name' => $project->name,
@@ -42,8 +53,16 @@ class ProjectInvolvementService
             'canManageMembers' => $canManageMembers,
             'canManageProject' => $viewer->can('update', $project),
             'memberCount' => $this->involvedCount($project),
-            'teams' => $this->teamsPayload($project->teams),
-            'users' => $this->usersPayload($project->involvedUsers),
+            'owner' => $owner ? [
+                'id' => $owner->id,
+                'name' => $owner->name,
+                'email' => $owner->email,
+                'username' => $owner->display_username,
+                'avatar' => $owner->avatar_url,
+                'initials' => $this->initials($owner->name ?: $owner->email),
+            ] : null,
+            'teams' => $this->teamsPayload($project),
+            'users' => $this->directUsersPayload($project->involvedUsers),
             'availableTeams' => $canManageMembers
                 ? $this->availableTeamsPayload($project, $viewer, $teamOptions)
                 : [],
@@ -68,12 +87,22 @@ class ProjectInvolvementService
         return [
             'canManageMembers' => $canManageMembers,
             'memberCount' => $this->involvedCount($project),
-            'teams' => $this->teamsPayload($project->teams),
-            'users' => $this->usersPayload($project->involvedUsers),
+            'teams' => $this->teamsPayload($project),
+            'users' => $this->directUsersPayload($project->involvedUsers),
             'availableTeams' => $canManageMembers
                 ? $this->availableTeamsPayload($project, $viewer)
                 : [],
         ];
+    }
+
+    public function projectRoleOptions(): array
+    {
+        return self::PROJECT_ROLES;
+    }
+
+    public function projectRoleKeys(): array
+    {
+        return array_column(self::PROJECT_ROLES, 'key');
     }
 
     public function teamOptionsForUser(User $user): Collection
@@ -90,15 +119,27 @@ class ProjectInvolvementService
             ->values();
     }
 
-    public function teamsPayload(Collection $teams): Collection
+    public function teamsPayload(Project $project): Collection
     {
-        return $teams->map(fn (Team $team) => [
+        $roleRows = $project->involvedUsers->keyBy('id');
+
+        return $project->teams->map(fn (Team $team) => [
             'id' => $team->id,
             'name' => $team->name,
             'slug' => $team->slug,
             'initials' => $this->initials($team->name),
             'memberCount' => (int) ($team->members_count ?? $team->members()->count()),
+            'members' => $team->relationLoaded('members')
+                ? $this->teamMembersPayload($team->members, $roleRows, $project->user_id)
+                : collect(),
         ])->values();
+    }
+
+    public function directUsersPayload(Collection $users): Collection
+    {
+        return $this->usersPayload(
+            $users->reject(fn (User $user) => ($user->pivot->source ?? null) === 'team')->values()
+        );
     }
 
     public function usersPayload(Collection $users): Collection
@@ -110,7 +151,7 @@ class ProjectInvolvementService
             'username' => $user->display_username,
             'avatar' => $user->avatar_url,
             'initials' => $this->initials($user->name ?: $user->email),
-            'role' => $user->pivot->role ?? 'member',
+            'role' => $this->normalizeProjectRole($user->pivot->role ?? null),
             'source' => $user->pivot->source ?? 'ldap',
         ])->values();
     }
@@ -120,9 +161,17 @@ class ProjectInvolvementService
         $teamOptions ??= $this->teamOptionsForUser($viewer);
         $linkedTeamIds = $project->teams->pluck('id')->all();
 
-        return $this->teamsPayload(
-            $teamOptions->reject(fn (Team $team) => in_array($team->id, $linkedTeamIds, true))->values()
-        );
+        return $teamOptions
+            ->reject(fn (Team $team) => in_array($team->id, $linkedTeamIds, true))
+            ->values()
+            ->map(fn (Team $team) => [
+                'id' => $team->id,
+                'name' => $team->name,
+                'slug' => $team->slug,
+                'initials' => $this->initials($team->name),
+                'memberCount' => (int) ($team->members_count ?? $team->members()->count()),
+            ])
+            ->values();
     }
 
     protected function loadProjectInvolvement(Project $project): void
@@ -130,13 +179,42 @@ class ProjectInvolvementService
         $project->loadMissing([
             'repositories',
             'teams' => fn ($query) => $query->withCount('members')->orderBy('name'),
+            'teams.members' => fn ($query) => $query->orderBy('name'),
             'involvedUsers' => fn ($query) => $query->orderBy('name'),
         ]);
     }
 
     protected function involvedCount(Project $project): int
     {
-        return $project->teams->count() + $project->involvedUsers->count();
+        return $project->teams->count() + $project->involvedUsers
+            ->reject(fn (User $user) => ($user->pivot->source ?? null) === 'team')
+            ->count();
+    }
+
+    protected function teamMembersPayload(Collection $members, Collection $roleRows, int $ownerUserId): Collection
+    {
+        return $members
+            ->reject(fn (User $member) => $member->id === $ownerUserId)
+            ->map(function (User $member) use ($roleRows) {
+                $roleRow = $roleRows->get($member->id);
+
+                return [
+                    'id' => $member->id,
+                    'name' => $member->name,
+                    'email' => $member->email,
+                    'username' => $member->display_username,
+                    'avatar' => $member->avatar_url,
+                    'initials' => $this->initials($member->name ?: $member->email),
+                    'role' => $this->normalizeProjectRole($roleRow?->pivot?->role),
+                ];
+            })->values();
+    }
+
+    protected function normalizeProjectRole(?string $role): string
+    {
+        return in_array($role, $this->projectRoleKeys(), true)
+            ? $role
+            : self::DEFAULT_PROJECT_ROLE;
     }
 
     protected function initials(?string $value): string

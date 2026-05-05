@@ -16,11 +16,9 @@ use Illuminate\Validation\Rule;
 class TeamController extends Controller
 {
     public static array $roles = [
-        ['key' => 'owner', 'label' => 'Owner', 'desc' => 'Full control, billing, role configuration'],
-        ['key' => 'maintainer', 'label' => 'Maintainer', 'desc' => 'Configure projects, repositories and policies'],
-        ['key' => 'creator', 'label' => 'Package Creator', 'desc' => 'Create packages, cannot deploy to PROD'],
-        ['key' => 'deployer', 'label' => 'Deployer', 'desc' => 'Deploy approved packages to permitted environments'],
-        ['key' => 'viewer', 'label' => 'Viewer', 'desc' => 'Read-only access to packages and deployments'],
+        ['key' => 'owner', 'label' => 'Team Lead', 'desc' => 'Can manage the team, members, and team settings'],
+        ['key' => 'maintainer', 'label' => 'Team Maintainer', 'desc' => 'Can invite members and assign this team to projects'],
+        ['key' => 'viewer', 'label' => 'Member', 'desc' => 'Part of the reusable team roster'],
     ];
 
     public function index(Request $request)
@@ -335,7 +333,7 @@ class TeamController extends Controller
 
         return redirect()
             ->route('team', ['team' => $team->id])
-            ->with('success', "{$member->name}'s role updated to " . ucfirst($newRole) . '.');
+            ->with('success', "{$member->name}'s role updated to ".ucfirst($newRole).'.');
     }
 
     public function removeMember(Request $request, Team $team, User $member): RedirectResponse

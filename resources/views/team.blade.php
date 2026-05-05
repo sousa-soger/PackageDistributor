@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Teams & Members')
-@section('subtitle', 'Group people, assign projects, and decide who can ship.')
+@section('title', 'Teams')
+@section('subtitle', 'Create reusable teams, invite people, and assign teams to projects.')
 
 @section('content')
 @php
@@ -9,6 +9,7 @@
   $teamName = $currentTeam?->name ?? '';
   $teamSlug = $currentTeam?->slug ?? '';
   $teamInitial = $teamName !== '' ? strtoupper(substr($teamName, 0, 1)) : 'T';
+  $roleLabels = collect($roles)->pluck('label', 'key');
 @endphp
 
 <div class="animate-fade-in px-4 sm:px-6 lg:px-8 py-6 lg:py-8"
@@ -342,18 +343,24 @@
                         <span class="inline-flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-md brand-soft-bg"
                               style="border:1px solid hsl(var(--border)/0.60);color:hsl(var(--foreground))">
                           <span class="h-2.5 w-2.5 rounded-full role-swatch-{{ $role }}"></span>
-                          {{ ucfirst($role === 'creator' ? 'Pkg Creator' : $role) }}
+                          {{ $roleLabels[$role] ?? ucfirst($role) }}
                         </span>
                       @else
                         <form method="POST" action="{{ route('team.members.update-role', [$currentTeam, $member]) }}">
                           @csrf
                           @method('PATCH')
                           <select name="role" onchange="this.form.submit()" class="role-select">
-                            @foreach(['owner', 'maintainer', 'creator', 'deployer', 'viewer'] as $roleOption)
-                              <option value="{{ $roleOption }}" {{ $role === $roleOption ? 'selected' : '' }}>
-                                {{ ucfirst($roleOption === 'creator' ? 'Pkg Creator' : $roleOption) }}
+                            @foreach($roles as $roleOption)
+                              @php $roleKey = $roleOption['key']; @endphp
+                              <option value="{{ $roleKey }}" {{ $role === $roleKey ? 'selected' : '' }}>
+                                {{ $roleOption['label'] }}
                               </option>
                             @endforeach
+                            @unless($roleLabels->has($role))
+                              <option value="{{ $role }}" selected>
+                                {{ ucfirst($role) }}
+                              </option>
+                            @endunless
                           </select>
                         </form>
                       @endif
@@ -430,7 +437,7 @@
                   style="border-bottom:1px solid hsl(var(--border)/0.50)"
                   onmouseenter="this.style.background='hsl(var(--secondary)/0.4)'"
                   onmouseleave="this.style.background=''">
-                <span class="h-3 w-3 rounded-full role-swatch-creator shrink-0"></span>
+                <span class="h-3 w-3 rounded-full brand-gradient-bg shrink-0"></span>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold truncate" style="color:hsl(var(--foreground))">{{ $project->name }}</div>
                   <div class="text-[11px] truncate" style="color:hsl(var(--muted-foreground))">
@@ -458,44 +465,6 @@
         @endif
       </div>
 
-      <div class="section-card p-0 overflow-hidden">
-        <button @click="permsOpen = !permsOpen"
-                class="w-full flex items-center justify-between px-5 py-3.5 text-left transition-base"
-                onmouseenter="this.style.background='hsl(var(--secondary)/0.4)'"
-                onmouseleave="this.style.background=''">
-          <span class="text-sm font-semibold flex items-center gap-2" style="color:hsl(var(--foreground))">
-            <svg class="h-4 w-4" style="color:hsl(var(--primary))" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
-            Role permissions
-          </span>
-          <svg class="h-4 w-4 transition-transform duration-200"
-               :class="permsOpen ? 'rotate-180' : ''"
-               style="color:hsl(var(--muted-foreground))"
-               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-          </svg>
-        </button>
-
-        <div x-show="permsOpen" x-cloak x-collapse
-             style="border-top:1px solid hsl(var(--border)/0.60)">
-          <div class="px-5 pb-5 pt-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              @foreach($roles as $role)
-                <div class="rounded-xl border p-4 transition-base"
-                     style="background:hsl(var(--card));border-color:hsl(var(--border)/0.70)"
-                     onmouseenter="this.style.boxShadow='var(--shadow-md)'"
-                     onmouseleave="this.style.boxShadow=''">
-                  <div class="h-8 w-8 rounded-lg shadow-soft mb-2 role-swatch-{{ $role['key'] }}"></div>
-                  <div class="text-sm font-semibold" style="color:hsl(var(--foreground))">{{ $role['label'] }}</div>
-                  <div class="text-[11px] mt-1 leading-snug" style="color:hsl(var(--muted-foreground))">{{ $role['desc'] }}</div>
-                </div>
-              @endforeach
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
   @endif
@@ -632,7 +601,7 @@
 
         <div>
           <label class="block text-xs font-medium mb-2" style="color:hsl(var(--foreground))">
-            Role <span style="color:hsl(var(--failed))">*</span>
+            Team access <span style="color:hsl(var(--failed))">*</span>
           </label>
           <div class="grid grid-cols-1 gap-2">
             @foreach($roles as $role)
