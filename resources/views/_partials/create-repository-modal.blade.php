@@ -5,13 +5,10 @@
   To open from anywhere, dispatch the custom event:
     window.dispatchEvent(new CustomEvent('open-repo-modal'))
 
-  Optional: pre-select a project by passing a detail:
-    window.dispatchEvent(new CustomEvent('open-repo-modal', { detail: { projectId: 5 } }))
 --}}
 <div x-data="connectRepoModal({
     oauthConnections: @js($oauthConnections ?? []),
     oauthProvider: @js(request('oauth_provider')),
-    projects: @js($repositoryProjectOptions ?? $projects ?? []),
 })"
 x-init="init()">
   <template x-teleport="body">
@@ -197,17 +194,6 @@ x-init="init()">
           {{-- STEP: details --}}
           <template x-if="step === 'details' && provider">
             <div class="space-y-4">
-              <div class="space-y-2">
-                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Project Name</label>
-                <select x-model="projectId" class="flex h-9 w-full items-center justify-between rounded-md border text-sm shadow-sm focus:outline-none"
-                        style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
-                  <option value="">Select a project</option>
-                  <template x-for="project in projects" :key="project.id">
-                    <option :value="String(project.id)" x-text="project.name"></option>
-                  </template>
-                </select>
-              </div>
-
               <template x-if="provider.authMethod === 'path'">
                 <div class="space-y-2">
                   <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Local folder path</label>
@@ -334,13 +320,11 @@ function connectRepoModal(config = {}) {
     error: '',
     oauthConnections: config.oauthConnections ?? {},
     oauthProvider: config.oauthProvider ?? null,
-    projects: config.projects ?? [],
 
     authMethod: 'oauth',
     token: '',
     host: '',
     localPath: '',
-    projectId: '',
     repoUrl: '',
 
     providers: [
@@ -394,11 +378,8 @@ function connectRepoModal(config = {}) {
     },
 
     init() {
-      window.addEventListener('open-repo-modal', (e) => {
+      window.addEventListener('open-repo-modal', () => {
         this.openModal();
-        if (e?.detail?.projectId) {
-          this.projectId = String(e.detail.projectId);
-        }
       });
 
       this.resumeOAuthFlowIfNeeded();
@@ -421,7 +402,6 @@ function connectRepoModal(config = {}) {
     reset() {
       this.step = 'provider';
       this.provider = null;
-      this.projectId = '';
       this.repoUrl = '';
       this.token = '';
       this.host = '';
@@ -499,7 +479,6 @@ function connectRepoModal(config = {}) {
           ? this.authMethod
           : null,
         name: repositoryValue,
-        project_id: this.projectId || null,
         provider: this.provider?.id,
         server_host: isCompanyServer ? this.host.trim() : null,
         server_path: isCompanyServer ? repositoryValue : null,
@@ -511,7 +490,6 @@ function connectRepoModal(config = {}) {
       sessionStorage.setItem(pendingConnectionKey, JSON.stringify({
         host: this.host,
         localPath: this.localPath,
-        projectId: this.projectId,
         providerId: this.provider?.id ?? null,
         repoUrl: this.repoUrl,
       }));
@@ -548,7 +526,6 @@ function connectRepoModal(config = {}) {
       this.authMethod = 'oauth';
       this.host = pendingState.host || '';
       this.localPath = pendingState.localPath || '';
-      this.projectId = pendingState.projectId || '';
       this.repoUrl = pendingState.repoUrl || '';
       this.step = 'details';
       this.oauthConnections[provider.id] = true;

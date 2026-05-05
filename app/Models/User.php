@@ -106,6 +106,13 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function involvedRepositories(): BelongsToMany
+    {
+        return $this->belongsToMany(Repository::class)
+            ->withPivot(['source', 'ldap_identifier', 'role'])
+            ->withTimestamps();
+    }
+
     public function ownedTeams(): HasMany
     {
         return $this->hasMany(Team::class, 'owner_user_id');

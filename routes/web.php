@@ -24,6 +24,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/repositories', [RepositoryController::class, 'index'])->name('repositories');
     Route::post('/repositories', [RepositoryController::class, 'store'])->name('repositories.store');
     Route::post('/repositories/{repository}/sync', [RepositoryController::class, 'sync'])->name('repositories.sync');
+    Route::get('/repositories/{repository}/members', [RepositoryController::class, 'members'])->name('repositories.members.show');
+    Route::get('/repositories/{repository}/users/search', [RepositoryController::class, 'searchUsers'])->name('repositories.users.search');
+    Route::post('/repositories/{repository}/users', [RepositoryController::class, 'storeUser'])->name('repositories.users.store');
+    Route::patch('/repositories/{repository}/users/{user}/role', [RepositoryController::class, 'updateUserRole'])->name('repositories.users.update-role');
+    Route::delete('/repositories/{repository}/users/{user}', [RepositoryController::class, 'destroyUser'])->name('repositories.users.destroy');
+    Route::patch('/repositories/{repository}/credentials', [RepositoryController::class, 'updateCredentials'])->name('repositories.credentials.update');
     Route::delete('/repositories/{repository}', [RepositoryController::class, 'destroy'])->name('repositories.destroy');
 
     Route::get('/team', [TeamController::class, 'index'])->name('team');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Repository extends Model
 {
@@ -44,6 +45,13 @@ class Repository extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot(['source', 'ldap_identifier', 'role'])
+            ->withTimestamps();
     }
 
     // ── Accessors ────────────────────────────────────────────────────────────

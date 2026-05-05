@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Repository;
+use App\Models\User;
 use App\Services\GitHubService;
+use App\Services\LdapService;
+use App\Services\ProjectInvolvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -15,21 +18,26 @@ class RepositoryController extends Controller
     {
         $user = $request->user();
 
-        $repositories = $user->repositories()
-            ->with('project')
+        $repositories = Repository::query()
+            ->where(fn ($query) => $query
+                ->where('user_id', $user->id)
+                ->orWhereHas('members', fn ($query) => $query->whereKey($user->id)))
+            ->with('members')
             ->latest()
             ->get();
 
-        $projects = $user->projects()
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $repositoryCards = $repositories
+            ->map(fn (Repository $repository) => $this->repositoryPayload($repository, $user))
+            ->values();
+
+        $repositoryRoleOptions = $this->repositoryRoleOptions();
 
         $oauthConnections = [
             'github' => (bool) $user->github_token,
             'gitlab' => (bool) $user->gitlab_token,
         ];
 
-        return view('repositories', compact('oauthConnections', 'projects', 'repositories'));
+        return view('repositories', compact('oauthConnections', 'repositories', 'repositoryCards', 'repositoryRoleOptions'));
     }
 
     public function store(Request $request, GitHubService $github): JsonResponse
@@ -41,13 +49,6 @@ class RepositoryController extends Controller
             'auth_method' => ['nullable', Rule::in(['oauth', 'pat'])],
             'display_name' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:500'],
-            'project_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('projects', 'id')->where(
-                    fn ($query) => $query->where('user_id', $request->user()->id)
-                ),
-            ],
             'provider' => ['required', Rule::in(['github', 'gitlab', 'company-server', 'local-pc'])],
             'server_host' => ['nullable', 'string', 'max:255'],
             'server_path' => ['nullable', 'string', 'max:500'],
@@ -163,7 +164,7 @@ class RepositoryController extends Controller
             'external_id' => $metadata['external_id'],
             'last_synced_at' => now(),
             'name' => $normalized['name'],
-            'project_id' => $validated['project_id'] ?? null,
+            'project_id' => null,
             'provider' => $validated['provider'],
             'server_host' => $validated['server_host'] ?? $normalized['server_host'],
             'server_path' => $validated['server_path'] ?? null,
@@ -248,6 +249,334 @@ class RepositoryController extends Controller
         $repository->delete();
 
         return response()->json(['message' => 'Repository removed.']);
+    }
+
+    public function members(Request $request, Repository $repository): JsonResponse
+    {
+        $this->authorize('view', $repository);
+
+        return response()->json($this->repositoryMembersPayload($repository, $request->user()));
+    }
+
+    public function searchUsers(Request $request, Repository $repository, LdapService $ldap): JsonResponse
+    {
+        $this->authorize('manageMembers', $repository);
+
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $query = trim((string) ($validated['q'] ?? ''));
+        if (mb_strlen($query) < 2) {
+            return response()->json(['users' => []]);
+        }
+
+        $directoryUsers = collect($ldap->searchUsers($query, 8));
+        $usernames = $directoryUsers->pluck('username')->filter()->values()->all();
+        $emails = $directoryUsers->pluck('email')->filter()->values()->all();
+
+        $existingUsers = empty($usernames) && empty($emails)
+            ? collect()
+            : User::query()
+                ->where(function ($query) use ($emails, $usernames) {
+                    if (! empty($usernames)) {
+                        $query->whereIn('ldap_username', $usernames);
+                    }
+
+                    if (! empty($emails)) {
+                        $query->orWhereIn('email', $emails);
+                    }
+                })
+                ->get();
+
+        $repositoryMemberIds = $repository->members()->pluck('users.id')->all();
+
+        $results = $directoryUsers->map(function (array $directoryUser) use ($existingUsers, $repository, $repositoryMemberIds) {
+            $existingUser = $existingUsers->first(function (User $user) use ($directoryUser) {
+                return ($directoryUser['username'] && $user->ldap_username === $directoryUser['username'])
+                    || ($directoryUser['email'] && $user->email === $directoryUser['email']);
+            });
+
+            $alreadyMember = $existingUser
+                ? in_array($existingUser->id, $repositoryMemberIds, true) || $existingUser->id === $repository->user_id
+                : false;
+
+            return [
+                'already_member' => $alreadyMember,
+                'avatar' => $directoryUser['avatar'],
+                'email' => $directoryUser['email'],
+                'id' => $existingUser?->id,
+                'name' => $directoryUser['name'],
+                'username' => $directoryUser['username'],
+            ];
+        })->values();
+
+        return response()->json(['users' => $results]);
+    }
+
+    public function storeUser(Request $request, Repository $repository, LdapService $ldap): JsonResponse
+    {
+        $this->authorize('manageMembers', $repository);
+
+        $validated = $request->validate([
+            'role' => ['nullable', Rule::in($this->repositoryRoleKeys())],
+            'username' => ['required', 'string', 'max:255'],
+        ]);
+
+        $directoryUser = $ldap->findUser($validated['username']);
+
+        if (! $directoryUser) {
+            return response()->json([
+                'message' => 'No matching LDAP user was found.',
+            ], 404);
+        }
+
+        try {
+            $member = $ldap->syncLocalUser($directoryUser);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        if ($member->id === $repository->user_id) {
+            return response()->json([
+                'message' => 'The repository owner already has access to this repository.',
+            ], 422);
+        }
+
+        $pivot = [
+            'source' => 'ldap',
+            'ldap_identifier' => $directoryUser['username'] ?? $validated['username'],
+            'role' => $validated['role'] ?? ProjectInvolvementService::DEFAULT_PROJECT_ROLE,
+        ];
+
+        if ($repository->members()->whereKey($member->id)->exists()) {
+            $repository->members()->updateExistingPivot($member->id, $pivot);
+        } else {
+            $repository->members()->attach($member->id, $pivot);
+        }
+
+        return response()->json($this->repositoryMembersPayload($repository->fresh(), $request->user()));
+    }
+
+    public function updateUserRole(Request $request, Repository $repository, User $user): JsonResponse
+    {
+        $this->authorize('manageMembers', $repository);
+
+        $validated = $request->validate([
+            'role' => ['required', Rule::in($this->repositoryRoleKeys())],
+        ]);
+
+        if (! $repository->members()->whereKey($user->id)->exists()) {
+            return response()->json([
+                'message' => 'That user is not assigned to this repository.',
+            ], 404);
+        }
+
+        $repository->members()->updateExistingPivot($user->id, [
+            'role' => $validated['role'],
+        ]);
+
+        return response()->json($this->repositoryMembersPayload($repository->fresh(), $request->user()));
+    }
+
+    public function destroyUser(Request $request, Repository $repository, User $user): JsonResponse
+    {
+        $this->authorize('manageMembers', $repository);
+
+        if (! $repository->members()->whereKey($user->id)->exists()) {
+            return response()->json([
+                'message' => 'That user is not assigned to this repository.',
+            ], 404);
+        }
+
+        $repository->members()->detach($user->id);
+
+        return response()->json($this->repositoryMembersPayload($repository->fresh(), $request->user()));
+    }
+
+    public function updateCredentials(Request $request, Repository $repository): JsonResponse
+    {
+        $this->authorize('update', $repository);
+
+        if (in_array($repository->provider, ['github', 'gitlab'], true)) {
+            $validated = $request->validate([
+                'access_token' => [
+                    'nullable',
+                    'string',
+                    'max:500',
+                    Rule::requiredIf(fn () => $request->input('auth_method') === 'pat'),
+                ],
+                'auth_method' => ['required', Rule::in(['oauth', 'pat'])],
+            ]);
+
+            $repository->update([
+                'access_token' => $validated['auth_method'] === 'pat'
+                    ? $validated['access_token']
+                    : null,
+                'status' => 'connected',
+            ]);
+        } elseif ($repository->provider === 'company-server') {
+            $validated = $request->validate([
+                'server_host' => ['required', 'string', 'max:255'],
+                'server_path' => ['required', 'string', 'max:500'],
+                'server_protocol' => ['nullable', Rule::in(['SSH', 'SFTP', 'HTTP', 'HTTPS'])],
+            ]);
+
+            $repository->update([
+                'name' => $validated['server_path'],
+                'server_host' => $validated['server_host'],
+                'server_path' => $validated['server_path'],
+                'server_protocol' => $validated['server_protocol'] ?? 'SSH',
+                'url' => $validated['server_path'],
+                'status' => 'connected',
+            ]);
+        } elseif ($repository->provider === 'local-pc') {
+            $validated = $request->validate([
+                'server_path' => ['required', 'string', 'max:500'],
+            ]);
+
+            $repository->update([
+                'name' => $validated['server_path'],
+                'server_path' => $validated['server_path'],
+                'url' => $validated['server_path'],
+                'status' => 'connected',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Repository connection updated.',
+            'repository' => $this->repositoryPayload($repository->fresh(), $request->user()),
+        ]);
+    }
+
+    protected function repositoryPayload(Repository $repository, User $viewer): array
+    {
+        $repository->loadMissing('members');
+
+        $membersPayload = $this->repositoryMembersPayload($repository, $viewer);
+
+        return array_merge($membersPayload, [
+            'authType' => $this->repositoryAuthType($repository),
+            'branchCount' => $repository->branch_count,
+            'canManageRepository' => $viewer->can('update', $repository),
+            'defaultBranch' => $repository->default_branch ?? 'main',
+            'externalId' => $repository->external_id,
+            'id' => $repository->id,
+            'label' => $repository->label,
+            'lastSyncedAt' => $repository->last_synced_at?->toIso8601String(),
+            'lastSyncedLabel' => $repository->last_synced_at?->diffForHumans() ?? 'Not synced yet',
+            'name' => $repository->name,
+            'provider' => $repository->provider,
+            'providerLabel' => $this->providerLabel($repository->provider),
+            'serverHost' => $repository->server_host,
+            'serverPath' => $repository->server_path,
+            'serverProtocol' => $repository->server_protocol,
+            'slug' => $repository->name,
+            'status' => $repository->status ?? 'connected',
+            'statusLabel' => $this->statusLabel($repository->status ?? 'connected'),
+            'tagCount' => $repository->tag_count,
+            'url' => $repository->url,
+            'username' => $repository->username,
+        ]);
+    }
+
+    protected function repositoryMembersPayload(Repository $repository, User $viewer): array
+    {
+        $repository->loadMissing('members');
+
+        return [
+            'canManageMembers' => $viewer->can('manageMembers', $repository),
+            'memberCount' => $repository->members->count(),
+            'users' => $repository->members
+                ->sortBy('name')
+                ->map(fn (User $user) => $this->memberPayload($user))
+                ->values(),
+        ];
+    }
+
+    protected function memberPayload(User $user): array
+    {
+        return [
+            'avatar' => $user->avatar_url,
+            'email' => $user->email,
+            'id' => $user->id,
+            'initials' => $this->initials($user->name ?: $user->email),
+            'name' => $user->name,
+            'role' => $this->normalizeRepositoryRole($user->pivot->role ?? null),
+            'source' => $user->pivot->source ?? 'ldap',
+            'username' => $user->display_username,
+        ];
+    }
+
+    protected function repositoryRoleOptions(): array
+    {
+        return ProjectInvolvementService::PROJECT_ROLES;
+    }
+
+    protected function repositoryRoleKeys(): array
+    {
+        return array_column($this->repositoryRoleOptions(), 'key');
+    }
+
+    protected function normalizeRepositoryRole(?string $role): string
+    {
+        return in_array($role, $this->repositoryRoleKeys(), true)
+            ? $role
+            : ProjectInvolvementService::DEFAULT_PROJECT_ROLE;
+    }
+
+    protected function repositoryAuthType(Repository $repository): string
+    {
+        if (in_array($repository->provider, ['github', 'gitlab'], true)) {
+            return $repository->access_token ? 'Personal Access Token' : 'OAuth';
+        }
+
+        if ($repository->provider === 'company-server') {
+            return $repository->server_protocol ?: 'SSH';
+        }
+
+        if ($repository->provider === 'local-pc') {
+            return 'Local agent';
+        }
+
+        return 'Repository connection';
+    }
+
+    protected function providerLabel(string $provider): string
+    {
+        return match ($provider) {
+            'github' => 'GitHub',
+            'gitlab' => 'GitLab',
+            'company-server' => 'Company Server',
+            'local-pc' => 'Local PC',
+            default => ucfirst(str_replace('-', ' ', $provider)),
+        };
+    }
+
+    protected function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'connected' => 'Connected',
+            'expired' => 'Expired',
+            'needs-auth' => 'Needs auth',
+            default => ucfirst($status),
+        };
+    }
+
+    protected function initials(?string $value): string
+    {
+        $parts = preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if ($parts === []) {
+            return '?';
+        }
+
+        return collect($parts)
+            ->map(fn (string $part) => strtoupper(substr($part, 0, 1)))
+            ->take(2)
+            ->implode('');
     }
 
     protected function fetchGitHubMetadata(GitHubService $github, string $name, ?string $token): array
