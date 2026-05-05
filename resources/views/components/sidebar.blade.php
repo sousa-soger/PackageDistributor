@@ -25,7 +25,7 @@
     </div>
 
     {{-- Navigation --}}
-    <nav class="flex-1 overflow-y-auto px-3 py-5 space-y-6">
+    <nav class="flex-1 overflow-y-auto scrollbar-thin px-3 py-5 space-y-6">
 
         {{-- Workspace Group --}}
         <div>
@@ -50,6 +50,24 @@
                             <rect width="7" height="5" x="3" y="16" rx="1"></rect>
                         </svg>
                         <span>Dashboard</span>
+                    </a>
+                </li>
+                {{-- Repostiries combined --}}
+                <li>
+                    <a href="{{ route('repositories') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
+                            {{ request()->routeIs('repositories') ? 'sidebar-active' : 'sidebar-link' }}">
+                        @if(request()->routeIs('repositories'))
+                            <span class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full brand-gradient-bg"></span>
+                        @endif
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-git-branch h-4 w-4">
+                            <line x1="6" x2="6" y1="3" y2="15"></line>
+                            <circle cx="18" cy="6" r="3"></circle>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <path d="M18 9a9 9 0 0 1-9 9"></path>
+                        </svg>
+                        <span>Repositories</span>
                     </a>
                 </li>
                 {{-- Create Package --}}
@@ -225,59 +243,4 @@
         color: hsl(var(--sidebar-accent-fg));
         font-weight: 600;
     }
-
-
-/*
-███████╗██╗██████╗ ███████╗██████╗  █████╗ ██████╗     ███████╗ ██████╗██████╗  ██████╗ ██╗     ██╗     ██████╗  █████╗ ██████╗     
-██╔════╝██║██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗    ██╔════╝██╔════╝██╔══██╗██╔═══██╗██║     ██║     ██╔══██╗██╔══██╗██╔══██╗    
-███████╗██║██║  ██║█████╗  ██████╔╝███████║██████╔╝    ███████╗██║     ██████╔╝██║   ██║██║     ██║     ██████╔╝███████║██████╔╝    
-╚════██║██║██║  ██║██╔══╝  ██╔══██╗██╔══██║██╔══██╗    ╚════██║██║     ██╔══██╗██║   ██║██║     ██║     ██╔══██╗██╔══██║██╔══██╗    
-███████║██║██████╔╝███████╗██████╔╝██║  ██║██║  ██║    ███████║╚██████╗██║  ██║╚██████╔╝███████╗███████╗██████╔╝██║  ██║██║  ██║    
-╚══════╝╚═╝╚═════╝ ╚══════╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝    
-*/
-    nav::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    nav::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    nav::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.3); /* Softened for light mode */
-        border-radius: 20px;
-        border: 1px solid transparent;
-        background-clip: padding-box;
-    }
-
-    nav::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.5);
-    }
-
-    nav {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-    }
-
-    /* --- Dark Mode --- */
-    .dark nav::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 20px;
-        border: 1px solid transparent;
-        background-clip: padding-box;
-    }
-
-    .dark nav::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.4);
-    }
-
-    /* Firefox Dark Mode */
-    .dark nav {
-        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-    }
-/*      
-█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗      
-╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝
-*/
-
 </style>

@@ -255,7 +255,49 @@
         padding-right: 1.75rem;
     }
     .role-select:focus { border-color: hsl(var(--primary) / 0.6); }
+
+/*
+███████╗ ██████╗██████╗  ██████╗ ██╗     ██╗     ██████╗  █████╗ ██████╗     
+██╔════╝██╔════╝██╔══██╗██╔═══██╗██║     ██║     ██╔══██╗██╔══██╗██╔══██╗    
+███████╗██║     ██████╔╝██║   ██║██║     ██║     ██████╔╝███████║██████╔╝    
+╚════██║██║     ██╔══██╗██║   ██║██║     ██║     ██╔══██╗██╔══██║██╔══██╗    
+███████║╚██████╗██║  ██║╚██████╔╝███████╗███████╗██████╔╝██║  ██║██║  ██║    
+╚══════╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝    
+*/
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 5px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 20px;
+        border: 1px solid transparent;
+        background-clip: padding-box;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.45);
+    }
+
+    .dark .scrollbar-thin {
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.4);
+    }
 }
+/*      
+█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗      
+╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝╚════╝
+*/
 
 @layer components {
     .nav-item-modern {
@@ -266,7 +308,7 @@
     /* Metallic Sheen Effect */
     .nav-item-modern::after {
         content: '';
-        @apply absolute top-0 -left-[100%] w-[60%] h-full pointer-events-none;
+        @apply absolute top-0 -left-full w-[60%] h-full pointer-events-none;
         background: linear-gradient(
             to right, 
             rgba(255, 255, 255, 0) 0%, 
@@ -297,7 +339,7 @@
 
     .nav-item-active::before {
         content: '';
-        @apply absolute top-1/2 -translate-y-1/2 -left-[1px] w-1 h-5 bg-blue-600 rounded-r-[3px] transition-all duration-200;
+        @apply absolute top-1/2 -translate-y-1/2 -left-px w-1 h-5 bg-blue-600 rounded-r-[3px] transition-all duration-200;
     }
 
     .icon-container {

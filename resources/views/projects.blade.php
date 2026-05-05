@@ -5,30 +5,30 @@
 
 @section('topbar_actions')
     <div x-data="{
-                                                showModal: @js($errors->any()),
-                                                modalMode: 'create',
-                                                selectedColor: @js(old('color', $colorOptions[0] ?? 'from-brand-rose to-brand-iris')),
-                                                editId: null,
-                                                editName: '',
-                                                editDescription: '',
-                                                openCreate() {
-                                                    this.modalMode = 'create';
-                                                    this.editId = null;
-                                                    this.editName = '';
-                                                    this.editDescription = '';
-                                                    this.selectedColor = @js($colorOptions[0] ?? 'from-brand-rose to-brand-iris');
-                                                    this.showModal = true;
-                                                },
-                                                openEdit(project) {
-                                                    this.modalMode = 'edit';
-                                                    this.editId = project.id;
-                                                    this.editName = project.name;
-                                                    this.editDescription = project.description === 'No description added yet.' ? '' : project.description;
-                                                    this.selectedColor = project.color;
-                                                    this.showModal = true;
-                                                },
-                                            }" @open-create-project.window="openCreate()"
-        @open-edit-project.window="openEdit($event.detail)">
+                                                                                            showModal: @js($errors->any()),
+                                                                                            modalMode: 'create',
+                                                                                            selectedColor: @js(old('color', $colorOptions[0] ?? 'from-brand-rose to-brand-iris')),
+                                                                                            editId: null,
+                                                                                            editName: '',
+                                                                                            editDescription: '',
+                                                                                            openCreate() {
+                                                                                                this.modalMode = 'create';
+                                                                                                this.editId = null;
+                                                                                                this.editName = '';
+                                                                                                this.editDescription = '';
+                                                                                                this.selectedColor = @js($colorOptions[0] ?? 'from-brand-rose to-brand-iris');
+                                                                                                this.showModal = true;
+                                                                                            },
+                                                                                            openEdit(project) {
+                                                                                                this.modalMode = 'edit';
+                                                                                                this.editId = project.id;
+                                                                                                this.editName = project.name;
+                                                                                                this.editDescription = project.description === 'No description added yet.' ? '' : project.description;
+                                                                                                this.selectedColor = project.color;
+                                                                                                this.showModal = true;
+                                                                                            },
+                                                                                        }"
+        @open-create-project.window="openCreate()" @open-edit-project.window="openEdit($event.detail)">
         <button type="button" @click="openCreate()"
             class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft hover:brightness-[1.03] active:brightness-95 transition-base h-9 rounded-md px-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -126,11 +126,11 @@
     </div>
 
     <div class="space-y-6" x-data="projectsPage({
-                                                projects: @js($projects),
-                                                csrfToken: @js(csrf_token()),
-                                                ldapSearchUrl: @js(route('ldap.users.search')),
-                                                roleOptions: @js($projectRoleOptions),
-                                            })">
+                                                                                            projects: @js($projects),
+                                                                                            csrfToken: @js(csrf_token()),
+                                                                                            ldapSearchUrl: @js(route('ldap.users.search')),
+                                                                                            roleOptions: @js($projectRoleOptions),
+                                                                                        })">
         {{-- Search header --}}
         <div class="mb-5 relative max-w-md">
             <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center">
@@ -177,19 +177,17 @@
         </div>
 
         {{-- Project cards grid --}}
-        {{-- Each card wrapper uses display:contents when active so the placeholder + article
-        become direct grid children — this lets col-span-full actually span the full row. --}}
-        {{-- Project cards grid --}}
         <div x-show="filteredProjects.length > 0" x-cloak class="space-y-4">
-            {{-- We render rows manually so the expanded panel can inject between rows --}}
+            {{-- We render rows manually so the selected card highlight can stay anchored in its row. --}}
             <template x-for="(row, rowIndex) in projectRows" :key="rowIndex">
                 <div class="space-y-4">
                     {{-- The row of cards --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                         <template x-for="project in row" :key="project.id">
-                            <article @click="selectedId !== project.id && setSelected(project.id)" :class="selectedId === project.id
-                                                                ? 'p-5 ring-[1px] ring-primary shadow-[0_0_0_4px_hsl(var(--primary)/ 0.3)] opacity-60 pointer-events-none'
-                                                                : 'p-5 cursor-pointer hover:shadow-soft'"
+                            <article @click="selectedId !== project.id && setSelected(project.id)"
+                                :class="selectedId === project.id
+                                                                                                            ? 'p-5 ring-[1px] ring-primary shadow-[0_0_0_4px_hsl(var(--primary)/ 0.3)] opacity-60 pointer-events-none'
+                                                                                                            : 'p-5 cursor-pointer hover:shadow-soft'"
                                 class="section-card text-left group relative overflow-hidden transition-all duration-300">
                                 {{-- Background glow --}}
                                 <div class="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br opacity-20 blur-2xl pointer-events-none"
@@ -285,445 +283,513 @@
                         </template>
                     </div>
 
-                    {{-- Expanded panel: renders below this row if selected project is in this row --}}
+                    {{-- Expanded bottom sheet: teleports out of the row and overlays the page. --}}
                     <template x-if="selectedProjectInRow(row)">
-                        <article class="section-card text-left relative overflow-hidden ring-primary shadow-soft p-0 z-10">
-                            {{-- Background glow --}}
-                            <div class="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br opacity-20 blur-2xl pointer-events-none"
-                                :class="selectedProjectInRow(row).color"></div>
+                        <div>
+                            <template x-teleport="body">
+                                <div class="fixed inset-0 z-40" @keydown.escape.window="selectedId = null">
+                                    <div class="absolute inset-0 bg-black/65 backdrop-blur-[2px]"
+                                        @click="selectedId = null"></div>
 
-                            {{-- Header --}}
-                            <div class="relative p-5 border-b border-border/60 brand-soft-bg">
-                                <div class="flex items-start justify-between gap-3 mb-3">
-                                    <div class="rounded-lg bg-gradient-to-br shadow-soft flex items-center justify-center shrink-0 h-12 w-12"
-                                        :class="selectedProjectInRow(row).color">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 on-brand" viewBox="0 0 24 24"
-                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <path
-                                                d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z">
-                                            </path>
-                                            <path d="M8 10v4"></path>
-                                            <path d="M12 10v2"></path>
-                                            <path d="M16 10v6"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex items-center gap-1" @click.stop>
-                                        <button type="button" x-show="selectedProjectInRow(row).canManageProject"
-                                            @click="window.dispatchEvent(new CustomEvent('open-edit-project', { detail: selectedProjectInRow(row) }))"
-                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                                            title="Edit project">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24"
-                                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round">
-                                                <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                            </svg>
-                                        </button>
-                                        <button type="button" x-show="selectedProjectInRow(row).canManageProject"
-                                            @click="deleteId = selectedProjectInRow(row).id; deleteName = selectedProjectInRow(row).name; showDeleteDialog = true;"
-                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-failed hover:bg-failed/10 transition-colors"
-                                            title="Delete project">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24"
-                                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round">
-                                                <path d="M3 6h18" />
-                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                            </svg>
-                                        </button>
-                                        <button type="button" @click="selectedId = null"
-                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                                            title="Collapse">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
-                                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round">
-                                                <path d="M18 6 6 18" />
-                                                <path d="m6 6 12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="text-base font-semibold" x-text="selectedProjectInRow(row).name"></div>
-                                <div class="text-xs text-muted-foreground mt-1"
-                                    x-text="selectedProjectInRow(row).description"></div>
-                                <div class="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
-                                    <span class="inline-flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24"
-                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <line x1="6" x2="6" y1="3" y2="15" />
-                                            <circle cx="18" cy="6" r="3" />
-                                            <circle cx="6" cy="18" r="3" />
-                                            <path d="M18 9a9 9 0 0 1-9 9" />
-                                        </svg>
-                                        <span x-text="selectedProjectInRow(row).repoCount + ' repos'"></span>
-                                    </span>
-                                    <span class="inline-flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24"
-                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                            <circle cx="9" cy="7" r="4" />
-                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                        </svg>
-                                        <span x-text="involvedLabel(selectedProjectInRow(row))"></span>
-                                    </span>
-                                    <span class="ml-auto flex items-center gap-1.5"
-                                        x-show="selectedProjectInRow(row).owner">
-                                        <template
-                                            x-if="selectedProjectInRow(row).owner && selectedProjectInRow(row).owner.avatar">
-                                            <img :src="selectedProjectInRow(row).owner.avatar"
-                                                :alt="selectedProjectInRow(row).owner.name"
-                                                class="h-4 w-4 rounded-full object-cover border border-border/70">
-                                        </template>
-                                        <template
-                                            x-if="selectedProjectInRow(row).owner && !selectedProjectInRow(row).owner.avatar">
-                                            <span
-                                                class="h-4 w-4 rounded-full brand-gradient-bg flex items-center justify-center text-[8px] font-semibold on-brand"
-                                                x-text="selectedProjectInRow(row).owner.initials"></span>
-                                        </template>
-                                        <span
-                                            x-text="selectedProjectInRow(row).owner ? selectedProjectInRow(row).owner.name : ''"></span>
-                                    </span>
-                                    <span class="ml-auto" x-show="!selectedProjectInRow(row).owner"
-                                        x-text="selectedProjectInRow(row).lastDeployedAt"></span>
-                                </div>
-                            </div>
-
-                            {{-- Repos + Team panels --}}
-                            <div
-                                class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/60">
-                                {{-- Repositories panel --}}
-                                <div class="p-5">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <h4 class="text-sm font-semibold inline-flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round">
-                                                <line x1="6" x2="6" y1="3" y2="15" />
-                                                <circle cx="18" cy="6" r="3" />
-                                                <circle cx="6" cy="18" r="3" />
-                                                <path d="M18 9a9 9 0 0 1-9 9" />
-                                            </svg>
-                                            Connected repositories
-                                        </h4>
-                                        <span class="text-[11px] text-muted-foreground"
-                                            x-text="selectedProjectInRow(row).repositories.length"></span>
-                                    </div>
-                                    <template
-                                        x-if="selectedProjectInRow(row).repositories.length === 0 && selectedProjectInRow(row).canManageProject">
-                                        <button @click="openCreateRepositoryModal(selectedProjectInRow(row).id)"
-                                            class="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-3 text-xs transition-base"
-                                            style="border-color:hsl(var(--border)/0.70);color:hsl(var(--muted-foreground))"
-                                            onmouseenter="this.style.borderColor='hsl(var(--primary)/0.5)';this.style.color='hsl(var(--primary))';this.style.background='hsl(var(--secondary)/0.3)'"
-                                            onmouseleave="this.style.borderColor='hsl(var(--border)/0.70)';this.style.color='hsl(var(--muted-foreground))';this.style.background=''">
-                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            New Repository
-                                        </button>
-                                    </template>
-                                    <template
-                                        x-if="selectedProjectInRow(row).repositories.length === 0 && !selectedProjectInRow(row).canManageProject">
-                                        <p class="text-xs text-muted-foreground py-6 text-center">No repositories connected
-                                            yet.</p>
-                                    </template>
-                                    <template x-if="selectedProjectInRow(row).repositories.length > 0">
-                                        <ul class="space-y-2">
-                                            <template x-for="repo in selectedProjectInRow(row).repositories" :key="repo.id">
-                                                <li
-                                                    class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
-                                                    <div class="h-8 w-8 rounded-md brand-soft-bg flex items-center justify-center text-primary shrink-0"
-                                                        x-html="providerIcon(repo.provider)"></div>
-                                                    <div class="min-w-0 flex-1">
-                                                        <div class="text-xs font-semibold font-mono truncate"
-                                                            x-text="repo.name"></div>
-                                                        <div class="text-[11px] text-muted-foreground"
-                                                            x-text="`${repo.branchCount} branches · ${repo.tagCount} tags · default ${repo.defaultBranch}`">
-                                                        </div>
-                                                    </div>
-                                                    <span
-                                                        class="text-[10px] font-medium px-2 py-0.5 rounded-md border whitespace-nowrap"
-                                                        :class="{
-                                                                            'bg-success/10 text-success border-success/30': repo.status === 'connected',
-                                                                            'bg-queued/10 text-queued border-queued/30': repo.status === 'expired',
-                                                                            'bg-failed/10 text-failed border-failed/30': repo.status !== 'connected' && repo.status !== 'expired',
-                                                                        }"
-                                                        x-text="repo.status === 'connected' ? 'Connected' : repo.status === 'expired' ? 'Expired' : 'Needs auth'"></span>
-                                                </li>
-                                            </template>
-                                        </ul>
-                                    </template>
-                                </div>
-
-                                {{-- Teams involved panel --}}
-                                <div class="p-5" @click.stop>
-                                    <div class="flex items-center justify-between mb-3">
-                                        <h4 class="text-sm font-semibold inline-flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                                <circle cx="9" cy="7" r="4" />
-                                                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                            </svg>
-                                            People and Roles
-                                        </h4>
-                                        <span class="text-[11px] text-muted-foreground"
-                                            x-text="involvedCount(selectedProjectInRow(row))"></span>
-                                    </div>
-
-                                    <div x-show="selectedProjectInRow(row).membersError"
-                                        x-text="selectedProjectInRow(row).membersError"
-                                        class="mb-3 rounded-lg border px-3 py-2 text-xs"
-                                        style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)">
-                                    </div>
-
-                                    <template x-if="selectedProjectInRow(row).owner">
-                                        <div class="mb-4">
-                                            <div
-                                                class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                                Owner</div>
-                                            <div class="flex items-center gap-3 rounded-lg border border-border/60 p-3">
-                                                <template x-if="selectedProjectInRow(row).owner.avatar">
-                                                    <img :src="selectedProjectInRow(row).owner.avatar"
-                                                        :alt="selectedProjectInRow(row).owner.name"
-                                                        class="h-9 w-9 rounded-full object-cover border border-border/70 shrink-0">
-                                                </template>
-                                                <template x-if="!selectedProjectInRow(row).owner.avatar">
-                                                    <div class="h-9 w-9 rounded-full brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
-                                                        x-text="selectedProjectInRow(row).owner.initials"></div>
-                                                </template>
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="text-xs font-semibold truncate"
-                                                        x-text="selectedProjectInRow(row).owner.name"></div>
-                                                    <div class="text-[11px] text-muted-foreground truncate"
-                                                        x-text="selectedProjectInRow(row).owner.username ? '@' + selectedProjectInRow(row).owner.username : ''">
-                                                    </div>
-                                                </div>
-                                                <span
-                                                    class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-primary/30 text-primary">Owner</span>
+                                    <div @click="selectedId = null"
+                                        class="absolute inset-x-0 bottom-0 flex max-h-screen items-end justify-center px-3 pt-8 sm:px-6 sm:pt-12">
+                                        <article @click.stop
+                                            class="section-card text-left relative overflow-x-hidden overflow-y-hidden ring-primary shadow-soft p-0 z-10 w-full max-w-7xl h-[92vh] max-h-[calc(100vh-1rem)] rounded-t-2xl sm:rounded-2xl flex flex-col"
+                                            role="dialog" aria-modal="true">
+                                            {{-- Background glow --}}
+                                            <div class="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br opacity-20 blur-2xl pointer-events-none"
+                                                :class="selectedProjectInRow(row).color">
                                             </div>
-                                        </div>
-                                    </template>
-
-                                    <template x-if="selectedProjectInRow(row).canManageMembers">
-                                        <div class="mb-4 space-y-3">
-                                            <div class="grid grid-cols-1 sm:grid-cols-[1fr_150px_auto] gap-2">
-                                                <select x-model="selectedProjectInRow(row).teamToAdd"
-                                                    class="h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
-                                                    <option value="">Add an existing team</option>
-                                                    <template x-for="team in selectedProjectInRow(row).availableTeams"
-                                                        :key="`available-team-${team.id}`">
-                                                        <option :value="String(team.id)"
-                                                            x-text="`${team.name} (${team.memberCount})`"></option>
-                                                    </template>
-                                                </select>
-                                                <select x-model="selectedProjectInRow(row).teamRoleToAdd"
-                                                    class="h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
-                                                    <template x-for="role in roleOptions" :key="`add-team-role-${role.key}`">
-                                                        <option :value="role.key" x-text="role.label"></option>
-                                                    </template>
-                                                </select>
-                                                <button type="button" @click="addProjectTeam(selectedProjectInRow(row))"
-                                                    :disabled="!selectedProjectInRow(row).teamToAdd || selectedProjectInRow(row).teamSaving"
-                                                    class="inline-flex h-9 items-center justify-center rounded-md brand-gradient-bg px-3 text-xs font-semibold text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03] disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    x-text="selectedProjectInRow(row).teamSaving ? 'Adding...' : 'Add team'"></button>
-                                            </div>
-
-                                            <div class="relative">
-                                                <input type="search" x-model="selectedProjectInRow(row).userSearch"
-                                                    @input.debounce.300ms="searchProjectUsers(selectedProjectInRow(row))"
-                                                    placeholder="Search LDAP users"
-                                                    class="w-full h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
-                                                <div x-show="selectedProjectInRow(row).userSearchLoading"
-                                                    class="mt-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
-                                                    Searching company LDAP...
-                                                </div>
-                                                <div x-show="selectedProjectInRow(row).userSearchError"
-                                                    x-text="selectedProjectInRow(row).userSearchError"
-                                                    class="mt-2 rounded-lg border px-3 py-2 text-xs"
-                                                    style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)">
-                                                </div>
-                                                <div x-show="selectedProjectInRow(row).userSuggestions.length > 0" x-cloak
-                                                    class="mt-2 max-h-56 overflow-y-auto space-y-2">
-                                                    <template x-for="user in selectedProjectInRow(row).userSuggestions"
-                                                        :key="user.username || user.email">
+                                            {{-- Header --}}
+                                            <div class="relative p-5 border-b border-border/60 brand-soft-bg">
+                                                <div class="flex items-start justify-between gap-3 mb-3">
+                                                    <div class="rounded-lg bg-gradient-to-br shadow-soft flex items-center justify-center shrink-0 h-12 w-12"
+                                                        :class="selectedProjectInRow(row).color">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 on-brand"
+                                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path
+                                                                d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z">
+                                                            </path>
+                                                            <path d="M8 10v4"></path>
+                                                            <path d="M12 10v2"></path>
+                                                            <path d="M16 10v6"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div class="flex items-center gap-1" @click.stop>
                                                         <button type="button"
-                                                            @click="!user.already_member && addProjectUser(selectedProjectInRow(row), user)"
-                                                            :disabled="user.already_member || selectedProjectInRow(row).userSaving"
-                                                            class="w-full flex items-center gap-3 rounded-lg border border-border/60 p-2 text-left transition-base hover:shadow-soft disabled:opacity-60 disabled:cursor-not-allowed">
-                                                            <template x-if="user.avatar">
-                                                                <img :src="user.avatar" :alt="user.name"
-                                                                    class="h-8 w-8 rounded-full object-cover border border-border/70 shrink-0">
-                                                            </template>
-                                                            <template x-if="!user.avatar">
-                                                                <div class="h-8 w-8 rounded-full brand-gradient-bg flex items-center justify-center text-[10px] font-semibold on-brand shrink-0"
-                                                                    x-text="userInitials(user.name, user.username)"></div>
-                                                            </template>
-                                                            <span class="min-w-0 flex-1">
-                                                                <span class="block text-xs font-semibold truncate"
-                                                                    x-text="user.name"></span>
-                                                                <span
-                                                                    class="block text-[11px] text-muted-foreground truncate"
-                                                                    x-text="userSubtitle(user)"></span>
-                                                            </span>
+                                                            x-show="selectedProjectInRow(row).canManageProject"
+                                                            @click="window.dispatchEvent(new CustomEvent('open-edit-project', { detail: selectedProjectInRow(row) }))"
+                                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                            title="Edit project">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
+                                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                                stroke-width="2" stroke-linecap="round"
+                                                                stroke-linejoin="round">
+                                                                <path
+                                                                    d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button type="button"
+                                                            x-show="selectedProjectInRow(row).canManageProject"
+                                                            @click="deleteId = selectedProjectInRow(row).id; deleteName = selectedProjectInRow(row).name; showDeleteDialog = true;"
+                                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-failed hover:bg-failed/10 transition-colors"
+                                                            title="Delete project">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
+                                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                                stroke-width="2" stroke-linecap="round"
+                                                                stroke-linejoin="round">
+                                                                <path d="M3 6h18" />
+                                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                            </svg>
+                                                        </button>
+                                                        <button type="button" @click="selectedId = null"
+                                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                            title="Collapse">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                                stroke-width="2" stroke-linecap="round"
+                                                                stroke-linejoin="round">
+                                                                <path d="M18 6 6 18" />
+                                                                <path d="m6 6 12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="text-base font-semibold"
+                                                    x-text="selectedProjectInRow(row).name"></div>
+                                                <div class="text-xs text-muted-foreground mt-1"
+                                                    x-text="selectedProjectInRow(row).description"></div>
+                                                <div class="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
+                                                    <span class="inline-flex items-center gap-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3"
+                                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <line x1="6" x2="6" y1="3" y2="15" />
+                                                            <circle cx="18" cy="6" r="3" />
+                                                            <circle cx="6" cy="18" r="3" />
+                                                            <path d="M18 9a9 9 0 0 1-9 9" />
+                                                        </svg>
+                                                        <span
+                                                            x-text="selectedProjectInRow(row).repoCount + ' repos'"></span>
+                                                    </span>
+                                                    <span class="inline-flex items-center gap-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3"
+                                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                                            <circle cx="9" cy="7" r="4" />
+                                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                                        </svg>
+                                                        <span x-text="involvedLabel(selectedProjectInRow(row))"></span>
+                                                    </span>
+                                                    <span class="ml-auto flex items-center gap-1.5"
+                                                        x-show="selectedProjectInRow(row).owner">
+                                                        <template
+                                                            x-if="selectedProjectInRow(row).owner && selectedProjectInRow(row).owner.avatar">
+                                                            <img :src="selectedProjectInRow(row).owner.avatar"
+                                                                :alt="selectedProjectInRow(row).owner.name"
+                                                                class="h-4 w-4 rounded-full object-cover border border-border/70">
+                                                        </template>
+                                                        <template
+                                                            x-if="selectedProjectInRow(row).owner && !selectedProjectInRow(row).owner.avatar">
                                                             <span
-                                                                class="text-[10px] font-semibold px-2 py-1 rounded-md border"
-                                                                :class="user.already_member ? 'border-border text-muted-foreground' : 'border-primary/30 text-primary'"
-                                                                x-text="user.already_member ? 'On project' : 'Add'"></span>
+                                                                class="h-4 w-4 rounded-full brand-gradient-bg flex items-center justify-center text-[8px] font-semibold on-brand"
+                                                                x-text="selectedProjectInRow(row).owner.initials"></span>
+                                                        </template>
+                                                        <span
+                                                            x-text="selectedProjectInRow(row).owner ? selectedProjectInRow(row).owner.name : ''"></span>
+                                                    </span>
+                                                    <span class="ml-auto" x-show="!selectedProjectInRow(row).owner"
+                                                        x-text="selectedProjectInRow(row).lastDeployedAt"></span>
+                                                </div>
+                                            </div>
+
+                                            {{-- Repos + Team panels --}}
+                                            <div
+                                                class="grid grid-cols-1 lg:grid-cols-10 divide-y lg:divide-y-0 lg:divide-x divide-border/60 flex-1 overflow-hidden">
+                                                {{-- Repositories panel --}}
+                                                <div class="col-span-4 p-5 overflow-y-auto scrollbar-thin">
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <h4 class="text-sm font-semibold inline-flex items-center gap-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round">
+                                                                <line x1="6" x2="6" y1="3" y2="15" />
+                                                                <circle cx="18" cy="6" r="3" />
+                                                                <circle cx="6" cy="18" r="3" />
+                                                                <path d="M18 9a9 9 0 0 1-9 9" />
+                                                            </svg>
+                                                            Connected repositories
+                                                        </h4>
+                                                        <span class="text-[11px] text-muted-foreground"
+                                                            x-text="selectedProjectInRow(row).repositories.length"></span>
+                                                    </div>
+                                                    <template
+                                                        x-if="selectedProjectInRow(row).repositories.length === 0 && selectedProjectInRow(row).canManageProject">
+                                                        <button
+                                                            @click="openCreateRepositoryModal(selectedProjectInRow(row).id)"
+                                                            class="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-3 text-xs transition-base"
+                                                            style="border-color:hsl(var(--border)/0.70);color:hsl(var(--muted-foreground))"
+                                                            onmouseenter="this.style.borderColor='hsl(var(--primary)/0.5)';this.style.color='hsl(var(--primary))';this.style.background='hsl(var(--secondary)/0.3)'"
+                                                            onmouseleave="this.style.borderColor='hsl(var(--border)/0.70)';this.style.color='hsl(var(--muted-foreground))';this.style.background=''">
+                                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                                                                stroke="currentColor" stroke-width="2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                            New Repository
                                                         </button>
                                                     </template>
+                                                    <template
+                                                        x-if="selectedProjectInRow(row).repositories.length === 0 && !selectedProjectInRow(row).canManageProject">
+                                                        <p class="text-xs text-muted-foreground py-6 text-center">No
+                                                            repositories connected
+                                                            yet.</p>
+                                                    </template>
+                                                    <template x-if="selectedProjectInRow(row).repositories.length > 0">
+                                                        <ul class="space-y-2">
+                                                            <template x-for="repo in selectedProjectInRow(row).repositories"
+                                                                :key="repo.id">
+                                                                <li
+                                                                    class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                                                    <div class="h-8 w-8 rounded-md brand-soft-bg flex items-center justify-center text-primary shrink-0"
+                                                                        x-html="providerIcon(repo.provider)"></div>
+                                                                    <div class="min-w-0 flex-1">
+                                                                        <div class="text-xs font-semibold font-mono truncate"
+                                                                            x-text="repo.name"></div>
+                                                                        <div class="text-[11px] text-muted-foreground"
+                                                                            x-text="`${repo.branchCount} branches · ${repo.tagCount} tags · default ${repo.defaultBranch}`">
+                                                                        </div>
+                                                                    </div>
+                                                                    <span
+                                                                        class="text-[10px] font-medium px-2 py-0.5 rounded-md border whitespace-nowrap"
+                                                                        :class="{
+                                                                                                                        'bg-success/10 text-success border-success/30': repo.status === 'connected',
+                                                                                                                        'bg-queued/10 text-queued border-queued/30': repo.status === 'expired',
+                                                                                                                        'bg-failed/10 text-failed border-failed/30': repo.status !== 'connected' && repo.status !== 'expired',
+                                                                                                                    }"
+                                                                        x-text="repo.status === 'connected' ? 'Connected' : repo.status === 'expired' ? 'Expired' : 'Needs auth'"></span>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </template>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </template>
 
-                                    <template x-if="involvedCount(selectedProjectInRow(row)) === 0">
-                                        <p class="text-xs text-muted-foreground py-6 text-center">No teams or users assigned
-                                            yet.</p>
-                                    </template>
+                                                {{-- Teams involved panel --}}
+                                                <div class="col-span-6 p-5 overflow-y-auto scrollbar-thin" @click.stop>
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <h4 class="text-sm font-semibold inline-flex items-center gap-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                                                <circle cx="9" cy="7" r="4" />
+                                                                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                                            </svg>
+                                                            People and Roles
+                                                        </h4>
+                                                        <span class="text-[11px] text-muted-foreground"
+                                                            x-text="involvedCount(selectedProjectInRow(row))"></span>
+                                                    </div>
 
-                                    <div x-show="involvedCount(selectedProjectInRow(row)) > 0" class="space-y-4">
-                                        <template x-if="selectedProjectInRow(row).teams.length > 0">
-                                            <div>
-                                                <div
-                                                    class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                                    Teams</div>
-                                                <ul class="space-y-2">
-                                                    <template x-for="team in selectedProjectInRow(row).teams"
-                                                        :key="`team-${team.id}`">
-                                                        <li class="rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
-                                                            <div class="flex items-center gap-3">
-                                                                <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
-                                                                    x-text="team.initials"></div>
+                                                    <div x-show="selectedProjectInRow(row).membersError"
+                                                        x-text="selectedProjectInRow(row).membersError"
+                                                        class="mb-3 rounded-lg border px-3 py-2 text-xs"
+                                                        style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)">
+                                                    </div>
+
+                                                    <template x-if="selectedProjectInRow(row).owner">
+                                                        <div class="mb-4">
+                                                            <div
+                                                                class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                                Owner</div>
+                                                            <div
+                                                                class="flex items-center gap-3 rounded-lg border border-border/60 p-3">
+                                                                <template x-if="selectedProjectInRow(row).owner.avatar">
+                                                                    <img :src="selectedProjectInRow(row).owner.avatar"
+                                                                        :alt="selectedProjectInRow(row).owner.name"
+                                                                        class="h-9 w-9 rounded-full object-cover border border-border/70 shrink-0">
+                                                                </template>
+                                                                <template x-if="!selectedProjectInRow(row).owner.avatar">
+                                                                    <div class="h-9 w-9 rounded-full brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
+                                                                        x-text="selectedProjectInRow(row).owner.initials">
+                                                                    </div>
+                                                                </template>
                                                                 <div class="min-w-0 flex-1">
                                                                     <div class="text-xs font-semibold truncate"
-                                                                        x-text="team.name"></div>
+                                                                        x-text="selectedProjectInRow(row).owner.name"></div>
                                                                     <div class="text-[11px] text-muted-foreground truncate"
-                                                                        x-text="`/${team.slug} - ${team.memberCount} members`">
+                                                                        x-text="selectedProjectInRow(row).owner.username ? '@' + selectedProjectInRow(row).owner.username : ''">
                                                                     </div>
                                                                 </div>
-                                                                <button type="button"
-                                                                    x-show="selectedProjectInRow(row).canManageMembers"
-                                                                    @click="removeProjectTeam(selectedProjectInRow(row), team)"
-                                                                    :disabled="selectedProjectInRow(row).removingTeamId === team.id"
-                                                                    class="inline-flex h-7 w-7 items-center justify-center rounded-md text-failed hover:bg-failed/10 transition-colors disabled:opacity-50"
-                                                                    title="Remove team">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                                        stroke-width="2" stroke-linecap="round"
-                                                                        stroke-linejoin="round">
-                                                                        <path d="M18 6 6 18" />
-                                                                        <path d="m6 6 12 12" />
-                                                                    </svg>
-                                                                </button>
+                                                                <span
+                                                                    class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-primary/30 text-primary">Owner</span>
                                                             </div>
-                                                            <ul x-show="team.members && team.members.length > 0" class="mt-3 space-y-2">
-                                                                <template x-for="member in team.members" :key="`team-${team.id}-member-${member.id}`">
-                                                                    <li class="flex items-center gap-3 rounded-md bg-secondary/25 px-3 py-2">
-                                                                        <template x-if="member.avatar">
-                                                                            <img :src="member.avatar" :alt="member.name"
-                                                                                class="h-7 w-7 rounded-full object-cover border border-border/70 shrink-0">
-                                                                        </template>
-                                                                        <template x-if="!member.avatar">
-                                                                            <div class="h-7 w-7 rounded-full brand-gradient-bg shadow-soft flex items-center justify-center text-[10px] font-semibold on-brand shrink-0"
-                                                                                x-text="member.initials"></div>
-                                                                        </template>
-                                                                        <div class="min-w-0 flex-1">
-                                                                            <div class="text-xs font-medium truncate" x-text="member.name"></div>
-                                                                            <div class="text-[11px] text-muted-foreground truncate" x-text="userSubtitle(member)"></div>
-                                                                        </div>
-                                                                        <template x-if="selectedProjectInRow(row).canManageMembers">
-                                                                            <select
-                                                                                x-model="member.role"
-                                                                                @change="updateProjectUserRole(selectedProjectInRow(row), member, $event.target.value, team)"
-                                                                                :disabled="selectedProjectInRow(row).roleSavingId === roleSavingKey('team', team.id, member.id)"
-                                                                                class="h-8 w-36 rounded-md border border-border bg-background px-2 text-[11px] outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
-                                                                                <template x-for="role in roleOptions" :key="`team-member-role-${team.id}-${member.id}-${role.key}`">
-                                                                                    <option :value="role.key" x-text="role.label"></option>
-                                                                                </template>
-                                                                            </select>
-                                                                        </template>
-                                                                        <template x-if="!selectedProjectInRow(row).canManageMembers">
-                                                                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground"
-                                                                                x-text="roleLabel(member.role)"></span>
-                                                                        </template>
-                                                                    </li>
-                                                                </template>
-                                                            </ul>
-                                                        </li>
+                                                        </div>
                                                     </template>
-                                                </ul>
-                                            </div>
-                                        </template>
 
-                                        <template x-if="selectedProjectInRow(row).users.length > 0">
-                                            <div>
-                                                <div
-                                                    class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                                    Individual users</div>
-                                                <ul class="space-y-2">
-                                                    <template x-for="user in selectedProjectInRow(row).users"
-                                                        :key="`user-${user.id}`">
-                                                        <li
-                                                            class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
-                                                            <template x-if="user.avatar">
-                                                                <img :src="user.avatar" :alt="user.name"
-                                                                    class="h-9 w-9 rounded-full object-cover border border-border/70 shrink-0">
-                                                            </template>
-                                                            <template x-if="!user.avatar">
-                                                                <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
-                                                                    x-text="user.initials"></div>
-                                                            </template>
-                                                            <div class="min-w-0 flex-1">
-                                                                <div class="text-xs font-semibold truncate"
-                                                                    x-text="user.name"></div>
-                                                                <div class="text-[11px] text-muted-foreground truncate"
-                                                                    x-text="userSubtitle(user)"></div>
-                                                            </div>
-                                                            <template x-if="selectedProjectInRow(row).canManageMembers">
-                                                                <select
-                                                                    x-model="user.role"
-                                                                    @change="updateProjectUserRole(selectedProjectInRow(row), user, $event.target.value)"
-                                                                    :disabled="selectedProjectInRow(row).roleSavingId === roleSavingKey('user', null, user.id)"
-                                                                    class="h-8 w-36 rounded-md border border-border bg-background px-2 text-[11px] outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
-                                                                    <template x-for="role in roleOptions" :key="`direct-user-role-${user.id}-${role.key}`">
-                                                                        <option :value="role.key" x-text="role.label"></option>
+                                                    <template x-if="selectedProjectInRow(row).canManageMembers">
+                                                        <div class="mb-4 space-y-3">
+                                                            <div
+                                                                class="grid grid-cols-1 sm:grid-cols-[1fr_150px_auto] gap-2">
+                                                                <select x-model="selectedProjectInRow(row).teamToAdd"
+                                                                    class="h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
+                                                                    <option value="">Add an existing team</option>
+                                                                    <template
+                                                                        x-for="team in selectedProjectInRow(row).availableTeams"
+                                                                        :key="`available-team-${team.id}`">
+                                                                        <option :value="String(team.id)"
+                                                                            x-text="`${team.name} (${team.memberCount})`">
+                                                                        </option>
                                                                     </template>
                                                                 </select>
-                                                            </template>
-                                                            <template x-if="!selectedProjectInRow(row).canManageMembers">
-                                                                <span
-                                                                    class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground"
-                                                                    x-text="roleLabel(user.role)"></span>
-                                                            </template>
-                                                            <button type="button"
-                                                                x-show="selectedProjectInRow(row).canManageMembers"
-                                                                @click="removeProjectUser(selectedProjectInRow(row), user)"
-                                                                :disabled="selectedProjectInRow(row).removingUserId === user.id"
-                                                                class="inline-flex h-7 w-7 items-center justify-center rounded-md text-failed hover:bg-failed/10 transition-colors disabled:opacity-50"
-                                                                title="Remove user">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                                    stroke-width="2" stroke-linecap="round"
-                                                                    stroke-linejoin="round">
-                                                                    <path d="M18 6 6 18" />
-                                                                    <path d="m6 6 12 12" />
-                                                                </svg>
-                                                            </button>
-                                                        </li>
+                                                                <select x-model="selectedProjectInRow(row).teamRoleToAdd"
+                                                                    class="h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
+                                                                    <template x-for="role in roleOptions"
+                                                                        :key="`add-team-role-${role.key}`">
+                                                                        <option :value="role.key" x-text="role.label">
+                                                                        </option>
+                                                                    </template>
+                                                                </select>
+                                                                <button type="button"
+                                                                    @click="addProjectTeam(selectedProjectInRow(row))"
+                                                                    :disabled="!selectedProjectInRow(row).teamToAdd || selectedProjectInRow(row).teamSaving"
+                                                                    class="inline-flex h-9 items-center justify-center rounded-md brand-gradient-bg px-3 text-xs font-semibold text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                    x-text="selectedProjectInRow(row).teamSaving ? 'Adding...' : 'Add team'"></button>
+                                                            </div>
+
+                                                            <div class="relative">
+                                                                <input type="search"
+                                                                    x-model="selectedProjectInRow(row).userSearch"
+                                                                    @input.debounce.300ms="searchProjectUsers(selectedProjectInRow(row))"
+                                                                    placeholder="Search LDAP users"
+                                                                    class="w-full h-9 rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
+                                                                <div x-show="selectedProjectInRow(row).userSearchLoading"
+                                                                    class="mt-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
+                                                                    Searching company LDAP...
+                                                                </div>
+                                                                <div x-show="selectedProjectInRow(row).userSearchError"
+                                                                    x-text="selectedProjectInRow(row).userSearchError"
+                                                                    class="mt-2 rounded-lg border px-3 py-2 text-xs"
+                                                                    style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)">
+                                                                </div>
+                                                                <div x-show="selectedProjectInRow(row).userSuggestions.length > 0"
+                                                                    x-cloak class="mt-2 max-h-56 overflow-y-auto space-y-2">
+                                                                    <template
+                                                                        x-for="user in selectedProjectInRow(row).userSuggestions"
+                                                                        :key="user.username || user.email">
+                                                                        <button type="button"
+                                                                            @click="!user.already_member && addProjectUser(selectedProjectInRow(row), user)"
+                                                                            :disabled="user.already_member || selectedProjectInRow(row).userSaving"
+                                                                            class="w-full flex items-center gap-3 rounded-lg border border-border/60 p-2 text-left transition-base hover:shadow-soft disabled:opacity-60 disabled:cursor-not-allowed">
+                                                                            <template x-if="user.avatar">
+                                                                                <img :src="user.avatar" :alt="user.name"
+                                                                                    class="h-8 w-8 rounded-full object-cover border border-border/70 shrink-0">
+                                                                            </template>
+                                                                            <template x-if="!user.avatar">
+                                                                                <div class="h-8 w-8 rounded-full brand-gradient-bg flex items-center justify-center text-[10px] font-semibold on-brand shrink-0"
+                                                                                    x-text="userInitials(user.name, user.username)">
+                                                                                </div>
+                                                                            </template>
+                                                                            <span class="min-w-0 flex-1">
+                                                                                <span
+                                                                                    class="block text-xs font-semibold truncate"
+                                                                                    x-text="user.name"></span>
+                                                                                <span
+                                                                                    class="block text-[11px] text-muted-foreground truncate"
+                                                                                    x-text="userSubtitle(user)"></span>
+                                                                            </span>
+                                                                            <span
+                                                                                class="text-[10px] font-semibold px-2 py-1 rounded-md border"
+                                                                                :class="user.already_member ? 'border-border text-muted-foreground' : 'border-primary/30 text-primary'"
+                                                                                x-text="user.already_member ? 'On project' : 'Add'"></span>
+                                                                        </button>
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </template>
-                                                </ul>
+
+                                                    <template x-if="involvedCount(selectedProjectInRow(row)) === 0">
+                                                        <p class="text-xs text-muted-foreground py-6 text-center">No teams
+                                                            or users assigned
+                                                            yet.</p>
+                                                    </template>
+
+                                                    <div x-show="involvedCount(selectedProjectInRow(row)) > 0"
+                                                        class="space-y-4">
+                                                        <template x-if="selectedProjectInRow(row).teams.length > 0">
+                                                            <div>
+                                                                <div
+                                                                    class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                                    Teams</div>
+                                                                <ul class="space-y-2">
+                                                                    <template
+                                                                        x-for="team in selectedProjectInRow(row).teams"
+                                                                        :key="`team-${team.id}`">
+                                                                        <li
+                                                                            class="rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                                                            <div class="flex items-center gap-3">
+                                                                                <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
+                                                                                    x-text="team.initials"></div>
+                                                                                <div class="min-w-0 flex-1">
+                                                                                    <div class="text-xs font-semibold truncate"
+                                                                                        x-text="team.name"></div>
+                                                                                    <div class="text-[11px] text-muted-foreground truncate"
+                                                                                        x-text="`/${team.slug} - ${team.memberCount} members`">
+                                                                                    </div>
+                                                                                </div>
+                                                                                <button type="button"
+                                                                                    x-show="selectedProjectInRow(row).canManageMembers"
+                                                                                    @click="removeProjectTeam(selectedProjectInRow(row), team)"
+                                                                                    :disabled="selectedProjectInRow(row).removingTeamId === team.id"
+                                                                                    class="inline-flex h-7 w-7 items-center justify-center rounded-md text-failed hover:bg-failed/10 transition-colors disabled:opacity-50"
+                                                                                    title="Remove team">
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                                        class="h-3.5 w-3.5"
+                                                                                        viewBox="0 0 24 24" fill="none"
+                                                                                        stroke="currentColor"
+                                                                                        stroke-width="2"
+                                                                                        stroke-linecap="round"
+                                                                                        stroke-linejoin="round">
+                                                                                        <path d="M18 6 6 18" />
+                                                                                        <path d="m6 6 12 12" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                            <ul x-show="team.members && team.members.length > 0"
+                                                                                class="mt-3 space-y-2">
+                                                                                <template x-for="member in team.members"
+                                                                                    :key="`team-${team.id}-member-${member.id}`">
+                                                                                    <li
+                                                                                        class="flex items-center gap-3 rounded-md bg-secondary/25 px-3 py-2">
+                                                                                        <template x-if="member.avatar">
+                                                                                            <img :src="member.avatar"
+                                                                                                :alt="member.name"
+                                                                                                class="h-7 w-7 rounded-full object-cover border border-border/70 shrink-0">
+                                                                                        </template>
+                                                                                        <template x-if="!member.avatar">
+                                                                                            <div class="h-7 w-7 rounded-full brand-gradient-bg shadow-soft flex items-center justify-center text-[10px] font-semibold on-brand shrink-0"
+                                                                                                x-text="member.initials">
+                                                                                            </div>
+                                                                                        </template>
+                                                                                        <div class="min-w-0 flex-1">
+                                                                                            <div class="text-xs font-medium truncate"
+                                                                                                x-text="member.name"></div>
+                                                                                            <div class="text-[11px] text-muted-foreground truncate"
+                                                                                                x-text="userSubtitle(member)">
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <template
+                                                                                            x-if="selectedProjectInRow(row).canManageMembers">
+                                                                                            <select x-model="member.role"
+                                                                                                @change="updateProjectUserRole(selectedProjectInRow(row), member, $event.target.value, team)"
+                                                                                                :disabled="selectedProjectInRow(row).roleSavingId === roleSavingKey('team', team.id, member.id)"
+                                                                                                class="h-8 w-36 rounded-md border border-border bg-background px-2 text-[11px] outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
+                                                                                                <template
+                                                                                                    x-for="role in roleOptions"
+                                                                                                    :key="`team-member-role-${team.id}-${member.id}-${role.key}`">
+                                                                                                    <option
+                                                                                                        :value="role.key"
+                                                                                                        x-text="role.label">
+                                                                                                    </option>
+                                                                                                </template>
+                                                                                            </select>
+                                                                                        </template>
+                                                                                        <template
+                                                                                            x-if="!selectedProjectInRow(row).canManageMembers">
+                                                                                            <span
+                                                                                                class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground"
+                                                                                                x-text="roleLabel(member.role)"></span>
+                                                                                        </template>
+                                                                                    </li>
+                                                                                </template>
+                                                                            </ul>
+                                                                        </li>
+                                                                    </template>
+                                                                </ul>
+                                                            </div>
+                                                        </template>
+
+                                                        <template x-if="selectedProjectInRow(row).users.length > 0">
+                                                            <div>
+                                                                <div
+                                                                    class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                                    users</div>
+                                                                <ul class="space-y-2">
+                                                                    <template
+                                                                        x-for="user in selectedProjectInRow(row).users"
+                                                                        :key="`user-${user.id}`">
+                                                                        <li
+                                                                            class="flex items-center gap-3 rounded-lg border border-border/60 p-3 hover:shadow-soft transition-base">
+                                                                            <template x-if="user.avatar">
+                                                                                <img :src="user.avatar" :alt="user.name"
+                                                                                    class="h-9 w-9 rounded-full object-cover border border-border/70 shrink-0">
+                                                                            </template>
+                                                                            <template x-if="!user.avatar">
+                                                                                <div class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
+                                                                                    x-text="user.initials"></div>
+                                                                            </template>
+                                                                            <div class="min-w-0 flex-1">
+                                                                                <div class="text-xs font-semibold truncate"
+                                                                                    x-text="user.name"></div>
+                                                                                <div class="text-[11px] text-muted-foreground truncate"
+                                                                                    x-text="userSubtitle(user)"></div>
+                                                                            </div>
+                                                                            <template
+                                                                                x-if="selectedProjectInRow(row).canManageMembers">
+                                                                                <select x-model="user.role"
+                                                                                    @change="updateProjectUserRole(selectedProjectInRow(row), user, $event.target.value)"
+                                                                                    :disabled="selectedProjectInRow(row).roleSavingId === roleSavingKey('user', null, user.id)"
+                                                                                    class="h-8 w-36 rounded-md border border-border bg-background px-2 text-[11px] outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20">
+                                                                                    <template x-for="role in roleOptions"
+                                                                                        :key="`direct-user-role-${user.id}-${role.key}`">
+                                                                                        <option :value="role.key"
+                                                                                            x-text="role.label">
+                                                                                        </option>
+                                                                                    </template>
+                                                                                </select>
+                                                                            </template>
+                                                                            <template
+                                                                                x-if="!selectedProjectInRow(row).canManageMembers">
+                                                                                <span
+                                                                                    class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground"
+                                                                                    x-text="roleLabel(user.role)"></span>
+                                                                            </template>
+                                                                            <button type="button"
+                                                                                x-show="selectedProjectInRow(row).canManageMembers"
+                                                                                @click="removeProjectUser(selectedProjectInRow(row), user)"
+                                                                                :disabled="selectedProjectInRow(row).removingUserId === user.id"
+                                                                                class="inline-flex h-7 w-7 items-center justify-center rounded-md text-failed hover:bg-failed/10 transition-colors disabled:opacity-50"
+                                                                                title="Remove user">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                                    class="h-3.5 w-3.5" viewBox="0 0 24 24"
+                                                                                    fill="none" stroke="currentColor"
+                                                                                    stroke-width="2" stroke-linecap="round"
+                                                                                    stroke-linejoin="round">
+                                                                                    <path d="M18 6 6 18" />
+                                                                                    <path d="m6 6 12 12" />
+                                                                                </svg>
+                                                                            </button>
+                                                                        </li>
+                                                                    </template>
+                                                                </ul>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </template>
+                                        </article>
                                     </div>
                                 </div>
-                            </div>
-                        </article>
+                            </template>
+                        </div>
                     </template>
                 </div>
             </template>
