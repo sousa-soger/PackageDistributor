@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\OAuthTokenRefreshException;
 use App\Models\Repository;
 use App\Models\User;
 use App\Services\GitHubService;
 use App\Services\LdapService;
+use App\Services\OAuthTokenService;
 use App\Services\ProjectInvolvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,7 +42,7 @@ class RepositoryController extends Controller
         return view('repositories', compact('oauthConnections', 'repositories', 'repositoryCards', 'repositoryRoleOptions'));
     }
 
-    public function store(Request $request, GitHubService $github): JsonResponse
+    public function store(Request $request, GitHubService $github, OAuthTokenService $oauthTokens): JsonResponse
     {
         $provider = $request->input('provider');
 
@@ -98,7 +100,14 @@ class RepositoryController extends Controller
         ];
 
         if ($validated['provider'] === 'github') {
-            $oauthToken = $request->user()->github_token;
+            $oauthToken = null;
+            if ($validated['auth_method'] === 'oauth') {
+                [$oauthToken, $authResponse] = $this->oauthTokenForProvider($request->user(), 'github', $oauthTokens);
+                if ($authResponse) {
+                    return $authResponse;
+                }
+            }
+
             $token = $validated['auth_method'] === 'pat'
                 ? $validated['access_token']
                 : $oauthToken;
@@ -125,7 +134,14 @@ class RepositoryController extends Controller
         }
 
         if ($validated['provider'] === 'gitlab') {
-            $oauthToken = $request->user()->gitlab_token;
+            $oauthToken = null;
+            if ($validated['auth_method'] === 'oauth') {
+                [$oauthToken, $authResponse] = $this->oauthTokenForProvider($request->user(), 'gitlab', $oauthTokens);
+                if ($authResponse) {
+                    return $authResponse;
+                }
+            }
+
             $token = $validated['auth_method'] === 'pat'
                 ? $validated['access_token']
                 : $oauthToken;
@@ -181,13 +197,22 @@ class RepositoryController extends Controller
         ], 201);
     }
 
-    public function sync(Repository $repository, GitHubService $github): JsonResponse
+    public function sync(Repository $repository, GitHubService $github, OAuthTokenService $oauthTokens): JsonResponse
     {
         $this->authorize('update', $repository);
         $repository->loadMissing('user');
 
         if ($repository->provider === 'github') {
-            $token = $repository->access_token ?: $repository->user?->github_token;
+            $token = $repository->access_token;
+            if (! $token && $repository->user) {
+                [$token, $authResponse] = $this->oauthTokenForProvider($repository->user, 'github', $oauthTokens);
+                if ($authResponse) {
+                    $repository->update(['status' => 'needs-auth']);
+
+                    return $authResponse;
+                }
+            }
+
             $metadata = $this->fetchGitHubMetadata($github, $repository->name, $token);
 
             if (! $metadata['ok']) {
@@ -207,7 +232,15 @@ class RepositoryController extends Controller
         }
 
         if ($repository->provider === 'gitlab') {
-            $token = $repository->access_token ?: $repository->user?->gitlab_token;
+            $token = $repository->access_token;
+            if (! $token && $repository->user) {
+                [$token, $authResponse] = $this->oauthTokenForProvider($repository->user, 'gitlab', $oauthTokens);
+                if ($authResponse) {
+                    $repository->update(['status' => 'needs-auth']);
+
+                    return $authResponse;
+                }
+            }
 
             if (! $token) {
                 $repository->update(['status' => 'needs-auth']);
@@ -449,6 +482,32 @@ class RepositoryController extends Controller
             'message' => 'Repository connection updated.',
             'repository' => $this->repositoryPayload($repository->fresh(), $request->user()),
         ]);
+    }
+
+    /**
+     * @return array{0: string|null, 1: JsonResponse|null}
+     */
+    protected function oauthTokenForProvider(User $user, string $provider, OAuthTokenService $oauthTokens): array
+    {
+        try {
+            $token = $oauthTokens->accessToken($user, $provider);
+        } catch (OAuthTokenRefreshException $e) {
+            return [null, response()->json([
+                'message' => $e->getMessage(),
+                'redirect_url' => route("{$provider}.oauth.redirect", ['return_to' => 'repositories']),
+                'requires_oauth' => true,
+            ], 409)];
+        }
+
+        if (! $token) {
+            return [null, response()->json([
+                'message' => 'Connect your '.$this->providerLabel($provider).' account first to use OAuth.',
+                'redirect_url' => route("{$provider}.oauth.redirect", ['return_to' => 'repositories']),
+                'requires_oauth' => true,
+            ], 409)];
+        }
+
+        return [$token, null];
     }
 
     protected function repositoryPayload(Repository $repository, User $viewer): array

@@ -8,7 +8,12 @@ use Illuminate\Support\Facades\Log;
 
 class GitHubService
 {
-    protected string $baseUrl = 'https://api.github.com';
+    protected string $baseUrl;
+
+    public function __construct()
+    {
+        $this->baseUrl = rtrim(config('services.github.api_url', 'https://api.github.com'), '/');
+    }
 
     protected function client(?string $token = null)
     {
@@ -82,9 +87,9 @@ class GitHubService
         return $response->json() ?? [];
     }
 
-    public function getRateLimit(): Response
+    public function getRateLimit(?string $token = null): Response
     {
-        return $this->client()->get("{$this->baseUrl}/rate_limit");
+        return $this->client($token)->get("{$this->baseUrl}/rate_limit");
     }
 
     /**
@@ -99,14 +104,15 @@ class GitHubService
         string $repo,
         string $ref,
         string $destinationZipPath,
-        ?callable $progressCallback = null
+        ?callable $progressCallback = null,
+        ?string $token = null
     ): bool {
         $parentDir = dirname($destinationZipPath);
         if (! is_dir($parentDir)) {
             mkdir($parentDir, 0755, true);
         }
 
-        $token = config('services.github.token');
+        $token ??= config('services.github.token');
         $url = "{$this->baseUrl}/repos/{$owner}/{$repo}/zipball/{$ref}";
 
         $fh = fopen($destinationZipPath, 'wb');

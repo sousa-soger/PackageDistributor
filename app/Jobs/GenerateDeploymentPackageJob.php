@@ -2,9 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\OAuthTokenRefreshException;
 use App\Models\DeploymentJob;
 use App\Models\User;
 use App\Services\DeploymentPackageService;
+use App\Services\OAuthTokenService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -37,7 +39,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
 
     public function __construct(public readonly int $deploymentJobId) {}
 
-    public function handle(DeploymentPackageService $service): void
+    public function handle(DeploymentPackageService $service, OAuthTokenService $oauthTokens): void
     {
         /** @var DeploymentJob $job */
         $job = DeploymentJob::findOrFail($this->deploymentJobId);
@@ -108,12 +110,20 @@ class GenerateDeploymentPackageJob implements ShouldQueue
 
         // ── Run the service ───────────────────────────────────────────────────
 
-        // For GitLab jobs, fetch the owner's OAuth token so the service can authenticate.
+        // Fetch the owner's OAuth token so VCS archive downloads can authenticate.
         $vcsProvider = $job->vcs_provider ?? 'github';
-        $gitlabToken = '';
-        if ($vcsProvider === 'gitlab') {
+        $vcsToken = '';
+        if (in_array($vcsProvider, ['github', 'gitlab'], true)) {
             $owner = User::find($job->user_id);
-            $gitlabToken = $owner?->gitlab_token ?? '';
+            if ($owner) {
+                try {
+                    $vcsToken = $oauthTokens->accessToken($owner, $vcsProvider) ?? '';
+                } catch (OAuthTokenRefreshException $e) {
+                    $job->markFailed($e->getMessage());
+
+                    return;
+                }
+            }
         }
 
         try {
@@ -126,7 +136,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 $job->package_name,
                 $progressCallback,
                 $vcsProvider,
-                $gitlabToken
+                $vcsToken
             );
 
             // Guard: job may have been cancelled while the final lines of

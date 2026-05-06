@@ -82,20 +82,28 @@ Route::middleware('auth')->group(function () {
     Route::post('/gitlab/oauth/disconnect', [GitLabOAuthController::class, 'disconnect'])
         ->name('gitlab.oauth.disconnect');
     Route::get('/gitlab/projects', [GitLabProjectController::class, 'list'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.projects');
     Route::get('/gitlab/explore', [GitLabProjectController::class, 'explore'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.explore');
     Route::get('/gitlab/users/search', [GitLabProjectController::class, 'searchUsers'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.users.search');
     Route::get('/gitlab/projects/{projectId}/members', [GitLabProjectController::class, 'getMembers'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.members.list');
     Route::post('/gitlab/projects/{projectId}/members', [GitLabProjectController::class, 'inviteMember'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.members.invite');
     Route::put('/gitlab/projects/{projectId}/members/{userId}', [GitLabProjectController::class, 'updateMemberRole'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.members.update');
     Route::delete('/gitlab/projects/{projectId}/members/{userId}', [GitLabProjectController::class, 'removeMember'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.members.remove');
     Route::get('/gitlab/projects/{projectId}/versions', [GitLabProjectController::class, 'getProjectVersions'])
+        ->middleware('fresh.vcs.oauth:gitlab')
         ->name('gitlab.project.versions');
 
     Route::get('/new-packageV3', [PackageController::class, 'indexV3'])->name('new-packageV3');
@@ -114,9 +122,15 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.us
 Route::post('/login', [AuthController::class, 'login'])->name('login.user');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout.user');
 
-Route::get('/github/repo-info', [GitHubController::class, 'repoInfo'])->name('github.repo-info');
-Route::get('/github/repo-versions', [GitHubController::class, 'repoVersions'])->name('github.repo-versions');
-Route::get('/github/rate-limit', [GitHubController::class, 'rateLimit'])->name('github.rate-limit');
+Route::get('/github/repo-info', [GitHubController::class, 'repoInfo'])
+    ->middleware('fresh.vcs.oauth:github')
+    ->name('github.repo-info');
+Route::get('/github/repo-versions', [GitHubController::class, 'repoVersions'])
+    ->middleware('fresh.vcs.oauth:github')
+    ->name('github.repo-versions');
+Route::get('/github/rate-limit', [GitHubController::class, 'rateLimit'])
+    ->middleware('fresh.vcs.oauth:github')
+    ->name('github.rate-limit');
 
 Route::middleware('auth')->group(function () {
 

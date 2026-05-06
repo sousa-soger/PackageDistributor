@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\OAuthTokenRefreshException;
 use App\Services\GitHubService;
+use App\Services\OAuthTokenService;
 use Illuminate\Http\Request;
 
 class GitHubController extends Controller
 {
-    public function repoInfo(Request $request, GitHubService $github)
+    public function repoInfo(Request $request, GitHubService $github, OAuthTokenService $oauthTokens)
     {
         $repo = $request->query('repo');
 
@@ -26,7 +28,25 @@ class GitHubController extends Controller
 
         [$owner, $name] = $parsed;
 
-        $response = $github->getRepository($owner, $name);
+        try {
+            $response = $request->user()
+                ? $oauthTokens->withFreshToken(
+                    $request->user(),
+                    'github',
+                    fn (string $token) => $github->getRepository($owner, $name, $token)
+                )
+                : $github->getRepository($owner, $name);
+        } catch (OAuthTokenRefreshException $e) {
+            return $this->oauthReconnectResponse($e);
+        }
+
+        if ($response === null) {
+            return response()->json([
+                'message' => 'Connect your GitHub account first.',
+                'redirect_url' => route('github.oauth.redirect'),
+                'requires_oauth' => true,
+            ], 409);
+        }
 
         if ($response->failed()) {
             return response()->json([
@@ -39,7 +59,7 @@ class GitHubController extends Controller
         return response()->json($response->json());
     }
 
-    public function repoVersions(Request $request, GitHubService $github)
+    public function repoVersions(Request $request, GitHubService $github, OAuthTokenService $oauthTokens)
     {
         $repo = $request->query('repo');
 
@@ -56,9 +76,39 @@ class GitHubController extends Controller
 
         [$owner, $name] = $parsed;
 
-        $branchesResponse = $github->getBranches($owner, $name);
-        $tagsResponse = $github->getTags($owner, $name);
-        $releasesResponse = $github->getReleases($owner, $name);
+        try {
+            if ($request->user()) {
+                $responses = $oauthTokens->withFreshToken(
+                    $request->user(),
+                    'github',
+                    fn (string $token) => [
+                        'branches' => $github->getBranches($owner, $name, $token),
+                        'tags' => $github->getTags($owner, $name, $token),
+                        'releases' => $github->getReleases($owner, $name, $token),
+                    ]
+                );
+            } else {
+                $responses = [
+                    'branches' => $github->getBranches($owner, $name),
+                    'tags' => $github->getTags($owner, $name),
+                    'releases' => $github->getReleases($owner, $name),
+                ];
+            }
+        } catch (OAuthTokenRefreshException $e) {
+            return $this->oauthReconnectResponse($e);
+        }
+
+        if ($responses === null) {
+            return response()->json([
+                'message' => 'Connect your GitHub account first.',
+                'redirect_url' => route('github.oauth.redirect'),
+                'requires_oauth' => true,
+            ], 409);
+        }
+
+        $branchesResponse = $responses['branches'];
+        $tagsResponse = $responses['tags'];
+        $releasesResponse = $responses['releases'];
 
         if ($branchesResponse->failed() || $tagsResponse->failed() || $releasesResponse->failed()) {
             return response()->json([
@@ -79,9 +129,27 @@ class GitHubController extends Controller
         ]);
     }
 
-    public function rateLimit(GitHubService $github)
+    public function rateLimit(Request $request, GitHubService $github, OAuthTokenService $oauthTokens)
     {
-        $response = $github->getRateLimit();
+        try {
+            $response = $request->user()
+                ? $oauthTokens->withFreshToken(
+                    $request->user(),
+                    'github',
+                    fn (string $token) => $github->getRateLimit($token)
+                )
+                : $github->getRateLimit();
+        } catch (OAuthTokenRefreshException $e) {
+            return $this->oauthReconnectResponse($e);
+        }
+
+        if ($response === null) {
+            return response()->json([
+                'message' => 'Connect your GitHub account first.',
+                'redirect_url' => route('github.oauth.redirect'),
+                'requires_oauth' => true,
+            ], 409);
+        }
 
         if ($response->failed()) {
             return response()->json([
@@ -105,5 +173,14 @@ class GitHubController extends Controller
         }
 
         return [$parts[0], $parts[1]];
+    }
+
+    protected function oauthReconnectResponse(OAuthTokenRefreshException $e)
+    {
+        return response()->json([
+            'message' => $e->getMessage(),
+            'redirect_url' => route('github.oauth.redirect'),
+            'requires_oauth' => true,
+        ], 409);
     }
 }

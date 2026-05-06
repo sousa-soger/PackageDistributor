@@ -43,7 +43,7 @@ class DeploymentPackageService
         string $packageName,
         callable $progressCallback,
         string $vcsProvider = 'github',
-        string $gitlabToken = ''
+        string $vcsToken = ''
     ): array {
         $environment = strtoupper(trim($environment));
         $projectName = trim($projectName);
@@ -77,7 +77,7 @@ class DeploymentPackageService
                 $encodedRepo = rawurlencode($repo);
 
                 $progressCallback(['packagingMessage' => 'Downloading base version from GitLab...'], 'Downloading base version...');
-                $baseResponse = Http::withToken($gitlabToken)
+                $baseResponse = Http::withToken($vcsToken)
                     ->withOptions(['sink' => $baseZipPath])
                     ->get("{$base}/api/v4/projects/{$encodedRepo}/repository/archive.zip", ['sha' => $baseVersion]);
 
@@ -86,7 +86,7 @@ class DeploymentPackageService
                 }
                 $progressCallback(['fileDownloadProgress' => 50], 'Downloading head version from GitLab...');
 
-                $headResponse = Http::withToken($gitlabToken)
+                $headResponse = Http::withToken($vcsToken)
                     ->withOptions(['sink' => $headZipPath])
                     ->get("{$base}/api/v4/projects/{$encodedRepo}/repository/archive.zip", ['sha' => $headVersion]);
 
@@ -110,7 +110,8 @@ class DeploymentPackageService
                         $downloaded['base'] = $dlTotal > 0 ? (int) round(($dlNow / $dlTotal) * 100) : 0;
                         $combined = (int) round(($downloaded['base'] + $downloaded['head']) / 2);
                         $progressCallback(['fileDownloadProgress' => $combined], 'Downloading base version...');
-                    }
+                    },
+                    $vcsToken ?: null
                 )) {
                     throw new \RuntimeException("Failed to download base version {$baseVersion}. Check repository access or API limits.");
                 }
@@ -123,7 +124,8 @@ class DeploymentPackageService
                         $downloaded['head'] = $dlTotal > 0 ? (int) round(($dlNow / $dlTotal) * 100) : 0;
                         $combined = (int) round(($downloaded['base'] + $downloaded['head']) / 2);
                         $progressCallback(['fileDownloadProgress' => $combined], 'Downloading head version...');
-                    }
+                    },
+                    $vcsToken ?: null
                 )) {
                     throw new \RuntimeException("Failed to download head version {$headVersion}. Check repository access or API limits.");
                 }
@@ -163,7 +165,7 @@ class DeploymentPackageService
 
             if ($vcsProvider === 'github' && isset($githubService)) {
                 try {
-                    $compareData = $githubService->compare($owner, $repoName, $baseVersion, $headVersion);
+                    $compareData = $githubService->compare($owner, $repoName, $baseVersion, $headVersion, $vcsToken ?: null);
                     $this->versionInfoTxt($packageRoot, $headVersion, $compareData);
                 } catch (\Exception $e) {
                     Log::warning('Could not generate version_info.txt: '.$e->getMessage());

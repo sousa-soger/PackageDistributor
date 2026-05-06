@@ -174,4 +174,33 @@ class User extends Authenticatable
 
         return null;
     }
+
+    public function hasOAuthConnection(string $provider): bool
+    {
+        return filled($this->oauthToken($provider));
+    }
+
+    public function oauthToken(string $provider): ?string
+    {
+        return $this->oauthColumnValue($provider, 'token');
+    }
+
+    public function oauthRefreshToken(string $provider): ?string
+    {
+        return $this->oauthColumnValue($provider, 'refresh_token');
+    }
+
+    public function oauthTokenExpiresAt(string $provider): mixed
+    {
+        return $this->oauthColumnValue($provider, 'token_expires_at');
+    }
+
+    private function oauthColumnValue(string $provider, string $suffix): mixed
+    {
+        if (! in_array($provider, ['github', 'gitlab'], true)) {
+            throw new \InvalidArgumentException("Unsupported OAuth provider [{$provider}].");
+        }
+
+        return $this->getAttribute("{$provider}_{$suffix}");
+    }
 }

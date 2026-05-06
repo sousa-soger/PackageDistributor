@@ -32,6 +32,7 @@ class GitHubOAuthController extends Controller
     public function callback(Request $request)
     {
         $githubUser = $this->githubDriver()->stateless()->user();
+        $expiresIn = $githubUser->expiresIn ?? null;
 
         $request->user()->update([
             'github_id' => $githubUser->getId(),
@@ -39,9 +40,9 @@ class GitHubOAuthController extends Controller
             'github_name' => $githubUser->getName(),
             'github_email' => $githubUser->getEmail(),
             'github_token' => $githubUser->token,
-            'github_refresh_token' => $githubUser->refreshToken,
-            'github_token_expires_at' => $githubUser->expiresIn
-                ? now()->addSeconds($githubUser->expiresIn)
+            'github_refresh_token' => $githubUser->refreshToken ?? null,
+            'github_token_expires_at' => $expiresIn
+                ? now()->addSeconds((int) $expiresIn)
                 : null,
             'github_connected_at' => now(),
         ]);

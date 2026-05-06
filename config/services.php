@@ -36,8 +36,10 @@ return [
     ],
 
     'github' => [
+        'api_url' => env('GITHUB_API_URL', 'https://api.github.com'),
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'oauth_token_url' => env('GITHUB_OAUTH_TOKEN_URL', 'https://github.com/login/oauth/access_token'),
         'redirect' => env('GITHUB_REDIRECT_URI'),
         'token' => env('GITHUB_TOKEN'),
     ],
@@ -46,6 +48,7 @@ return [
         'base_url' => env('GITLAB_BASE_URL', 'https://gitlab.com'),
         'client_id' => env('GITLAB_CLIENT_ID'),
         'client_secret' => env('GITLAB_CLIENT_SECRET'),
+        'oauth_token_url' => env('GITLAB_OAUTH_TOKEN_URL'),
         'redirect' => env('GITLAB_REDIRECT_URI'),
     ],
 ];

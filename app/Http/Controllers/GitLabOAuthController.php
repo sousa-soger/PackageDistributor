@@ -33,6 +33,7 @@ class GitLabOAuthController extends Controller
     public function callback(Request $request)
     {
         $gitlabUser = $this->gitlabDriver()->stateless()->user();
+        $expiresIn = $gitlabUser->expiresIn ?? null;
 
         $request->user()->update([
             'gitlab_id' => $gitlabUser->getId(),
@@ -40,9 +41,9 @@ class GitLabOAuthController extends Controller
             'gitlab_name' => $gitlabUser->getName(),
             'gitlab_email' => $gitlabUser->getEmail(),
             'gitlab_token' => $gitlabUser->token,
-            'gitlab_refresh_token' => $gitlabUser->refreshToken,
-            'gitlab_token_expires_at' => $gitlabUser->expiresIn
-                ? now()->addSeconds($gitlabUser->expiresIn)
+            'gitlab_refresh_token' => $gitlabUser->refreshToken ?? null,
+            'gitlab_token_expires_at' => $expiresIn
+                ? now()->addSeconds((int) $expiresIn)
                 : null,
             'gitlab_connected_at' => now(),
         ]);

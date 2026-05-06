@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\OAuthTokenRefreshException;
+use App\Models\User;
+use App\Services\OAuthTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -21,15 +24,16 @@ class GitLabProjectController extends Controller
         ]);
     }
 
-    public function list(Request $request): JsonResponse
+    public function list(Request $request, OAuthTokenService $oauthTokens): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->get("{$this->baseUrl()}/api/v4/projects", [
                 'membership' => 'true',
@@ -72,15 +76,16 @@ class GitLabProjectController extends Controller
         );
     }
 
-    public function explore(Request $request): JsonResponse
+    public function explore(Request $request, OAuthTokenService $oauthTokens): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->get("{$this->baseUrl()}/api/v4/projects", [
                 'visibility' => 'internal',
@@ -119,12 +124,13 @@ class GitLabProjectController extends Controller
         );
     }
 
-    public function searchUsers(Request $request): JsonResponse
+    public function searchUsers(Request $request, OAuthTokenService $oauthTokens): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
         $q = $request->query('q', '');
@@ -133,7 +139,7 @@ class GitLabProjectController extends Controller
             return response()->json([]);
         }
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->get("{$this->baseUrl()}/api/v4/users", [
                 'search' => $q,
@@ -157,12 +163,13 @@ class GitLabProjectController extends Controller
         );
     }
 
-    public function inviteMember(Request $request, int $projectId): JsonResponse
+    public function inviteMember(Request $request, OAuthTokenService $oauthTokens, int $projectId): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
         $validated = $request->validate([
@@ -170,7 +177,7 @@ class GitLabProjectController extends Controller
             'access_level' => ['required', 'integer', 'in:10,20,30,40,50'],
         ]);
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->post("{$this->baseUrl()}/api/v4/projects/{$projectId}/members", [
                 'user_id' => $validated['user_id'],
@@ -188,15 +195,16 @@ class GitLabProjectController extends Controller
         return response()->json(['message' => 'Member added successfully.']);
     }
 
-    public function getMembers(Request $request, int $projectId): JsonResponse
+    public function getMembers(Request $request, OAuthTokenService $oauthTokens, int $projectId): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->get("{$this->baseUrl()}/api/v4/projects/{$projectId}/members/all", [
                 'per_page' => 100,
@@ -221,19 +229,20 @@ class GitLabProjectController extends Controller
         );
     }
 
-    public function updateMemberRole(Request $request, int $projectId, int $userId): JsonResponse
+    public function updateMemberRole(Request $request, OAuthTokenService $oauthTokens, int $projectId, int $userId): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
         $validated = $request->validate([
             'access_level' => ['required', 'integer', 'in:10,20,30,40,50'],
         ]);
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->put("{$this->baseUrl()}/api/v4/projects/{$projectId}/members/{$userId}", [
                 'access_level' => $validated['access_level'],
@@ -249,15 +258,16 @@ class GitLabProjectController extends Controller
         return response()->json(['message' => 'Role updated successfully.']);
     }
 
-    public function removeMember(Request $request, int $projectId, int $userId): JsonResponse
+    public function removeMember(Request $request, OAuthTokenService $oauthTokens, int $projectId, int $userId): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
-        $response = Http::withToken($user->gitlab_token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->delete("{$this->baseUrl()}/api/v4/projects/{$projectId}/members/{$userId}");
 
@@ -277,22 +287,23 @@ class GitLabProjectController extends Controller
      *
      * GET /gitlab/projects/{projectId}/versions
      */
-    public function getProjectVersions(Request $request, int $projectId): JsonResponse
+    public function getProjectVersions(Request $request, OAuthTokenService $oauthTokens, int $projectId): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->gitlab_token) {
-            return response()->json(['message' => 'GitLab is not connected.'], 401);
+        [$token, $authResponse] = $this->gitlabToken($user, $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
         }
 
         $base = $this->baseUrl();
 
-        $branchesResponse = Http::withToken($user->gitlab_token)
+        $branchesResponse = Http::withToken($token)
             ->get("{$base}/api/v4/projects/{$projectId}/repository/branches", [
                 'per_page' => 100,
             ]);
 
-        $tagsResponse = Http::withToken($user->gitlab_token)
+        $tagsResponse = Http::withToken($token)
             ->get("{$base}/api/v4/projects/{$projectId}/repository/tags", [
                 'per_page' => 100,
             ]);
@@ -311,5 +322,35 @@ class GitLabProjectController extends Controller
             'tags' => $tags->values(),
             'releases' => [], // GitLab tags serve as releases
         ]);
+    }
+
+    /**
+     * @return array{0: string|null, 1: JsonResponse|null}
+     */
+    private function gitlabToken(User $user, OAuthTokenService $oauthTokens): array
+    {
+        if (! $user->gitlab_token) {
+            return [null, response()->json(['message' => 'GitLab is not connected.'], 401)];
+        }
+
+        try {
+            $token = $oauthTokens->accessToken($user, 'gitlab');
+        } catch (OAuthTokenRefreshException $e) {
+            return [null, response()->json([
+                'message' => $e->getMessage(),
+                'redirect_url' => route('gitlab.oauth.redirect'),
+                'requires_oauth' => true,
+            ], 409)];
+        }
+
+        if (! $token) {
+            return [null, response()->json([
+                'message' => 'Reconnect GitLab OAuth before making GitLab API requests.',
+                'redirect_url' => route('gitlab.oauth.redirect'),
+                'requires_oauth' => true,
+            ], 409)];
+        }
+
+        return [$token, null];
     }
 }
