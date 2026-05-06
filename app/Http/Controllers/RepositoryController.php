@@ -9,6 +9,7 @@ use App\Services\GitHubService;
 use App\Services\LdapService;
 use App\Services\OAuthTokenService;
 use App\Services\ProjectInvolvementService;
+use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -100,32 +101,19 @@ class RepositoryController extends Controller
         ];
 
         if ($validated['provider'] === 'github') {
-            $oauthToken = null;
             if ($validated['auth_method'] === 'oauth') {
-                [$oauthToken, $authResponse] = $this->oauthTokenForProvider($request->user(), 'github', $oauthTokens);
-                if ($authResponse) {
-                    return $authResponse;
-                }
+                $metadata = $this->fetchGitHubMetadataWithOAuth(
+                    $github,
+                    $request->user(),
+                    $oauthTokens,
+                    $normalized['name']
+                );
+            } else {
+                $metadata = $this->fetchGitHubMetadata($github, $normalized['name'], $validated['access_token']);
             }
-
-            $token = $validated['auth_method'] === 'pat'
-                ? $validated['access_token']
-                : $oauthToken;
-
-            if ($validated['auth_method'] === 'oauth' && ! $oauthToken) {
-                return response()->json([
-                    'message' => 'Connect your GitHub account first to use OAuth.',
-                    'redirect_url' => route('github.oauth.redirect', ['return_to' => 'repositories']),
-                    'requires_oauth' => true,
-                ], 409);
-            }
-
-            $metadata = $this->fetchGitHubMetadata($github, $normalized['name'], $token);
 
             if (! $metadata['ok']) {
-                return response()->json([
-                    'message' => $metadata['message'],
-                ], 422);
+                return $this->githubConnectionErrorResponse($metadata);
             }
 
             $metadata['access_token'] = $validated['auth_method'] === 'pat'
@@ -203,22 +191,23 @@ class RepositoryController extends Controller
         $repository->loadMissing('user');
 
         if ($repository->provider === 'github') {
-            $token = $repository->access_token;
-            if (! $token && $repository->user) {
-                [$token, $authResponse] = $this->oauthTokenForProvider($repository->user, 'github', $oauthTokens);
-                if ($authResponse) {
-                    $repository->update(['status' => 'needs-auth']);
-
-                    return $authResponse;
-                }
-            }
-
-            $metadata = $this->fetchGitHubMetadata($github, $repository->name, $token);
+            $metadata = $repository->access_token
+                ? $this->fetchGitHubMetadata($github, $repository->name, $repository->access_token)
+                : (
+                    $repository->user
+                        ? $this->fetchGitHubMetadataWithOAuth($github, $repository->user, $oauthTokens, $repository->name)
+                        : [
+                            'message' => 'This repository no longer has an owner account.',
+                            'ok' => false,
+                        ]
+                );
 
             if (! $metadata['ok']) {
-                return response()->json([
-                    'message' => $metadata['message'],
-                ], 422);
+                if (! empty($metadata['requires_oauth'])) {
+                    $repository->update(['status' => 'needs-auth']);
+                }
+
+                return $this->githubConnectionErrorResponse($metadata);
             }
 
             $repository->update([
@@ -273,6 +262,76 @@ class RepositoryController extends Controller
         return response()->json([
             'message' => 'Repository synced.',
             'repository' => $repository->fresh(),
+        ]);
+    }
+
+    public function versions(Request $request, Repository $repository, GitHubService $github, OAuthTokenService $oauthTokens): JsonResponse
+    {
+        $this->authorize('createPackage', $repository);
+
+        if (! in_array($repository->provider, ['github', 'gitlab'], true)) {
+            return response()->json([
+                'message' => 'Package creation is only available for GitHub and GitLab repositories right now.',
+            ], 422);
+        }
+
+        [$token, $authResponse] = $this->repositoryAccessToken($repository, $request->user(), $oauthTokens);
+        if ($authResponse) {
+            return $authResponse;
+        }
+
+        if ($repository->provider === 'github') {
+            $parsed = $this->parseGitHubOwnerRepo($repository->name);
+
+            if (! $parsed) {
+                return response()->json([
+                    'message' => 'GitHub repositories must use the format owner/repo.',
+                ], 422);
+            }
+
+            [$owner, $repo] = $parsed;
+            $branchesResponse = $github->getBranches($owner, $repo, $token);
+            $tagsResponse = $github->getTags($owner, $repo, $token);
+            $releasesResponse = $github->getReleases($owner, $repo, $token);
+
+            if ($branchesResponse->failed() || $tagsResponse->failed() || $releasesResponse->failed()) {
+                return response()->json([
+                    'message' => 'Failed to fetch repository versions with the repository owner credentials.',
+                ], 422);
+            }
+
+            return response()->json([
+                'branches' => $branchesResponse->json() ?? [],
+                'tags' => $tagsResponse->json() ?? [],
+                'releases' => $releasesResponse->json() ?? [],
+            ]);
+        }
+
+        $projectPath = rawurlencode($repository->external_id ?: $repository->name);
+        $baseUrl = rtrim(config('services.gitlab.base_url', 'https://gitlab.com'), '/');
+
+        $branchesResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get("{$baseUrl}/api/v4/projects/{$projectPath}/repository/branches", [
+                'per_page' => 100,
+            ]);
+
+        $tagsResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get("{$baseUrl}/api/v4/projects/{$projectPath}/repository/tags", [
+                'per_page' => 100,
+            ]);
+
+        if ($branchesResponse->failed() || $tagsResponse->failed()) {
+            return response()->json([
+                'message' => 'Failed to fetch repository versions with the repository owner credentials.',
+            ], 422);
+        }
+
+        return response()->json([
+            'branches' => collect($branchesResponse->json())->map(fn (array $branch) => ['name' => $branch['name']])->values(),
+            'tags' => collect($tagsResponse->json())->map(fn (array $tag) => ['name' => $tag['name']])->values(),
+            'releases' => [],
         ]);
     }
 
@@ -510,6 +569,55 @@ class RepositoryController extends Controller
         return [$token, null];
     }
 
+    /**
+     * @return array{0: string|null, 1: JsonResponse|null}
+     */
+    protected function repositoryAccessToken(Repository $repository, User $viewer, OAuthTokenService $oauthTokens): array
+    {
+        if ($repository->access_token) {
+            return [$repository->access_token, null];
+        }
+
+        $repository->loadMissing('user');
+        $owner = $repository->user;
+
+        if (! $owner) {
+            return [null, response()->json([
+                'message' => 'This repository no longer has an owner account.',
+            ], 422)];
+        }
+
+        try {
+            $token = $oauthTokens->accessToken($owner, $repository->provider);
+        } catch (OAuthTokenRefreshException $e) {
+            return [null, $this->ownerCredentialRequiredResponse($repository, $viewer, $e->getMessage())];
+        }
+
+        if (! $token) {
+            return [null, $this->ownerCredentialRequiredResponse(
+                $repository,
+                $viewer,
+                'The repository owner needs to reconnect '.$this->providerLabel($repository->provider).' OAuth or save a PAT before this repository can be packaged.'
+            )];
+        }
+
+        return [$token, null];
+    }
+
+    protected function ownerCredentialRequiredResponse(Repository $repository, User $viewer, string $message): JsonResponse
+    {
+        $payload = ['message' => $message];
+
+        if ($viewer->id === $repository->user_id) {
+            $payload['redirect_url'] = route("{$repository->provider}.oauth.redirect", ['return_to' => 'create-package']);
+            $payload['requires_oauth'] = true;
+
+            return response()->json($payload, 409);
+        }
+
+        return response()->json($payload, 422);
+    }
+
     protected function repositoryPayload(Repository $repository, User $viewer): array
     {
         $repository->loadMissing('members');
@@ -519,6 +627,7 @@ class RepositoryController extends Controller
         return array_merge($membersPayload, [
             'authType' => $this->repositoryAuthType($repository),
             'branchCount' => $repository->branch_count,
+            'canCreatePackage' => $viewer->can('createPackage', $repository),
             'canManageRepository' => $viewer->can('update', $repository),
             'defaultBranch' => $repository->default_branch ?? 'main',
             'externalId' => $repository->external_id,
@@ -638,7 +747,74 @@ class RepositoryController extends Controller
             ->implode('');
     }
 
-    protected function fetchGitHubMetadata(GitHubService $github, string $name, ?string $token): array
+    protected function githubConnectionErrorResponse(array $metadata): JsonResponse
+    {
+        $payload = [
+            'message' => $metadata['message'],
+        ];
+
+        if (! empty($metadata['requires_oauth'])) {
+            $payload['redirect_url'] = route('github.oauth.redirect', ['return_to' => 'repositories']);
+            $payload['requires_oauth'] = true;
+
+            return response()->json($payload, 409);
+        }
+
+        return response()->json($payload, 422);
+    }
+
+    protected function fetchGitHubMetadataWithOAuth(
+        GitHubService $github,
+        User $user,
+        OAuthTokenService $oauthTokens,
+        string $name
+    ): array {
+        $parsed = $this->parseGitHubOwnerRepo($name);
+
+        if (! $parsed) {
+            return [
+                'message' => 'GitHub repositories must use the format owner/repo.',
+                'ok' => false,
+            ];
+        }
+
+        [$owner, $repo] = $parsed;
+
+        try {
+            $responses = $oauthTokens->withFreshToken(
+                $user,
+                'github',
+                fn (string $token) => [
+                    'branches' => $github->getBranches($owner, $repo, $token),
+                    'repository' => $github->getRepository($owner, $repo, $token),
+                    'tags' => $github->getTags($owner, $repo, $token),
+                ]
+            );
+        } catch (OAuthTokenRefreshException $e) {
+            return [
+                'message' => $e->getMessage(),
+                'ok' => false,
+                'requires_oauth' => true,
+            ];
+        }
+
+        if ($responses === null) {
+            return [
+                'message' => 'Connect your GitHub account first to use OAuth.',
+                'ok' => false,
+                'requires_oauth' => true,
+            ];
+        }
+
+        return $this->githubMetadataFromResponses(
+            $responses['repository'],
+            $responses['branches'],
+            $responses['tags'],
+            true
+        );
+    }
+
+    protected function fetchGitHubMetadata(GitHubService $github, string $name, ?string $token, bool $usingOAuth = false): array
     {
         $parsed = $this->parseGitHubOwnerRepo($name);
 
@@ -654,18 +830,33 @@ class RepositoryController extends Controller
         $repoResponse = $github->getRepository($owner, $repo, $token);
 
         if ($repoResponse->failed()) {
+            return $this->githubMetadataFromResponses($repoResponse, null, null, $usingOAuth);
+        }
+
+        $branchesResponse = $github->getBranches($owner, $repo, $token);
+        $tagsResponse = $github->getTags($owner, $repo, $token);
+
+        return $this->githubMetadataFromResponses($repoResponse, $branchesResponse, $tagsResponse, $usingOAuth);
+    }
+
+    protected function githubMetadataFromResponses(
+        HttpResponse $repoResponse,
+        ?HttpResponse $branchesResponse,
+        ?HttpResponse $tagsResponse,
+        bool $usingOAuth
+    ): array {
+        if ($repoResponse->failed()) {
             return [
-                'message' => 'Could not reach this GitHub repository. Check the URL and credentials.',
+                'message' => $this->githubRepositoryFailureMessage($repoResponse, $usingOAuth),
                 'ok' => false,
+                'requires_oauth' => $usingOAuth && $this->githubResponseNeedsOAuthReconnect($repoResponse),
             ];
         }
 
         $repoData = $repoResponse->json();
-        $branchesResponse = $github->getBranches($owner, $repo, $token);
-        $tagsResponse = $github->getTags($owner, $repo, $token);
 
         return [
-            'branches' => $branchesResponse->ok()
+            'branches' => $branchesResponse?->ok()
                 ? collect($branchesResponse->json())->pluck('name')->all()
                 : [],
             'default_branch' => $repoData['default_branch'] ?? 'main',
@@ -673,10 +864,47 @@ class RepositoryController extends Controller
             'message' => null,
             'ok' => true,
             'status' => 'connected',
-            'tags' => $tagsResponse->ok()
+            'tags' => $tagsResponse?->ok()
                 ? collect($tagsResponse->json())->pluck('name')->all()
                 : [],
         ];
+    }
+
+    protected function githubRepositoryFailureMessage(HttpResponse $response, bool $usingOAuth): string
+    {
+        if ($usingOAuth && $this->githubResponseMissingRepoScope($response)) {
+            return 'Your GitHub OAuth token is missing the repo scope required for private repositories. Reconnect GitHub and approve private repository access, then try again.';
+        }
+
+        if ($usingOAuth && $response->unauthorized()) {
+            return 'GitHub rejected the stored OAuth token. Reconnect GitHub and try again.';
+        }
+
+        return 'Could not reach this GitHub repository. Check the URL and credentials.';
+    }
+
+    protected function githubResponseNeedsOAuthReconnect(HttpResponse $response): bool
+    {
+        return $response->unauthorized() || $this->githubResponseMissingRepoScope($response);
+    }
+
+    protected function githubResponseMissingRepoScope(HttpResponse $response): bool
+    {
+        $acceptedScopes = $this->parseGitHubScopeHeader($response->header('X-Accepted-OAuth-Scopes'));
+        $grantedScopes = $this->parseGitHubScopeHeader($response->header('X-OAuth-Scopes'));
+
+        return in_array('repo', $acceptedScopes, true)
+            && ! in_array('repo', $grantedScopes, true);
+    }
+
+    protected function parseGitHubScopeHeader(?string $header): array
+    {
+        return str($header ?? '')
+            ->explode(',')
+            ->map(fn (string $scope) => trim($scope))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     protected function fetchGitLabMetadata(string $name, ?string $token): array

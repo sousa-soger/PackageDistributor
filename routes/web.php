@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/repositories', [RepositoryController::class, 'index'])->name('repositories');
     Route::post('/repositories', [RepositoryController::class, 'store'])->name('repositories.store');
     Route::post('/repositories/{repository}/sync', [RepositoryController::class, 'sync'])->name('repositories.sync');
+    Route::get('/repositories/{repository}/versions', [RepositoryController::class, 'versions'])->name('repositories.versions');
     Route::get('/repositories/{repository}/members', [RepositoryController::class, 'members'])->name('repositories.members.show');
     Route::get('/repositories/{repository}/users/search', [RepositoryController::class, 'searchUsers'])->name('repositories.users.search');
     Route::post('/repositories/{repository}/users', [RepositoryController::class, 'storeUser'])->name('repositories.users.store');

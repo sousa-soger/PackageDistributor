@@ -20,6 +20,7 @@
                oauthProvider: @js(request('oauth_provider')),
                roleOptions: @js($repositoryRoleOptions),
                csrfToken: @js(csrf_token()),
+               createPackageBaseUrl: @js(route('create-package')),
                oauthReconnectUrls: {
                  github: @js(route('github.oauth.redirect', ['return_to' => 'repositories'])),
                  gitlab: @js(route('gitlab.oauth.redirect', ['return_to' => 'repositories'])),
@@ -88,7 +89,16 @@
               </div>
 
               <div class="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-base">
-                <button type="button" @click.stop="syncRepo(repo)" :disabled="syncing === repo.id"
+                <a x-show="repo.canCreatePackage" :href="createPackageUrl(repo)" @click.stop
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base brand-gradient-bg text-[hsl(var(--on-brand))]"
+                  title="Create package">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7 9 18l-5-5" />
+                  </svg>
+                  Package
+                </a>
+
+                <button type="button" x-show="repo.canManageRepository" @click.stop="syncRepo(repo)" :disabled="syncing === repo.id"
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base"
                   style="background:hsl(var(--secondary));color:hsl(var(--foreground))" title="Sync branches and tags">
                   <svg class="h-3.5 w-3.5" :class="syncing === repo.id ? 'animate-spin' : ''" fill="none"
@@ -99,7 +109,7 @@
                   <span x-text="syncing === repo.id ? 'Syncing...' : 'Sync'"></span>
                 </button>
 
-                <button type="button" @click.stop="removeRepo(repo)"
+                <button type="button" x-show="repo.canManageRepository" @click.stop="removeRepo(repo)"
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base"
                   style="background:hsl(var(--failed)/0.08);color:hsl(var(--failed))" title="Remove repository">
                   <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -152,7 +162,15 @@
                       class="rounded-lg brand-soft-bg shadow-soft flex items-center justify-center shrink-0 h-12 w-12 text-primary"
                       x-html="providerIcon(selectedRepository.provider)"></div>
                     <div class="flex items-center gap-1" @click.stop>
-                      <button type="button" @click="syncRepo(selectedRepository)"
+                      <a x-show="selectedRepository.canCreatePackage" :href="createPackageUrl(selectedRepository)"
+                        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+                        title="Create package">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 7 9 18l-5-5" />
+                        </svg>
+                      </a>
+                      <button type="button" x-show="selectedRepository.canManageRepository" @click="syncRepo(selectedRepository)"
                         :disabled="syncing === selectedRepository.id"
                         class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
                         title="Sync repository">
@@ -532,6 +550,7 @@
         error: '',
         roleOptions: Array.isArray(config.roleOptions) ? config.roleOptions : [],
         csrfToken: config.csrfToken ?? '',
+        createPackageBaseUrl: config.createPackageBaseUrl ?? '/create-package',
         oauthReconnectUrls: config.oauthReconnectUrls ?? {},
         oauthConnections: config.oauthConnections ?? {},
         oauthProvider: config.oauthProvider ?? null,
@@ -648,6 +667,13 @@
 
         setSelected(id) {
           this.selectedId = id;
+        },
+
+        createPackageUrl(repo) {
+          const url = new URL(this.createPackageBaseUrl, window.location.origin);
+          url.searchParams.set('repository', repo.id);
+
+          return `${url.pathname}${url.search}`;
         },
 
         memberLabel(repo) {

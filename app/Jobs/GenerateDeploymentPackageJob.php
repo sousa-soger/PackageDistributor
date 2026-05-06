@@ -15,26 +15,14 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Thrown inside the progress callback when the DB status flips to 'cancelled'.
- * Caught in handle() and treated as a clean stop — not a failure.
- */
 class JobCancelledException extends \RuntimeException {}
 
 class GenerateDeploymentPackageJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Number of times the job may be attempted.
-     * Set to 1 — we do not auto-retry long-running generation jobs.
-     */
     public int $tries = 1;
 
-    /**
-     * Maximum seconds the job may run before it is killed.
-     * Matches the set_time_limit(600) from the old controller.
-     */
     public int $timeout = 600;
 
     public function __construct(public readonly int $deploymentJobId) {}
@@ -42,9 +30,8 @@ class GenerateDeploymentPackageJob implements ShouldQueue
     public function handle(DeploymentPackageService $service, OAuthTokenService $oauthTokens): void
     {
         /** @var DeploymentJob $job */
-        $job = DeploymentJob::findOrFail($this->deploymentJobId);
+        $job = DeploymentJob::with('repository.user')->findOrFail($this->deploymentJobId);
 
-        // Only process if the job is still queued (not already cancelled etc.)
         if ($job->status !== 'queued') {
             Log::warning("GenerateDeploymentPackageJob: job #{$job->id} has status '{$job->status}', skipping.");
 
@@ -53,23 +40,16 @@ class GenerateDeploymentPackageJob implements ShouldQueue
 
         $job->markRunning();
 
-        // ── Progress callback wiring ──────────────────────────────────────────
-        // Write every tick to cache (fast, polling-friendly).
-        // Write to DB only every ~2 seconds to avoid excessive DB load.
-        // On every tick we also re-read the DB status — if it flipped to
-        // 'cancelled' we throw JobCancelledException to bail out immediately.
-
         $lastDbWrite = 0;
-        $dbThrottleMs = 2000; // milliseconds
+        $dbThrottleMs = 2000;
         $lastCancelCheck = 0;
-        $cancelCheckMs = 1500; // check for cancellation every 1.5 s
+        $cancelCheckMs = 1500;
 
         $progressCallback = function (array $data, string $message) use ($job, &$lastDbWrite, $dbThrottleMs, &$lastCancelCheck, $cancelCheckMs) {
-            // ── Cancellation check ────────────────────────────────────────
             $nowMs = (int) (microtime(true) * 1000);
             if ($nowMs - $lastCancelCheck >= $cancelCheckMs) {
                 $lastCancelCheck = $nowMs;
-                // Fresh read — bypass any Eloquent model cache
+
                 $fresh = DeploymentJob::find($job->id);
                 if ($fresh && $fresh->status === 'cancelled') {
                     throw new JobCancelledException("Job #{$job->id} was cancelled.");
@@ -84,7 +64,6 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 $merged['packagingMessage'] = $message;
             }
 
-            // Derive weighted overall progress
             if (! isset($data['packagingProgress'])) {
                 $merged['packagingProgress'] = (int) round(
                     ($merged['fileDownloadProgress'] / 100) * 10 +
@@ -98,7 +77,6 @@ class GenerateDeploymentPackageJob implements ShouldQueue
 
             Cache::put($cacheKey, $merged, 600);
 
-            // Throttled DB write
             if ($nowMs - $lastDbWrite >= $dbThrottleMs) {
                 $lastDbWrite = $nowMs;
                 $job->update([
@@ -108,22 +86,33 @@ class GenerateDeploymentPackageJob implements ShouldQueue
             }
         };
 
-        // ── Run the service ───────────────────────────────────────────────────
-
-        // Fetch the owner's OAuth token so VCS archive downloads can authenticate.
-        $vcsProvider = $job->vcs_provider ?? 'github';
+        $repository = $job->repository;
+        $packageRepository = $repository?->name ?? $job->repo;
+        $vcsProvider = $repository?->provider ?? $job->vcs_provider ?? 'github';
         $vcsToken = '';
-        if (in_array($vcsProvider, ['github', 'gitlab'], true)) {
-            $owner = User::find($job->user_id);
-            if ($owner) {
-                try {
-                    $vcsToken = $oauthTokens->accessToken($owner, $vcsProvider) ?? '';
-                } catch (OAuthTokenRefreshException $e) {
-                    $job->markFailed($e->getMessage());
 
-                    return;
+        if (in_array($vcsProvider, ['github', 'gitlab'], true)) {
+            if ($repository?->access_token) {
+                $vcsToken = $repository->access_token;
+            } else {
+                $owner = $repository?->user ?? User::find($job->user_id);
+
+                if ($owner) {
+                    try {
+                        $vcsToken = $oauthTokens->accessToken($owner, $vcsProvider) ?? '';
+                    } catch (OAuthTokenRefreshException $e) {
+                        $job->markFailed($e->getMessage());
+
+                        return;
+                    }
                 }
             }
+        }
+
+        if ($repository && in_array($vcsProvider, ['github', 'gitlab'], true) && $vcsToken === '') {
+            $job->markFailed('The repository owner needs to reconnect OAuth or save a PAT before this repository can be packaged.');
+
+            return;
         }
 
         try {
@@ -132,25 +121,22 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 $job->project_name,
                 $job->base_version,
                 $job->head_version,
-                $job->repo,
+                $packageRepository,
                 $job->package_name,
                 $progressCallback,
                 $vcsProvider,
                 $vcsToken
             );
 
-            // Guard: job may have been cancelled while the final lines of
-            // generate() were running (after the last progress tick).
             $job->refresh();
             if ($job->status === 'cancelled') {
-                Log::info("GenerateDeploymentPackageJob: job #{$job->id} completed but status is 'cancelled' — discarding result.");
+                Log::info("GenerateDeploymentPackageJob: job #{$job->id} completed but status is 'cancelled' - discarding result.");
 
                 return;
             }
 
             $job->markCompleted($result);
 
-            // Also write the final full-100 snapshot to cache
             Cache::put($job->progressCacheKey(), [
                 'fileDownloadProgress' => 100,
                 'headFileExtraction' => 100,
@@ -161,11 +147,8 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 'packagingProgress' => 100,
                 'packagingMessage' => 'Done.',
             ], 600);
-
         } catch (JobCancelledException $e) {
-            // Clean stop — the DB already has status='cancelled', nothing to update.
             Log::info("GenerateDeploymentPackageJob: job #{$job->id} was cancelled mid-run and stopped cleanly.");
-
         } catch (\Throwable $e) {
             Log::error("GenerateDeploymentPackageJob #{$this->deploymentJobId} failed: ".$e->getMessage(), [
                 'exception' => $e,
@@ -174,14 +157,9 @@ class GenerateDeploymentPackageJob implements ShouldQueue
         }
     }
 
-    /**
-     * Handle a job failure triggered by the queue worker itself
-     * (e.g. timeout, out-of-memory kill signal).
-     */
     public function failed(\Throwable $exception): void
     {
         $job = DeploymentJob::find($this->deploymentJobId);
-        // Don't overwrite a deliberate cancellation
         if ($job && $job->status === 'running') {
             $job->markFailed('Job was killed by the queue worker: '.$exception->getMessage());
         }

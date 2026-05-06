@@ -14,11 +14,8 @@
         csrfToken: '{{ csrf_token() }}',
         completedPackages: @js($packages),
         dbQueuedPackages: @js($queuedPackages),
-        vcsProvider: @js($vcsProvider),
-        gitlabConnected: @js($gitlabConnected),
-        gitlabProjectsUrl: '{{ route('gitlab.projects') }}',
-        gitlabVersionsBaseUrl: '{{ url('/gitlab/projects') }}',
-        githubVersionsUrl: '{{ route('github.repo-versions') }}'
+        selectedRepositoryId: @js($selectedRepositoryId),
+        repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
     })"
     x-init="init()"
 >
@@ -30,88 +27,45 @@
                 <div class="mb-5 flex items-start gap-3">
                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg brand-soft-bg text-sm font-semibold text-primary">1</div>
                     <div>
-                        <h2 class="text-base font-semibold tracking-tight">Project & Repository</h2>
+                        <h2 class="text-base font-semibold tracking-tight">Repository</h2>
                         <p class="mt-0.5 text-xs text-muted-foreground">Choose where this package comes from.</p>
                     </div>
                 </div>
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium leading-none">Project</label>
-                        <div class="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
-                            Current Laravel version uses repository as the main selector.
-                        </div>
-                    </div>
-
+                <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
                     <div class="space-y-2">
                         <label class="text-sm font-medium leading-none">Repository</label>
-
-                        <template x-if="vcsProvider === 'github'">
-                            <select
-                                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                x-model="selectedRepository"
-                            >
-                                <option value="">Choose repository</option>
-                                <template x-for="repo in repositories" :key="repo.id">
-                                    <option :value="repo.id" x-text="repo.label"></option>
-                                </template>
-                            </select>
-                        </template>
-
-                        <template x-if="vcsProvider === 'gitlab'">
-                            <div class="mt-2 space-y-2">
-                                <template x-if="!gitlabConnected">
-                                    <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                        GitLab is not connected. Connect GitLab first from Projects.
-                                    </div>
-                                </template>
-
-                                <template x-if="gitlabConnected">
-                                    <div class="space-y-2">
-                                        <input
-                                            type="search"
-                                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                            placeholder="Search GitLab projects..."
-                                            x-model="gitlabSearch"
-                                        >
-
-                                        <div class="max-h-56 overflow-y-auto rounded-md border border-border bg-popover shadow-md mt-1">
-                                            <template x-if="gitlabLoading">
-                                                <div class="px-3 py-2 text-sm text-muted-foreground">Loading projects...</div>
-                                            </template>
-
-                                            <template x-for="project in filteredGitlabProjects" :key="project.id">
-                                                <button
-                                                    type="button"
-                                                    class="flex w-full items-center justify-between gap-3 border-b border-border/30 px-3 py-2 text-left text-sm transition last:border-b-0 hover:bg-secondary/40"
-                                                    :class="selectedRepository == project.id ? 'bg-secondary/60' : ''"
-                                                    @click="selectGitlabProject(project)"
-                                                >
-                                                    <span>
-                                                        <span class="block font-semibold" x-text="project.name"></span>
-                                                        <span class="block text-[11px] text-muted-foreground mt-0.5" x-text="project.path"></span>
-                                                    </span>
-                                                    <span class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-foreground/80 lowercase" x-text="project.visibility"></span>
-                                                </button>
-                                            </template>
-
-                                            <template x-if="!gitlabLoading && filteredGitlabProjects.length === 0">
-                                                <div class="px-3 py-2 text-sm text-muted-foreground">No projects found.</div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
+                        <select
+                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            x-model="selectedRepository"
+                            :disabled="repositories.length === 0"
+                        >
+                            <option value="">Choose repository</option>
+                            <template x-for="repo in repositories" :key="repo.id">
+                                <option :value="repo.id" x-text="repo.label + ' (' + repo.providerLabel + ')'"></option>
+                            </template>
+                        </select>
                     </div>
+
+                    <a href="{{ route('repositories') }}"
+                       class="inline-flex h-10 items-center justify-center self-end rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                        Manage repositories
+                    </a>
                 </div>
+
+                <template x-if="repositories.length === 0">
+                    <div class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+                        Connect a GitHub or GitLab repository, or ask the owner to invite you as a Maintainer or Package Creator.
+                    </div>
+                </template>
 
                 <div class="flex flex-wrap items-center gap-2 mt-4 text-xs text-muted-foreground" x-show="selectedRepository">
                     <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
-                        <span class="capitalize" x-text="vcsProvider"></span>
+                        <span x-text="selectedRepositoryProviderLabel"></span>
                     </span>
                     <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-1" x-text="selectedRepositoryLabel"></span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-1" x-text="selectedRepositoryRoleLabel"></span>
                     <span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 border border-success/30 text-success bg-success/10">
                         <span class="h-1.5 w-1.5 rounded-full bg-current"></span>Connected
                     </span>
@@ -417,33 +371,27 @@ function quickCreatePackage({
     csrfToken,
     completedPackages,
     dbQueuedPackages,
-    vcsProvider,
-    gitlabConnected,
-    gitlabProjectsUrl,
-    gitlabVersionsBaseUrl,
-    githubVersionsUrl,
+    selectedRepositoryId,
+    repositoryVersionsBaseUrl,
 }) {
+    repositories = repositories.map(repo => ({
+        ...repo,
+        id: String(repo.id),
+    }));
+    const initialRepositoryId = selectedRepositoryId ? String(selectedRepositoryId) : '';
+
     return {
         repositories,
         completedPackages,
         dbQueuedPackages,
-        vcsProvider,
-        gitlabConnected,
         queueUrl,
         jobProgressBaseUrl,
         downloadUrl,
         csrfToken,
-        gitlabProjectsUrl,
-        gitlabVersionsBaseUrl,
-        githubVersionsUrl,
+        repositoryVersionsBaseUrl,
 
         phase: 'form',
-        selectedRepository: '',
-        selectedRepositoryLabelOverride: '',
-        gitlabSelectedPath: '',
-        gitlabProjects: [],
-        gitlabSearch: '',
-        gitlabLoading: false,
+        selectedRepository: initialRepositoryId,
 
         repoBranches: [],
         repoTags: [],
@@ -481,29 +429,41 @@ function quickCreatePackage({
         ],
 
         init() {
-            if (this.vcsProvider === 'gitlab' && this.gitlabConnected) {
-                this.loadGitlabProjects();
-            }
-
             this.$watch('selectedRepository', async () => {
                 this.resetVersionState();
                 if (this.selectedRepository) {
                     await this.fetchRepoVersions();
                 }
             });
+
+            if (this.selectedRepository) {
+                this.fetchRepoVersions();
+            }
         },
 
-        get filteredGitlabProjects() {
-            const q = this.gitlabSearch.toLowerCase();
-            return this.gitlabProjects.filter(project => {
-                return !q || project.name.toLowerCase().includes(q) || (project.path || '').toLowerCase().includes(q);
-            });
+        get selectedRepositoryOption() {
+            return this.repositories.find(r => r.id === String(this.selectedRepository)) || null;
         },
 
         get selectedRepositoryLabel() {
-            if (this.selectedRepositoryLabelOverride) return this.selectedRepositoryLabelOverride;
-            const repo = this.repositories.find(r => r.id === this.selectedRepository);
-            return repo ? repo.label : this.selectedRepository;
+            return this.selectedRepositoryOption?.label || '';
+        },
+
+        get selectedRepositoryProvider() {
+            return this.selectedRepositoryOption?.provider || '';
+        },
+
+        get selectedRepositoryProviderLabel() {
+            return this.selectedRepositoryOption?.providerLabel || '';
+        },
+
+        get selectedRepositoryRoleLabel() {
+            const role = this.selectedRepositoryOption?.role;
+            if (role === 'owner') return 'Owner credentials';
+            if (role === 'maintainer') return 'Maintainer';
+            if (role === 'creator') return 'Package Creator';
+
+            return 'Repository access';
         },
 
         get allRepoVersions() {
@@ -592,39 +552,17 @@ function quickCreatePackage({
             return stage ? stage.label : 'Queued';
         },
 
-        async loadGitlabProjects() {
-            this.gitlabLoading = true;
-            try {
-                const res = await fetch(this.gitlabProjectsUrl, { headers: { Accept: 'application/json' } });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'Failed to load GitLab projects.');
-                this.gitlabProjects = data;
-            } catch (error) {
-                this.gitlabProjects = [];
-                console.error(error);
-            } finally {
-                this.gitlabLoading = false;
-            }
-        },
-
-        selectGitlabProject(project) {
-            this.selectedRepository = project.id;
-            this.gitlabSelectedPath = project.path || String(project.id);
-            this.selectedRepositoryLabelOverride = project.name;
-        },
-
         async fetchRepoVersions() {
             this.isLoadingVersions = true;
             try {
-                let url = '';
-                if (this.vcsProvider === 'gitlab') {
-                    url = `${this.gitlabVersionsBaseUrl}/${encodeURIComponent(this.selectedRepository)}/versions`;
-                } else {
-                    url = `${this.githubVersionsUrl}?repo=${encodeURIComponent(this.selectedRepository)}`;
-                }
+                const url = `${this.repositoryVersionsBaseUrl}/${encodeURIComponent(this.selectedRepository)}/versions`;
 
                 const res = await fetch(url, { headers: { Accept: 'application/json' } });
-                const data = res.ok ? await res.json() : {};
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.message || 'Failed to load repository versions.');
+                }
 
                 this.repoBranches = data.branches || [];
                 this.repoTags = data.tags || [];
@@ -680,7 +618,10 @@ function quickCreatePackage({
             }
 
             this.duplicatePackage = this.completedPackages.find(pkg => {
-                return pkg.repo === this.selectedRepository &&
+                const matchesRepository = String(pkg.repository_id || '') === String(this.selectedRepository)
+                    || (this.selectedRepositoryOption && pkg.repo === this.selectedRepositoryOption.name);
+
+                return matchesRepository &&
                     pkg.base_version === this.baseRef &&
                     pkg.head_version === this.headRef &&
                     pkg.environment === this.form.environment;
@@ -709,9 +650,10 @@ function quickCreatePackage({
                         project_name: this.selectedRepositoryLabel,
                         base_version: this.baseRef,
                         head_version: this.headRef,
-                        repo: this.vcsProvider === 'gitlab' ? this.gitlabSelectedPath : this.selectedRepository,
+                        repository_id: this.selectedRepository,
+                        repo: this.selectedRepositoryOption?.name || '',
                         package_name: this.finalPackageName,
-                        vcs_provider: this.vcsProvider,
+                        vcs_provider: this.selectedRepositoryProvider,
                     }),
                 });
 

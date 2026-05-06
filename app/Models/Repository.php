@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Repository extends Model
 {
+    public const PACKAGE_CREATOR_ROLES = ['maintainer', 'creator'];
+
     protected $fillable = [
         'user_id',
         'project_id',
@@ -52,6 +55,11 @@ class Repository extends Model
         return $this->belongsToMany(User::class)
             ->withPivot(['source', 'ldap_identifier', 'role'])
             ->withTimestamps();
+    }
+
+    public function deploymentJobs(): HasMany
+    {
+        return $this->hasMany(DeploymentJob::class);
     }
 
     // ── Accessors ────────────────────────────────────────────────────────────

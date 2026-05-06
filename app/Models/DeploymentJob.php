@@ -11,6 +11,7 @@ class DeploymentJob extends Model
     protected $fillable = [
         'user_id',
         'project_id',
+        'repository_id',
         'batch_id',
         'repo',
         'vcs_provider',
@@ -43,6 +44,11 @@ class DeploymentJob extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function repository(): BelongsTo
+    {
+        return $this->belongsTo(Repository::class);
     }
 
     // ── Cache key helpers ────────────────────────────────────────────────────

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\QueueDeploymentPackageRequest;
 use App\Jobs\GenerateDeploymentPackageJob;
 use App\Models\DeploymentJob;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -111,19 +113,32 @@ class DeploymentPackageController extends Controller
      *
      * Route: POST /deployments/queue-job
      */
-    public function queueJob(Request $request)
+    public function queueJob(QueueDeploymentPackageRequest $request): JsonResponse
     {
         session()->save();
 
-        $validated = $request->validate([
-            'environment' => ['required', 'string', 'max:20'],
-            'project_name' => ['required', 'string', 'max:100'],
-            'base_version' => ['required', 'string', 'max:100'],
-            'head_version' => ['required', 'string', 'max:100'],
-            'repo' => ['required', 'string', 'max:255'],
-            'package_name' => ['nullable', 'string', 'max:255'],
-            'vcs_provider' => ['nullable', 'string', 'in:github,gitlab'],
-        ]);
+        $validated = $request->validated();
+        $repository = $request->packageRepository();
+
+        if ($repository) {
+            $this->authorize('createPackage', $repository);
+
+            if (! in_array($repository->provider, ['github', 'gitlab'], true)) {
+                return response()->json([
+                    'message' => 'Package creation is only available for GitHub and GitLab repositories right now.',
+                ], 422);
+            }
+
+            if (($repository->status ?? 'connected') !== 'connected') {
+                return response()->json([
+                    'message' => 'Reconnect or sync this repository before creating a package.',
+                ], 422);
+            }
+
+            $validated['repo'] = $repository->name;
+            $validated['vcs_provider'] = $repository->provider;
+            $validated['project_name'] = $repository->label;
+        }
 
         // Derive the package name the same way the Artisan command did
         if (empty($validated['package_name'])) {
@@ -138,6 +153,8 @@ class DeploymentPackageController extends Controller
         // Create the DB record
         $job = DeploymentJob::create([
             'user_id' => auth()->id(),
+            'project_id' => $repository?->project_id,
+            'repository_id' => $repository?->id,
             'repo' => $validated['repo'],
             'vcs_provider' => $validated['vcs_provider'] ?? config('packaging.vcs_provider', 'github'),
             'project_name' => $validated['project_name'],

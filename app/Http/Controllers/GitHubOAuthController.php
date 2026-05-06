@@ -2,17 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 class GitHubOAuthController extends Controller
 {
-    private function githubDriver()
+    private const SCOPES = [
+        'repo',
+        'read:user',
+        'user:email',
+    ];
+
+    private function githubDriver(): Provider
     {
-        return Socialite::driver('github');
+        return Socialite::driver('github')
+            ->scopes(self::SCOPES);
     }
 
-    public function redirect(Request $request)
+    public function redirect(Request $request): SymfonyRedirectResponse
     {
         $request->session()->put(
             'github_oauth_redirect_to',
@@ -20,16 +30,12 @@ class GitHubOAuthController extends Controller
         );
 
         return $this->githubDriver()
-            ->scopes([
-                'read:user',
-                'repo',
-                'user:email',
-            ])
+            ->with(['scope' => implode(' ', self::SCOPES)])
             ->stateless()
             ->redirect();
     }
 
-    public function callback(Request $request)
+    public function callback(Request $request): RedirectResponse
     {
         $githubUser = $this->githubDriver()->stateless()->user();
         $expiresIn = $githubUser->expiresIn ?? null;
@@ -57,7 +63,7 @@ class GitHubOAuthController extends Controller
             ->with('success', 'GitHub connected successfully.');
     }
 
-    public function disconnect(Request $request)
+    public function disconnect(Request $request): RedirectResponse
     {
         $request->user()->update([
             'github_id' => null,
