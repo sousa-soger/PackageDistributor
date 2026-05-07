@@ -91,6 +91,17 @@ class GenerateDeploymentPackageJob implements ShouldQueue
         $vcsProvider = $repository?->provider ?? $job->vcs_provider ?? 'github';
         $vcsToken = '';
 
+        if ($repository?->provider === 'local-pc') {
+            if (! $repository->storage_path) {
+                $job->markFailed('This local repository is missing its stored Git mirror. Reconnect or upload it again before creating a package.');
+
+                return;
+            }
+
+            $packageRepository = $repository->storage_path;
+            $vcsProvider = 'local-pc';
+        }
+
         if (in_array($vcsProvider, ['github', 'gitlab'], true)) {
             if ($repository?->access_token) {
                 $vcsToken = $repository->access_token;

@@ -32,7 +32,7 @@ class QueueDeploymentPackageRequest extends FormRequest
             'project_name' => [Rule::requiredIf(fn () => blank($this->input('repository_id'))), 'nullable', 'string', 'max:100'],
             'repo' => [Rule::requiredIf(fn () => blank($this->input('repository_id'))), 'nullable', 'string', 'max:255'],
             'repository_id' => ['nullable', 'integer', Rule::exists('repositories', 'id')],
-            'vcs_provider' => ['nullable', 'string', 'in:github,gitlab'],
+            'vcs_provider' => ['nullable', 'string', 'in:github,gitlab,local-pc'],
         ];
     }
 

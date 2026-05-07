@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Repositories')
 @section('subtitle', 'GitHub, GitLab, company servers and local repositories.')
@@ -52,10 +52,62 @@
       </div>
     @endif
 
-    {{-- ── Repository grid ─────────────────────────────────────────────────── --}}
+    {{-- ── Search bar + view toggle ─────────────────────────────────────────── --}}
     @if($repositories->isNotEmpty())
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="repo-grid">
-        <template x-for="repo in repositories" :key="repo.id">
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <div class="relative flex-1 min-w-[220px] max-w-md">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-search absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input
+            type="search"
+            x-model.debounce.200ms="searchQuery"
+            placeholder="Search repositories…"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9"
+          >
+        </div>
+        <div class="ml-auto inline-flex items-center rounded-lg border border-border/70 bg-card p-1 shadow-sm">
+          <button
+            @click="setViewMode('cards')"
+            :class="viewMode === 'cards' ? 'brand-soft-bg text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'"
+            class="px-2.5 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-base"
+            aria-label="Card view">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-layout-grid h-3.5 w-3.5">
+              <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+              <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+              <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+              <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+            </svg>
+            Cards
+          </button>
+          <button
+            @click="setViewMode('list')"
+            :class="viewMode === 'list' ? 'brand-soft-bg text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'"
+            class="px-2.5 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-base"
+            aria-label="List view">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-list h-3.5 w-3.5">
+              <path d="M3 12h.01"></path>
+              <path d="M3 18h.01"></path>
+              <path d="M3 6h.01"></path>
+              <path d="M8 12h13"></path>
+              <path d="M8 18h13"></path>
+              <path d="M8 6h13"></path>
+            </svg>
+            List
+          </button>
+        </div>
+      </div>
+
+      {{-- ── Card grid view ────────────────────────────────────────────────────── --}}
+      <div x-show="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="repo-grid">
+        <template x-for="repo in filteredRepositories" :key="repo.id">
           <article @click="setSelected(repo.id)"
             class="section-card p-5 group cursor-pointer text-left relative overflow-hidden transition-all duration-300 hover:shadow-soft"
             :class="selectedId === repo.id ? 'ring-[1px] ring-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.25)] opacity-70' : ''">
@@ -63,7 +115,7 @@
 
             <div class="relative">
               <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center flex-shrink-0 text-primary"
+                <div class="h-12 w-12 rounded-lg brand-soft-bg flex items-center justify-center flex-shrink-0 text-primary"
                   x-html="providerIcon(repo.provider)"></div>
 
                 <span class="text-[11px] font-medium px-2 py-0.5 rounded-md border" :class="statusBadgeClass(repo.status)"
@@ -77,23 +129,43 @@
               </div>
 
               <div class="mt-3 flex flex-wrap gap-1.5">
+                <span x-show="repo.ownerName"
+                  class="inline-flex items-center gap-1.5 text-[11px] font-semibold pl-1 pr-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 text-foreground">
+                  <span class="relative flex shrink-0 overflow-hidden rounded-full h-4 w-4">
+                    <span class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
+                      x-text="repo.ownerInitials"></span>
+                  </span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-crown h-2.5 w-2.5 text-primary">
+                    <path
+                      d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z">
+                    </path>
+                    <path d="M5 21h14"></path>
+                  </svg>
+                  <span x-text="`Owner - ${repo.ownerName}`"></span>
+                </span>
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded"
                   style="background:hsl(var(--secondary));color:hsl(var(--muted-foreground))"
                   x-text="`${repo.branchCount} branches`"></span>
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded"
                   style="background:hsl(var(--secondary));color:hsl(var(--muted-foreground))"
                   x-text="`${repo.tagCount} tags`"></span>
+                <!--
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded"
                   style="background:hsl(var(--secondary));color:hsl(var(--muted-foreground))"
                   x-text="`default - ${repo.defaultBranch}`"></span>
+                -->
               </div>
 
               <div class="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-base">
                 <a x-show="repo.canCreatePackage" :href="createPackageUrl(repo)" @click.stop
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base brand-gradient-bg text-[hsl(var(--on-brand))]"
                   title="Create package">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7 9 18l-5-5" />
+                  <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 16h6M19 13v6M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l2-1.14M7.5 4.27l9 5.15"></path>
+                    <polyline stroke-linecap="round" stroke-linejoin="round" points="3.29 7 12 12 20.71 7"></polyline>
+                    <line stroke-linecap="round" stroke-linejoin="round" x1="12" x2="12" y1="22" y2="12"></line>
                   </svg>
                   Package
                 </a>
@@ -138,6 +210,95 @@
             <p class="text-xs mt-0.5" style="color:hsl(var(--muted-foreground))">GitHub, GitLab, or custom server</p>
           </div>
         </button>
+
+        {{-- Empty search state --}}
+        <template x-if="filteredRepositories.length === 0 && searchQuery.trim() !== ''">
+          <div class="col-span-full py-10 text-center text-sm text-muted-foreground">
+            No repositories match your search.
+          </div>
+        </template>
+      </div>
+
+      {{-- ── List view ─────────────────────────────────────────────────────────── --}}
+      <div x-show="viewMode === 'list'" class="section-card p-0 overflow-hidden">
+        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_auto_auto_auto_auto] gap-3 px-5 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 border-b border-border/60 font-semibold">
+          <div>Repository</div>
+          <div class="hidden md:block">Owner</div>
+          <div class="hidden md:block">Provider</div>
+          <div class="hidden md:block text-right">Branches</div>
+          <div class="hidden md:block text-right">Members</div>
+          <div class="text-right">Status</div>
+        </div>
+        <ul class="divide-y divide-border/60">
+          <template x-for="repo in filteredRepositories" :key="'list-' + repo.id">
+            <li>
+              <button @click="setSelected(repo.id)"
+                class="w-full grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_auto_auto_auto_auto] gap-3 items-center px-5 py-3 hover:bg-secondary/40 transition-base text-left"
+                :class="selectedId === repo.id ? 'bg-primary/5' : ''">
+
+                {{-- Repository name + url --}}
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="h-9 w-9 rounded-md brand-soft-bg flex items-center justify-center text-primary shrink-0"
+                    x-html="listProviderIcon(repo.provider)"></div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-semibold font-mono truncate" x-text="repo.label"></div>
+                    <div class="text-[11px] text-muted-foreground truncate" x-text="repo.url || repo.name"></div>
+                  </div>
+                </div>
+
+                {{-- Owner --}}
+                <div class="hidden md:flex items-center gap-2 min-w-0">
+                  <template x-if="repo.ownerName">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="relative flex overflow-hidden rounded-full h-6 w-6 shrink-0">
+                        <span class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[10px] font-semibold"
+                          x-text="repo.ownerInitials"></span>
+                      </span>
+                      <div class="min-w-0">
+                        <div class="text-xs font-semibold truncate inline-flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-crown h-2.5 w-2.5 text-primary">
+                            <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"></path>
+                            <path d="M5 21h14"></path>
+                          </svg>
+                          <span x-text="repo.ownerName"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <template x-if="!repo.ownerName">
+                    <span class="text-xs text-muted-foreground">&mdash;</span>
+                  </template>
+                </div>
+
+                {{-- Provider --}}
+                <div class="hidden md:block text-xs text-muted-foreground" x-text="repo.providerLabel"></div>
+
+                {{-- Branches --}}
+                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-right" x-text="repo.branchCount"></div>
+
+                {{-- Members --}}
+                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-right" x-text="repo.memberCount"></div>
+
+                {{-- Status badge --}}
+                <div class="text-right">
+                  <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border whitespace-nowrap"
+                    :class="statusBadgeClass(repo.status)">
+                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                    <span x-text="repo.statusLabel"></span>
+                  </span>
+                </div>
+              </button>
+            </li>
+          </template>
+        </ul>
+
+        {{-- Empty search result inside list view --}}
+        <div x-show="filteredRepositories.length === 0"
+          class="py-10 text-center text-sm text-muted-foreground">
+          No repositories match your search.
+        </div>
       </div>
     @endif
 
@@ -159,16 +320,84 @@
                 <div class="relative p-5 border-b border-border/60 brand-soft-bg">
                   <div class="flex items-start justify-between gap-3 mb-3">
                     <div
-                      class="rounded-lg brand-soft-bg shadow-soft flex items-center justify-center shrink-0 h-12 w-12 text-primary"
-                      x-html="providerIcon(selectedRepository.provider)"></div>
+                      class="rounded-lg brand-soft-bg shadow-soft flex items-center justify-center shrink-0 h-14 w-14 text-primary"
+                      x-html="providerIcon(selectedRepository.provider)">
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h2 class="text-2xl font-semibold truncate" x-text="selectedRepository.label"></h2>
+                        <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border"
+                          :class="statusBadgeClass(selectedRepository.status)">
+                          <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                          <span x-text="selectedRepository.statusLabel"></span>
+                        </span>
+                      </div>
+
+                      <a x-show="selectedRepository.url" :href="selectedRepository.url" target="_blank" rel="noreferrer"
+                        class="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mt-1 break-all"
+                        x-text="selectedRepository.url">
+                      </a>
+
+                      <div class="mt-3 flex flex-wrap items-center gap-1.5">
+                        <span x-show="selectedRepository.ownerName"
+                          class="inline-flex items-center gap-1.5 text-[11px] font-semibold pl-1 pr-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 text-foreground">
+                          <span class="relative flex shrink-0 overflow-hidden rounded-full h-4 w-4">
+                            <span class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
+                              x-text="selectedRepository.ownerInitials"></span>
+                          </span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-crown h-2.5 w-2.5 text-primary">
+                            <path
+                              d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z">
+                            </path>
+                            <path d="M5 21h14"></path>
+                          </svg>
+                          <span x-text="`Owner - ${selectedRepository.ownerName}`"></span>
+                        </span>
+                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-git-branch h-3 w-3">
+                            <line x1="6" x2="6" y1="3" y2="15"></line>
+                            <circle cx="18" cy="6" r="3"></circle>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <path d="M18 9a9 9 0 0 1-9 9"></path>
+                          </svg>
+                          <span x-text="selectedRepository.branchCount + ' branches'"></span>
+                        </span>
+                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-tag h-3 w-3">
+                            <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path>
+                            <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                          </svg>
+                          <span x-text="selectedRepository.tagCount + ' tags'"></span>
+                        </span>
+                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-users h-3 w-3">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                          <span x-text="memberLabel(selectedRepository)"></span>
+                        </span>
+                      </div>
+                    </div>
                     <div class="flex items-center gap-1" @click.stop>
                       <a x-show="selectedRepository.canCreatePackage" :href="createPackageUrl(selectedRepository)"
-                        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base brand-gradient-bg text-[hsl(var(--on-brand))]"
                         title="Create package">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M20 7 9 18l-5-5" />
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 16h6M19 13v6M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l2-1.14M7.5 4.27l9 5.15"></path>
+                            <polyline stroke-linecap="round" stroke-linejoin="round" points="3.29 7 12 12 20.71 7"></polyline>
+                            <line stroke-linecap="round" stroke-linejoin="round" x1="12" x2="12" y1="22" y2="12"></line>
                         </svg>
+                        Create package
                       </a>
                       <button type="button" x-show="selectedRepository.canManageRepository" @click="syncRepo(selectedRepository)"
                         :disabled="syncing === selectedRepository.id"
@@ -204,42 +433,6 @@
                         </svg>
                       </button>
                     </div>
-                  </div>
-                  <div class="text-base font-semibold" x-text="selectedRepository.label"></div>
-                  <div class="text-xs text-muted-foreground mt-1"
-                    x-text="selectedRepository.url || selectedRepository.name"></div>
-                  <div class="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                    <span class="inline-flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="6" x2="6" y1="3" y2="15" />
-                        <circle cx="18" cy="6" r="3" />
-                        <circle cx="6" cy="18" r="3" />
-                        <path d="M18 9a9 9 0 0 1-9 9" />
-                      </svg>
-                      <span x-text="selectedRepository.branchCount + ' branches'"></span>
-                    </span>
-                    <span class="inline-flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 12V8H6a2 2 0 0 1 0-4h12v4" />
-                        <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
-                        <path d="M18 12h4v4h-4z" />
-                      </svg>
-                      <span x-text="selectedRepository.tagCount + ' tags'"></span>
-                    </span>
-                    <span class="inline-flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                      <span x-text="memberLabel(selectedRepository)"></span>
-                    </span>
-                    <span class="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-md border"
-                      :class="statusBadgeClass(selectedRepository.status)" x-text="selectedRepository.statusLabel"></span>
                   </div>
                 </div>
 
@@ -542,6 +735,8 @@
       return {
         repositories: config.repositories ?? [],
         selectedId: null,
+        viewMode: localStorage.getItem('repositories.viewMode') ?? 'cards',
+        searchQuery: '',
         modal: false,
         step: 'provider',
         provider: null,
@@ -560,6 +755,23 @@
         host: '',
         localPath: '',
         repoUrl: '',
+
+        get filteredRepositories() {
+          const q = this.searchQuery.trim().toLowerCase();
+          if (!q) return this.repositories;
+          return this.repositories.filter((repo) =>
+            (repo.label || '').toLowerCase().includes(q) ||
+            (repo.url || '').toLowerCase().includes(q) ||
+            (repo.name || '').toLowerCase().includes(q) ||
+            (repo.providerLabel || '').toLowerCase().includes(q) ||
+            (repo.ownerName || '').toLowerCase().includes(q)
+          );
+        },
+
+        setViewMode(mode) {
+          this.viewMode = mode;
+          localStorage.setItem('repositories.viewMode', mode);
+        },
 
         providers: [
           {
@@ -643,6 +855,8 @@
             ...repo,
             users: Array.isArray(repo.users) ? repo.users : [],
             memberCount: Number(repo.memberCount ?? 0),
+            ownerInitials: repo.ownerInitials || this.userInitials(repo.ownerName),
+            ownerName: repo.ownerName || '',
             canManageMembers: Boolean(repo.canManageMembers),
             canManageRepository: Boolean(repo.canManageRepository),
             membersError: '',
@@ -651,6 +865,7 @@
             userSearchLoading: false,
             userSearchError: '',
             userSearchNonce: 0,
+            type: repo.type || null,
             userSaving: false,
             userRoleToAdd: this.roleOptions[0]?.key ?? 'viewer',
             roleSavingId: null,
@@ -710,18 +925,34 @@
 
         providerIcon(provider) {
           if (provider === 'github') {
-            return `<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12" /></svg>`;
+            return `<svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12" /></svg>`;
           }
 
           if (provider === 'gitlab') {
-            return `<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0118.6 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z" /></svg>`;
+            return `<svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24"><path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0118.6 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z" /></svg>`;
           }
 
           if (provider === 'company-server') {
-            return `<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>`;
+            return `<svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>`;
           }
 
-          return `<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
+          return `<svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
+        },
+
+        listProviderIcon(provider) {
+          if (provider === 'github') {
+            return `<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12" /></svg>`;
+          }
+
+          if (provider === 'gitlab') {
+            return `<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0118.6 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z" /></svg>`;
+          }
+
+          if (provider === 'company-server') {
+            return `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>`;
+          }
+
+          return `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
         },
 
         openModal() {
@@ -1116,10 +1347,16 @@
 
         async syncRepo(repoOrId) {
           const id = typeof repoOrId === 'object' ? repoOrId.id : repoOrId;
+          const repo = typeof repoOrId === 'object'
+            ? repoOrId
+            : this.repositories.find((item) => item.id === id);
+          const endpoint = repo?.type === 'ssh-mirror'
+            ? `/api/repositories/${id}/sync-ssh`
+            : `/repositories/${id}/sync`;
           this.syncing = id;
 
           try {
-            const resp = await fetch(`/repositories/${id}/sync`, {
+            const resp = await fetch(endpoint, {
               method: 'POST',
               headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
             });

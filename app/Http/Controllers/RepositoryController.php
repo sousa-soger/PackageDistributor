@@ -12,8 +12,11 @@ use App\Services\ProjectInvolvementService;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
+use Symfony\Component\Process\Process;
+use ZipArchive;
 
 class RepositoryController extends Controller
 {
@@ -25,7 +28,7 @@ class RepositoryController extends Controller
             ->where(fn ($query) => $query
                 ->where('user_id', $user->id)
                 ->orWhereHas('members', fn ($query) => $query->whereKey($user->id)))
-            ->with('members')
+            ->with(['members', 'user'])
             ->latest()
             ->get();
 
@@ -190,6 +193,10 @@ class RepositoryController extends Controller
         $this->authorize('update', $repository);
         $repository->loadMissing('user');
 
+        if ($repository->provider === 'local-pc') {
+            return $this->syncLocalRepository($repository, $repository->type === 'ssh-mirror');
+        }
+
         if ($repository->provider === 'github') {
             $metadata = $repository->access_token
                 ? $this->fetchGitHubMetadata($github, $repository->name, $repository->access_token)
@@ -265,13 +272,458 @@ class RepositoryController extends Controller
         ]);
     }
 
+    public function sshPublicKey(): JsonResponse
+    {
+        return response()->json([
+            'public_key' => $this->ensureSshPublicKey(),
+        ]);
+    }
+
+    public function connectSsh(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ip' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'path' => ['required', 'string', 'max:500'],
+        ]);
+
+        if ($request->user()->repositories()->where('provider', 'local-pc')->where('name', $validated['name'])->exists()) {
+            return response()->json([
+                'message' => 'This repository is already connected to your account.',
+                'success' => false,
+            ], 422);
+        }
+
+        $repository = $request->user()->repositories()->create([
+            'branches' => [],
+            'default_branch' => 'main',
+            'display_name' => $validated['name'],
+            'has_git_history' => true,
+            'name' => $validated['name'],
+            'provider' => 'local-pc',
+            'remote_ip' => $validated['ip'],
+            'remote_path' => $validated['path'],
+            'server_path' => $validated['path'],
+            'server_protocol' => 'SSH',
+            'status' => 'connected',
+            'tags' => [],
+            'type' => 'ssh-mirror',
+            'url' => "ssh://owner@{$validated['ip']}:{$validated['path']}",
+        ]);
+
+        $storagePath = storage_path("app/repos/{$repository->id}.git");
+
+        try {
+            File::ensureDirectoryExists(dirname($storagePath));
+
+            $process = new Process([
+                'git',
+                'clone',
+                '--mirror',
+                "ssh://owner@{$validated['ip']}:{$validated['path']}",
+                $storagePath,
+            ]);
+            $process->setTimeout(30);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                throw new \RuntimeException($process->getErrorOutput() ?: $process->getOutput());
+            }
+
+            $repository->update(array_merge([
+                'last_synced_at' => now(),
+                'storage_path' => $storagePath,
+            ], $this->localRepositoryRefAttributes($storagePath)));
+
+            return response()->json([
+                'repository' => [
+                    'id' => $repository->id,
+                    'last_synced_at' => $repository->last_synced_at?->toIso8601String(),
+                    'name' => $repository->name,
+                ],
+                'success' => true,
+            ], 201);
+        } catch (\Throwable $e) {
+            File::deleteDirectory($storagePath);
+            $repository->delete();
+
+            return response()->json([
+                'message' => $this->humanGitError($e->getMessage()),
+                'success' => false,
+            ], 422);
+        }
+    }
+
+    public function syncSsh(Repository $repository): JsonResponse
+    {
+        $this->authorize('update', $repository);
+
+        if ($repository->type !== 'ssh-mirror' || ! $repository->storage_path) {
+            return response()->json([
+                'message' => 'This repository is not connected through SSH access.',
+                'success' => false,
+            ], 422);
+        }
+
+        return $this->syncLocalRepository($repository, true);
+    }
+
+    public function upload(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'max:512000'],
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $uploadedFile = $validated['file'];
+        $extension = strtolower($uploadedFile->getClientOriginalExtension());
+
+        if (! in_array($extension, ['bundle', 'zip'], true)) {
+            return response()->json([
+                'message' => 'Upload a ZIP archive or Git bundle file.',
+                'success' => false,
+            ], 422);
+        }
+
+        if ($request->user()->repositories()->where('provider', 'local-pc')->where('name', $validated['name'])->exists()) {
+            return response()->json([
+                'message' => 'This repository is already connected to your account.',
+                'success' => false,
+            ], 422);
+        }
+
+        $repository = $request->user()->repositories()->create([
+            'branches' => [],
+            'default_branch' => 'main',
+            'display_name' => $validated['name'],
+            'has_git_history' => true,
+            'name' => $validated['name'],
+            'provider' => 'local-pc',
+            'status' => 'connected',
+            'tags' => [],
+            'type' => 'uploaded',
+            'url' => $uploadedFile->getClientOriginalName(),
+        ]);
+
+        $storagePath = storage_path("app/repos/{$repository->id}.git");
+        $tmpDir = storage_path("app/tmp/{$repository->id}");
+        $warning = null;
+
+        try {
+            File::ensureDirectoryExists($tmpDir);
+            File::ensureDirectoryExists(dirname($storagePath));
+
+            $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+            $tmpFile = $uploadedFile->move($tmpDir, $safeName)->getPathname();
+
+            if ($extension === 'bundle') {
+                $this->processBundleUpload($tmpFile, $storagePath);
+            } else {
+                $hasGitHistory = $this->processZipUpload($tmpFile, $tmpDir, $storagePath);
+
+                if (! $hasGitHistory) {
+                    $warning = 'No .git folder found. File contents were imported but version history is not available.';
+                    $repository->has_git_history = false;
+                }
+            }
+
+            $repository->fill(array_merge([
+                'last_synced_at' => now(),
+                'storage_path' => $storagePath,
+            ], $this->localRepositoryRefAttributes($storagePath)))->save();
+
+            return response()->json([
+                'repository' => [
+                    'id' => $repository->id,
+                    'name' => $repository->name,
+                ],
+                'success' => true,
+                'warning' => $warning,
+            ], 201);
+        } catch (\Throwable $e) {
+            File::deleteDirectory($storagePath);
+            $repository->delete();
+
+            return response()->json([
+                'message' => $this->humanGitError($e->getMessage()),
+                'success' => false,
+            ], 422);
+        } finally {
+            File::deleteDirectory($tmpDir);
+        }
+    }
+
+    protected function syncLocalRepository(Repository $repository, bool $fetchRemote): JsonResponse
+    {
+        if (! in_array($repository->type, ['ssh-mirror', 'uploaded'], true) || ! $repository->storage_path || ! File::isDirectory($repository->storage_path)) {
+            return response()->json([
+                'message' => 'This local repository is missing its stored Git mirror. Reconnect or upload it again before syncing.',
+                'success' => false,
+            ], 422);
+        }
+
+        if ($fetchRemote) {
+            $process = new Process(['git', 'fetch', '--all'], $repository->storage_path);
+            $process->setTimeout(30);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                return response()->json([
+                    'message' => $this->humanGitError($process->getErrorOutput() ?: $process->getOutput()),
+                    'success' => false,
+                ], 422);
+            }
+        }
+
+        try {
+            $repository->update(array_merge([
+                'last_synced_at' => now(),
+                'status' => 'connected',
+            ], $this->localRepositoryRefAttributes($repository->storage_path)));
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Could not read branches and tags from this local repository: '.$e->getMessage(),
+                'success' => false,
+            ], 422);
+        }
+
+        return response()->json([
+            'last_synced_at' => $repository->last_synced_at?->toIso8601String(),
+            'message' => 'Repository synced.',
+            'repository' => $repository->fresh(),
+            'success' => true,
+        ]);
+    }
+
+    /**
+     * @return array{branches: list<string>, default_branch: string, tags: list<string>}
+     */
+    protected function localRepositoryRefAttributes(string $gitDirectory): array
+    {
+        $branches = $this->localGitRefs($gitDirectory, 'refs/heads');
+        $tags = $this->localGitRefs($gitDirectory, 'refs/tags');
+
+        return [
+            'branches' => $branches,
+            'default_branch' => $this->localDefaultBranch($gitDirectory, $branches),
+            'tags' => $tags,
+        ];
+    }
+
+    /**
+     * @param  list<string>  $branches
+     */
+    protected function localDefaultBranch(string $gitDirectory, array $branches): string
+    {
+        $process = new Process([
+            'git',
+            "--git-dir={$gitDirectory}",
+            'symbolic-ref',
+            '--quiet',
+            '--short',
+            'HEAD',
+        ]);
+        $process->setTimeout(30);
+        $process->run();
+
+        if ($process->isSuccessful()) {
+            $branch = trim($process->getOutput());
+
+            if ($branch !== '') {
+                return $branch;
+            }
+        }
+
+        if (in_array('main', $branches, true)) {
+            return 'main';
+        }
+
+        if (in_array('master', $branches, true)) {
+            return 'master';
+        }
+
+        return $branches[0] ?? 'main';
+    }
+
+    protected function ensureSshPublicKey(): string
+    {
+        $sshDir = storage_path('app/ssh');
+        $privateKey = "{$sshDir}/id_rsa";
+        $publicKey = "{$privateKey}.pub";
+
+        if (! File::exists($publicKey)) {
+            File::ensureDirectoryExists($sshDir, 0700);
+
+            $process = new Process([
+                'ssh-keygen',
+                '-t',
+                'rsa',
+                '-b',
+                '4096',
+                '-f',
+                $privateKey,
+                '-N',
+                '',
+            ]);
+            $process->setTimeout(30);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                throw new \RuntimeException('Unable to generate the server SSH key. Make sure ssh-keygen is installed.');
+            }
+        }
+
+        return trim(File::get($publicKey));
+    }
+
+    protected function processBundleUpload(string $bundlePath, string $storagePath): void
+    {
+        $verify = new Process(['git', 'bundle', 'verify', $bundlePath]);
+        $verify->setTimeout(120);
+        $verify->run();
+
+        if (! $verify->isSuccessful()) {
+            throw new \RuntimeException($verify->getErrorOutput() ?: $verify->getOutput());
+        }
+
+        $clone = new Process(['git', 'clone', '--mirror', $bundlePath, $storagePath]);
+        $clone->setTimeout(120);
+        $clone->run();
+
+        if (! $clone->isSuccessful()) {
+            throw new \RuntimeException($clone->getErrorOutput() ?: $clone->getOutput());
+        }
+    }
+
+    protected function processZipUpload(string $zipPath, string $tmpDir, string $storagePath): bool
+    {
+        $extractDir = "{$tmpDir}/extracted";
+        File::ensureDirectoryExists($extractDir);
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath) !== true) {
+            throw new \RuntimeException('The ZIP archive could not be opened.');
+        }
+
+        $zip->extractTo($extractDir);
+        $zip->close();
+
+        $gitDirectory = $this->findGitDirectory($extractDir);
+
+        if ($gitDirectory) {
+            File::copyDirectory($gitDirectory, $storagePath);
+
+            $config = new Process(['git', "--git-dir={$storagePath}", 'config', '--bool', 'core.bare', 'true']);
+            $config->setTimeout(120);
+            $config->run();
+
+            if (! $config->isSuccessful()) {
+                throw new \RuntimeException($config->getErrorOutput() ?: $config->getOutput());
+            }
+
+            return true;
+        }
+
+        $contentRoot = $this->uploadedContentRoot($extractDir);
+        $this->importFilesIntoBareRepository($contentRoot, $storagePath);
+
+        return false;
+    }
+
+    protected function findGitDirectory(string $root): ?string
+    {
+        $items = scandir($root);
+
+        if ($items === false) {
+            return null;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = $root.DIRECTORY_SEPARATOR.$item;
+
+            if (! is_dir($path)) {
+                continue;
+            }
+
+            if ($item === '.git') {
+                return $path;
+            }
+
+            $nested = $this->findGitDirectory($path);
+            if ($nested) {
+                return $nested;
+            }
+        }
+
+        return null;
+    }
+
+    protected function uploadedContentRoot(string $extractDir): string
+    {
+        $directories = File::directories($extractDir);
+        $files = File::files($extractDir);
+
+        if (count($directories) === 1 && count($files) === 0) {
+            return $directories[0];
+        }
+
+        return $extractDir;
+    }
+
+    protected function importFilesIntoBareRepository(string $contentRoot, string $storagePath): void
+    {
+        $commands = [
+            ['git', 'init'],
+            ['git', 'add', '-A', '--force'],
+            ['git', '-c', 'user.name=Cybix Upload', '-c', 'user.email=cybix@example.invalid', 'commit', '--allow-empty', '-m', 'Import uploaded repository'],
+            ['git', 'clone', '--mirror', $contentRoot, $storagePath],
+        ];
+
+        foreach ($commands as $command) {
+            $process = new Process($command, in_array('clone', $command, true) ? null : $contentRoot);
+            $process->setTimeout(120);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                throw new \RuntimeException($process->getErrorOutput() ?: $process->getOutput());
+            }
+        }
+    }
+
+    protected function humanGitError(string $output): string
+    {
+        $normalized = strtolower($output);
+
+        if (str_contains($normalized, 'connection refused') || str_contains($normalized, 'port 22')) {
+            return 'Connection refused. Check your IP address, SSH service, and firewall.';
+        }
+
+        if (str_contains($normalized, 'permission denied') || str_contains($normalized, 'publickey')) {
+            return 'Authentication failed. Make sure the server public key was added to your machine.';
+        }
+
+        if (str_contains($normalized, 'no such file or directory') || str_contains($normalized, 'does not exist')) {
+            return 'Path not found. Check the repository path on the remote machine.';
+        }
+
+        return 'Unknown error: '.trim($output);
+    }
+
     public function versions(Request $request, Repository $repository, GitHubService $github, OAuthTokenService $oauthTokens): JsonResponse
     {
         $this->authorize('createPackage', $repository);
 
+        if ($repository->provider === 'local-pc') {
+            return $this->localRepositoryVersions($repository);
+        }
+
         if (! in_array($repository->provider, ['github', 'gitlab'], true)) {
             return response()->json([
-                'message' => 'Package creation is only available for GitHub and GitLab repositories right now.',
+                'message' => 'Package creation is not available for this repository type.',
             ], 422);
         }
 
@@ -335,12 +787,86 @@ class RepositoryController extends Controller
         ]);
     }
 
+    protected function localRepositoryVersions(Repository $repository): JsonResponse
+    {
+        if (! $repository->storage_path || ! File::isDirectory($repository->storage_path)) {
+            return response()->json([
+                'message' => 'This local repository is missing its stored Git mirror. Reconnect or upload it again before creating a package.',
+            ], 422);
+        }
+
+        try {
+            $branches = $this->localGitRefs($repository->storage_path, 'refs/heads');
+            $tags = $this->localGitRefs($repository->storage_path, 'refs/tags');
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Could not read versions from this local repository: '.$e->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'branches' => collect($branches)->map(fn (string $branch) => ['name' => $branch])->values(),
+            'tags' => collect($tags)->map(fn (string $tag) => ['name' => $tag])->values(),
+            'releases' => [],
+        ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function localGitRefs(string $gitDirectory, string $refPrefix): array
+    {
+        $process = new Process([
+            'git',
+            "--git-dir={$gitDirectory}",
+            'for-each-ref',
+            '--format=%(refname:short)',
+            $refPrefix,
+        ]);
+        $process->setTimeout(30);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            throw new \RuntimeException(trim($process->getErrorOutput() ?: $process->getOutput()));
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', trim($process->getOutput())) ?: [])
+            ->map(fn (string $ref) => trim($ref))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
     public function destroy(Repository $repository): JsonResponse
     {
         $this->authorize('delete', $repository);
+
+        $this->deleteLocalRepositoryStorage($repository);
+
         $repository->delete();
 
         return response()->json(['message' => 'Repository removed.']);
+    }
+
+    protected function deleteLocalRepositoryStorage(Repository $repository): void
+    {
+        if ($repository->provider !== 'local-pc' || blank($repository->storage_path)) {
+            return;
+        }
+
+        $storagePath = $this->normalizedPath($repository->storage_path);
+        $managedRepoRoot = $this->normalizedPath(storage_path('app/repos'));
+
+        if (! str_starts_with($storagePath, $managedRepoRoot.DIRECTORY_SEPARATOR)) {
+            return;
+        }
+
+        File::deleteDirectory($storagePath);
+    }
+
+    protected function normalizedPath(string $path): string
+    {
+        return rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
     }
 
     public function members(Request $request, Repository $repository): JsonResponse
@@ -620,9 +1146,23 @@ class RepositoryController extends Controller
 
     protected function repositoryPayload(Repository $repository, User $viewer): array
     {
-        $repository->loadMissing('members');
+        if (
+            $repository->provider === 'local-pc'
+            && filled($repository->storage_path)
+            && File::isDirectory($repository->storage_path)
+            && blank($repository->branches)
+            && blank($repository->tags)
+        ) {
+            try {
+                $repository->fill($this->localRepositoryRefAttributes($repository->storage_path))->save();
+            } catch (\Throwable) {
+            }
+        }
+
+        $repository->loadMissing(['members', 'user']);
 
         $membersPayload = $this->repositoryMembersPayload($repository, $viewer);
+        $ownerName = $repository->user?->name ?: $repository->user?->email;
 
         return array_merge($membersPayload, [
             'authType' => $this->repositoryAuthType($repository),
@@ -636,6 +1176,8 @@ class RepositoryController extends Controller
             'lastSyncedAt' => $repository->last_synced_at?->toIso8601String(),
             'lastSyncedLabel' => $repository->last_synced_at?->diffForHumans() ?? 'Not synced yet',
             'name' => $repository->name,
+            'ownerInitials' => $this->initials($ownerName),
+            'ownerName' => $ownerName,
             'provider' => $repository->provider,
             'providerLabel' => $this->providerLabel($repository->provider),
             'serverHost' => $repository->server_host,
@@ -644,8 +1186,13 @@ class RepositoryController extends Controller
             'slug' => $repository->name,
             'status' => $repository->status ?? 'connected',
             'statusLabel' => $this->statusLabel($repository->status ?? 'connected'),
+            'storagePath' => $repository->storage_path,
             'tagCount' => $repository->tag_count,
+            'type' => $repository->type,
             'url' => $repository->url,
+            'hasGitHistory' => (bool) $repository->has_git_history,
+            'remoteIp' => $repository->remote_ip,
+            'remotePath' => $repository->remote_path,
             'username' => $repository->username,
         ]);
     }
@@ -706,6 +1253,14 @@ class RepositoryController extends Controller
         }
 
         if ($repository->provider === 'local-pc') {
+            if ($repository->type === 'ssh-mirror') {
+                return 'SSH mirror';
+            }
+
+            if ($repository->type === 'uploaded') {
+                return 'Uploaded archive';
+            }
+
             return 'Local agent';
         }
 
@@ -872,6 +1427,10 @@ class RepositoryController extends Controller
 
     protected function githubRepositoryFailureMessage(HttpResponse $response, bool $usingOAuth): string
     {
+        if ($usingOAuth && $this->usesGitHubAppClient() && $this->githubResponseMissingRepoScope($response)) {
+            return 'This private repository cannot be accessed because the GitHub App is not installed on it, or it does not have the required repository permissions. Please install the GitHub App on this repository and allow access to Metadata and Contents, then try again.';
+        }
+
         if ($usingOAuth && $this->githubResponseMissingRepoScope($response)) {
             return 'Your GitHub OAuth token is missing the repo scope required for private repositories. Reconnect GitHub and approve private repository access, then try again.';
         }
@@ -885,7 +1444,8 @@ class RepositoryController extends Controller
 
     protected function githubResponseNeedsOAuthReconnect(HttpResponse $response): bool
     {
-        return $response->unauthorized() || $this->githubResponseMissingRepoScope($response);
+        return $response->unauthorized()
+            || (! $this->usesGitHubAppClient() && $this->githubResponseMissingRepoScope($response));
     }
 
     protected function githubResponseMissingRepoScope(HttpResponse $response): bool
@@ -905,6 +1465,11 @@ class RepositoryController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    protected function usesGitHubAppClient(): bool
+    {
+        return str_starts_with((string) config('services.github.client_id'), 'Iv');
     }
 
     protected function fetchGitLabMetadata(string $name, ?string $token): array

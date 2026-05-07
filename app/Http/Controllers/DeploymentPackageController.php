@@ -123,9 +123,9 @@ class DeploymentPackageController extends Controller
         if ($repository) {
             $this->authorize('createPackage', $repository);
 
-            if (! in_array($repository->provider, ['github', 'gitlab'], true)) {
+            if (! in_array($repository->provider, ['github', 'gitlab', 'local-pc'], true)) {
                 return response()->json([
-                    'message' => 'Package creation is only available for GitHub and GitLab repositories right now.',
+                    'message' => 'Package creation is not available for this repository type.',
                 ], 422);
             }
 
@@ -135,7 +135,15 @@ class DeploymentPackageController extends Controller
                 ], 422);
             }
 
-            $validated['repo'] = $repository->name;
+            if ($repository->provider === 'local-pc' && (! $repository->storage_path || ! File::isDirectory($repository->storage_path))) {
+                return response()->json([
+                    'message' => 'This local repository is missing its stored Git mirror. Reconnect or upload it again before creating a package.',
+                ], 422);
+            }
+
+            $validated['repo'] = $repository->provider === 'local-pc'
+                ? $repository->storage_path
+                : $repository->name;
             $validated['vcs_provider'] = $repository->provider;
             $validated['project_name'] = $repository->label;
         }

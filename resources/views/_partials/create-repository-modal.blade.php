@@ -40,15 +40,15 @@ x-init="init()">
             <template x-for="(s, i) in ['provider', 'auth', 'details', 'done']" :key="i">
               <div class="flex items-center gap-2 flex-1">
                 <div class="h-1.5 flex-1 rounded-full transition-colors"
-                     :style="( ['provider', 'auth', 'details', 'done'].indexOf(step === 'verifying' ? 'details' : step) >= i ) ? 'background:var(--gradient-brand)' : 'background:hsl(var(--border))'">
+                     :style="( ['provider', 'auth', 'details', 'done'].indexOf(progressStep) >= i ) ? 'background:var(--gradient-brand)' : 'background:hsl(var(--border))'">
                 </div>
               </div>
             </template>
           </div>
         </div>
 
-        {{-- Body --}}
-        <div class="px-6 py-5 max-h-[60vh] overflow-y-auto">
+        {{-- Body --}}  
+        <div class="px-6 py-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
           <div x-show="error"
                x-cloak
                class="mb-4 rounded-xl border px-3 py-2 text-sm"
@@ -191,6 +191,158 @@ x-init="init()">
             </div>
           </template>
 
+          {{-- STEP: local options --}}
+          <template x-if="step === 'local-options'">
+            <div class="space-y-4">
+              <p class="text-sm" style="color:hsl(var(--muted-foreground))">Choose how Cybix should connect to this local repository.</p>
+              <div class="grid gap-3 md:grid-cols-3">
+                <template x-for="option in localOptions" :key="option.id">
+                  <button @click="pickLocalOption(option.id)"
+                          class="text-left rounded-xl border p-4 transition-base hover:shadow-soft"
+                          style="background:hsl(var(--card));border-color:hsl(var(--border)/0.7)"
+                          onmouseenter="this.style.borderColor='hsl(var(--primary)/0.4)'"
+                          onmouseleave="this.style.borderColor='hsl(var(--border)/0.7)'">
+                    <div class="h-11 w-11 rounded-lg brand-soft-bg flex items-center justify-center mb-4"
+                         style="color:hsl(var(--primary))" x-html="option.icon"></div>
+                    <div class="text-sm font-semibold mb-1" style="color:hsl(var(--foreground))" x-text="option.title"></div>
+                    <div class="text-xs leading-5" style="color:hsl(var(--muted-foreground))" x-text="option.description"></div>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          {{-- STEP: Cybix Agent placeholder --}}
+          <template x-if="step === 'local-agent'">
+            <div class="space-y-5">
+              <button @click="step = 'local-options'"
+                      class="inline-flex items-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-2"
+                      style="color:hsl(var(--foreground))"
+                      onmouseenter="this.style.background='hsl(var(--accent))'"
+                      onmouseleave="this.style.background='transparent'">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                Back
+              </button>
+              <div class="py-10 flex flex-col items-center justify-center gap-4 text-center">
+                <div class="text-base font-semibold" style="color:hsl(var(--foreground))">Cybix Agent coming soon. Stay tuned.</div>
+                <button disabled class="brand-gradient-bg inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 opacity-50 cursor-not-allowed">Continue</button>
+              </div>
+            </div>
+          </template>
+
+          {{-- STEP: SSH Access --}}
+          <template x-if="step === 'local-ssh'">
+            <div class="space-y-4">
+              <button @click="step = 'local-options'"
+                      class="inline-flex items-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-2"
+                      style="color:hsl(var(--foreground))"
+                      onmouseenter="this.style.background='hsl(var(--accent))'"
+                      onmouseleave="this.style.background='transparent'">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                Back
+              </button>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-3">
+                  <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Step 1 — Add this key to your machine</label>
+                  <button @click="copySshKey()" type="button"
+                          class="inline-flex items-center justify-center rounded-md border text-xs font-medium h-8 px-3"
+                          style="background:hsl(var(--background));border-color:hsl(var(--border));color:hsl(var(--foreground))"
+                          x-text="sshCopyLabel"></button>
+                </div>
+                <textarea readonly rows="4" x-model="sshPublicKey"
+                          :placeholder="sshKeyLoading ? 'Loading public key...' : 'Server public key unavailable'"
+                          class="w-full rounded-md border text-xs font-mono shadow-sm"
+                          style="background:hsl(var(--secondary)/0.35);border-color:hsl(var(--input, var(--border)));padding:0.75rem;color:hsl(var(--foreground))"></textarea>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Step 2 — Enter your machine's IP address</label>
+                <input type="text" x-model="sshIp" placeholder="e.g. 192.168.1.50" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Step 3 — Enter the full path to your repository</label>
+                <input type="text" x-model="sshPath" placeholder="e.g. /home/john/projects/myrepo or C:/Users/john/myrepo" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository name</label>
+                <input type="text" x-model="sshName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
+              </div>
+
+              <button @click="connectSsh()" :disabled="sshLoading || !canSubmitSsh"
+                      class="brand-gradient-bg shadow-soft inline-flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium transition-base h-10 px-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg x-show="sshLoading" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <span x-text="sshLoading ? 'Testing connection...' : 'Test Connection & Connect'"></span>
+              </button>
+
+              <div x-show="sshError" x-cloak class="rounded-lg border px-3 py-2 text-sm"
+                   style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)" x-text="sshError"></div>
+            </div>
+          </template>
+
+          {{-- STEP: Upload Repository --}}
+          <template x-if="step === 'local-upload'">
+            <div class="space-y-4">
+              <button @click="step = 'local-options'"
+                      class="inline-flex items-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-2"
+                      style="color:hsl(var(--foreground))"
+                      onmouseenter="this.style.background='hsl(var(--accent))'"
+                      onmouseleave="this.style.background='transparent'">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                Back
+              </button>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="rounded-xl border p-4 cursor-pointer transition-base hover:shadow-soft" style="border-color:hsl(var(--border)/0.7)">
+                  <input type="file" webkitdirectory multiple class="hidden" @change="handleFolderSelection($event)">
+                  <div class="text-sm font-semibold mb-1" style="color:hsl(var(--foreground))">Browse Folder</div>
+                  <div class="text-xs leading-5" style="color:hsl(var(--muted-foreground))">Zip a selected folder in your browser before uploading.</div>
+                </label>
+                <label class="rounded-xl border p-4 cursor-pointer transition-base hover:shadow-soft" style="border-color:hsl(var(--border)/0.7)">
+                  <input type="file" accept=".zip,.bundle" class="hidden" @change="handleArchiveSelection($event)">
+                  <div class="text-sm font-semibold mb-1" style="color:hsl(var(--foreground))">Upload ZIP or Bundle</div>
+                  <div class="text-xs leading-5" style="color:hsl(var(--muted-foreground))">Use a prepared archive or Git bundle file.</div>
+                </label>
+              </div>
+
+              <div class="rounded-lg border border-dashed p-3 text-xs" style="border-color:hsl(var(--border));background:hsl(var(--secondary)/0.35);color:hsl(var(--muted-foreground))">
+                Note: some browsers may exclude hidden folders like .git when browsing. For full git history, use Upload ZIP instead.
+              </div>
+
+              <div x-show="zipLoading" x-cloak class="text-sm" style="color:hsl(var(--muted-foreground))" x-text="zipProgress"></div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository name</label>
+                <input type="text" x-model="uploadName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Owner's Local Path</label>
+                <input type="text" x-model="uploadLocalPath" placeholder="e.g. H:\xampp\htdocs\test-1 or /home/john/projects/test-1" class="flex h-9 w-full ro              <div x-show="uploadFile" x-cloak class="space-y-2">
+                <div class="flex items-center justify-between text-xs" style="color:hsl(var(--muted-foreground))">
+                  <span x-text="uploadFile?.name"></span>
+                  <span x-text="`${uploadProgress}%`"></span>
+                </div>
+                <div class="h-2 rounded-full overflow-hidden" style="background:hsl(var(--border))">
+                  <div class="h-full transition-all" :style="`width:${uploadProgress}%;background:var(--gradient-brand)`"></div>
+                </div>
+              </div>
+
+              <button @click="uploadRepository()" :disabled="uploadLoading || !canSubmitUpload"
+                      class="brand-gradient-bg shadow-soft inline-flex w-full items-center justify-center rounded-md text-sm font-medium transition-base h-10 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                      x-text="uploadLoading ? 'Uploading...' : 'Connect Uploaded Repository'"></button>
+
+              <div x-show="uploadError" x-cloak class="rounded-lg border px-3 py-2 text-sm"
+                   style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)" x-text="uploadError"></div>
+            </div>
+          </template>
+
           {{-- STEP: details --}}
           <template x-if="step === 'details' && provider">
             <div class="space-y-4">
@@ -244,8 +396,8 @@ x-init="init()">
         <div class="flex flex-col-reverse sm:flex-row sm:space-x-2 px-6 py-4 border-t gap-2 sm:justify-between"
              style="border-color:hsl(var(--border)/0.6);background:hsl(var(--secondary)/0.5)">
 
-            <template x-if="step !== 'provider' && step !== 'done' && step !== 'verifying'">
-                <button @click="step = (step === 'details' ? 'auth' : 'provider')"
+            <template x-if="showFooterBack">
+                <button @click="goBack()"
                         class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-3"
                         style="color:hsl(var(--foreground))"
                         onmouseenter="this.style.background='hsl(var(--accent))'"
@@ -255,7 +407,7 @@ x-init="init()">
                 </button>
             </template>
 
-            <template x-if="step === 'provider' || step === 'done' || step === 'verifying'">
+            <template x-if="!showFooterBack">
                 <span></span>
             </template>
 
@@ -308,6 +460,7 @@ x-init="init()">
   </template>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
 <script>
 function connectRepoModal(config = {}) {
   const pendingConnectionKey = 'repositories.pending-connection';
@@ -326,6 +479,21 @@ function connectRepoModal(config = {}) {
     host: '',
     localPath: '',
     repoUrl: '',
+    sshPublicKey: '',
+    sshKeyLoading: false,
+    sshCopyLabel: 'Copy',
+    sshIp: '',
+    sshPath: '',
+    sshName: '',
+    sshError: '',
+    sshLoading: false,
+    uploadFile: null,
+    uploadName: '',
+    uploadError: '',
+    uploadLoading: false,
+    uploadProgress: 0,
+    zipLoading: false,
+    zipProgress: '',
 
     providers: [
       {
@@ -362,6 +530,37 @@ function connectRepoModal(config = {}) {
       },
     ],
 
+    localOptions: [
+      {
+        id: 'agent',
+        title: 'Cybix Agent',
+        description: 'Install our lightweight background app for automatic syncing',
+        icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8V4m-4 8H4m16 0h-4m-8 4v4m8-9a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6"/></svg>`,
+      },
+      {
+        id: 'ssh',
+        title: 'SSH Access',
+        description: 'Give the server SSH access to pull directly from your machine',
+        icon: `<svg class="h-5 w-5" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor"><g transform="scale(0.3287671233)"><g id="databases-and-servers/servers/ssh" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="terminal" transform="translate(11.000000, 17.000000)" fill="currentColor" fill-rule="nonzero"><path d="M49.2407485,0.0215730994 L1.65983626,0.0215730994 C0.743128655,0.0215730994 0,0.76480117 0,1.68140936 L0,9.94480117 L50.9005848,9.94480117 L50.9005848,1.68140936 C50.9005848,0.76480117 50.1574561,0.0215730994 49.2407485,0.0215730994 Z M32.0399298,7.19626901 C30.8196082,7.19626901 29.826848,6.20350877 29.826848,4.98318713 C29.826848,3.7628655 30.8196082,2.77010526 32.0399298,2.77010526 C33.2602515,2.77010526 34.2530117,3.7628655 34.2530117,4.98318713 C34.2530117,6.20350877 33.2602515,7.19626901 32.0399298,7.19626901 Z M38.0686667,7.19626901 C36.848345,7.19626901 35.8555848,6.20350877 35.8555848,4.98318713 C35.8555848,3.7628655 36.848345,2.77010526 38.0686667,2.77010526 C39.2889883,2.77010526 40.2817485,3.7628655 40.2817485,4.98318713 C40.2817485,6.20350877 39.2889883,7.19626901 38.0686667,7.19626901 Z M44.0974035,7.19626901 C42.8770819,7.19626901 41.8843216,6.20350877 41.8843216,4.98318713 C41.8843216,3.7628655 42.8770819,2.77010526 44.0974035,2.77010526 C45.3177251,2.77010526 46.3104854,3.7628655 46.3104854,4.98318713 C46.3104854,6.20350877 45.3177251,7.19626901 44.0974035,7.19626901 Z"></path><path d="M0,13.2643743 L0,37.0905205 C0,38.0071287 0.743128655,38.7503567 1.65983626,38.7503567 L49.240848,38.7503567 C50.1574561,38.7503567 50.9006842,38.0072281 50.9006842,37.0905205 L50.9006842,13.2643743 L0,13.2643743 Z M23.4073099,27.2714795 L17.9739708,31.8946842 C17.2758772,32.4887895 16.2283392,32.404386 15.6342339,31.706193 C15.0401287,31.0080994 15.1245322,29.9605614 15.8227251,29.3664561 L19.7704035,26.0073158 L15.8227251,22.6481754 C15.1245322,22.0540702 15.0402281,21.0066316 15.6342339,20.3084386 C16.2282398,19.6101462 17.2758772,19.5259415 17.9739708,20.1199474 L23.4073099,24.743152 C24.185731,25.4055556 24.185731,26.6091754 23.4073099,27.2714795 Z M34.0021871,32.2903567 L27.4453567,32.2903567 C26.5287485,32.2903567 25.7855205,31.5472281 25.7855205,30.6305205 C25.7855205,29.7138129 26.5286491,28.9706842 27.4453567,28.9706842 L34.0021871,28.9706842 C34.9187953,28.9706842 35.6620234,29.7138129 35.6620234,30.6305205 C35.6620234,31.5472281 34.9187953,32.2903567 34.0021871,32.2903567 Z"></path></g></g></g></svg>`,
+      },
+      {
+        id: 'upload',
+        title: 'Upload Repository',
+        description: 'Upload a ZIP archive or Git bundle of your local repository',
+        icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>`,
+      },
+    ],
+
+    get progressStep() {
+      if (this.step === 'local-options') return 'auth';
+      if (['local-agent', 'local-ssh', 'local-upload'].includes(this.step)) return 'details';
+      return this.step === 'verifying' ? 'details' : this.step;
+    },
+
+    get showFooterBack() {
+      return ['auth', 'details', 'local-options'].includes(this.step);
+    },
+
     get canSubmitAuth() {
       if (!this.provider) return false;
       if (this.provider.authMethod === 'github' || this.provider.authMethod === 'gitlab') {
@@ -375,6 +574,14 @@ function connectRepoModal(config = {}) {
       if (this.provider?.authMethod === 'path') return this.localPath.trim() !== '';
       if (this.provider?.authMethod === 'ssh') return this.host.trim() !== '' && this.repoUrl.trim() !== '';
       return this.repoUrl.trim() !== '';
+    },
+
+    get canSubmitSsh() {
+      return this.sshIp.trim() !== '' && this.sshPath.trim() !== '' && this.sshName.trim() !== '';
+    },
+
+    get canSubmitUpload() {
+      return this.uploadFile && this.uploadName.trim() !== '';
     },
 
     init() {
@@ -409,13 +616,169 @@ function connectRepoModal(config = {}) {
       this.authMethod = 'oauth';
       this.error = '';
       this.loading = false;
+      this.sshPublicKey = '';
+      this.sshKeyLoading = false;
+      this.sshCopyLabel = 'Copy';
+      this.sshIp = '';
+      this.sshPath = '';
+      this.sshName = '';
+      this.sshError = '';
+      this.sshLoading = false;
+      this.uploadFile = null;
+      this.uploadName = '';
+      this.uploadError = '';
+      this.uploadLoading = false;
+      this.uploadProgress = 0;
+      this.zipLoading = false;
+      this.zipProgress = '';
     },
     pickProvider(provider) {
       this.provider = provider;
       this.authMethod = 'oauth';
       this.token = '';
       this.error = '';
-      this.step = 'auth';
+      this.step = provider.id === 'local-pc' ? 'local-options' : 'auth';
+    },
+    goBack() {
+      if (this.step === 'details') {
+        this.step = 'auth';
+        return;
+      }
+
+      this.step = 'provider';
+    },
+    pickLocalOption(option) {
+      this.error = '';
+      if (option === 'agent') {
+        this.step = 'local-agent';
+        return;
+      }
+
+      if (option === 'ssh') {
+        this.step = 'local-ssh';
+        this.loadSshPublicKey();
+        return;
+      }
+
+      this.step = 'local-upload';
+    },
+    async loadSshPublicKey() {
+      if (this.sshPublicKey || this.sshKeyLoading) return;
+
+      this.sshKeyLoading = true;
+      this.sshError = '';
+
+      try {
+        const response = await fetch('/api/repositories/ssh-public-key', {
+          headers: { 'Accept': 'application/json' },
+        });
+        const payload = await this.parseJson(response);
+
+        if (!response.ok) {
+          throw new Error(this.extractErrorMessage(payload, 'Could not load the server SSH key.'));
+        }
+
+        this.sshPublicKey = payload?.public_key || '';
+      } catch (error) {
+        this.sshError = error.message || 'Could not load the server SSH key.';
+      } finally {
+        this.sshKeyLoading = false;
+      }
+    },
+    async copySshKey() {
+      if (!this.sshPublicKey) return;
+
+      await navigator.clipboard.writeText(this.sshPublicKey);
+      this.sshCopyLabel = 'Copied!';
+      setTimeout(() => this.sshCopyLabel = 'Copy', 1500);
+    },
+    async connectSsh() {
+      if (!this.canSubmitSsh || this.sshLoading) return;
+
+      this.sshLoading = true;
+      this.sshError = '';
+
+      try {
+        const response = await fetch('/api/repositories/connect-ssh', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          },
+          body: JSON.stringify({
+            ip: this.sshIp.trim(),
+            name: this.sshName.trim(),
+            path: this.sshPath.trim(),
+          }),
+        });
+        const payload = await this.parseJson(response);
+
+        if (!response.ok) {
+          throw new Error(this.extractErrorMessage(payload, 'SSH connection failed.'));
+        }
+
+        this.closeModal(false);
+        sessionStorage.setItem('flash_toast_msg', 'Repository connected successfully.');
+        sessionStorage.setItem('flash_toast_type', 'success');
+        window.location.reload();
+      } catch (error) {
+        this.sshError = error.message || 'SSH connection failed.';
+      } finally {
+        this.sshLoading = false;
+      }
+    },
+    async handleFolderSelection(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      if (!window.JSZip) {
+        this.uploadError = 'The ZIP helper could not load. Try Upload ZIP instead.';
+        return;
+      }
+
+      this.zipLoading = true;
+      this.uploadError = '';
+      this.uploadProgress = 0;
+
+      try {
+        const zip = new JSZip();
+        files.forEach((file) => {
+          zip.file(file.webkitRelativePath || file.name, file);
+        });
+
+        const rootName = (files[0].webkitRelativePath || '').split('/')[0] || 'repository';
+        this.uploadName = this.uploadName || rootName;
+        const blob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+          this.zipProgress = `Zipping ${files.length} files... ${Math.round(metadata.percent)}%`;
+        });
+
+        this.uploadFile = new File([blob], `${this.uploadName || rootName}.zip`, { type: 'application/zip' });
+      } catch (error) {
+        this.uploadError = 'Could not zip the selected folder.';
+      } finally {
+        this.zipLoading = false;
+      }
+    },
+    handleArchiveSelection(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      this.uploadFile = file;
+      this.uploadError = '';
+      this.uploadProgress = 0;
+      this.uploadName = this.uploadName || file.name.replace(/\.(zip|bundle)$/i, '');
+    },
+    uploadRepository() {
+      if (!this.canSubmitUpload || this.uploadLoading) return;
+
+      this.uploadLoading = true;
+      this.uploadError = '';
+      this.uploadProgress = 0;
+
+      const formData = new FormData();
+      formData.append('file', this.uploadFile);
+nd(formData);
     },
     async handleVerify() {
       if (!this.canSubmitDetails) return;
@@ -553,6 +916,13 @@ function connectRepoModal(config = {}) {
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) return null;
       return response.json();
+    },
+    safeParseJson(value) {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return null;
+      }
     },
   };
 }

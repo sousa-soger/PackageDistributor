@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\DeploymentPackageService;
 use App\Services\OAuthTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -79,6 +80,72 @@ test('create package page lists owned and invited repositories with creator acce
         ->assertSee('Owned App')
         ->assertSee('Invited App')
         ->assertDontSee('Viewer App');
+});
+
+test('create package page lists connected local repositories', function () {
+    $actor = User::factory()->create();
+    $storagePath = storage_path('app/repos/local-app.git');
+    File::ensureDirectoryExists($storagePath);
+
+    try {
+        packageRepositoryFor($actor, [
+            'display_name' => 'Uploaded Local App',
+            'name' => 'uploaded-local-app',
+            'provider' => 'local-pc',
+            'storage_path' => $storagePath,
+            'type' => 'uploaded',
+            'url' => 'repository.zip',
+        ]);
+
+        $this->actingAs($actor)
+            ->get(route('create-package'))
+            ->assertOk()
+            ->assertSee('Uploaded Local App')
+            ->assertSee('Local Repository');
+    } finally {
+        File::deleteDirectory($storagePath);
+    }
+});
+
+test('connected local repository can queue a package', function () {
+    Queue::fake();
+
+    $owner = User::factory()->create();
+    $storagePath = storage_path('app/repos/local-queue-test.git');
+    File::ensureDirectoryExists($storagePath);
+
+    try {
+        $repository = packageRepositoryFor($owner, [
+            'display_name' => 'Local Queue Repo',
+            'name' => 'local-queue-repo',
+            'provider' => 'local-pc',
+            'storage_path' => $storagePath,
+            'type' => 'uploaded',
+            'url' => 'local.zip',
+        ]);
+
+        $this->actingAs($owner)
+            ->postJson(route('deployments.queue-job'), [
+                'base_version' => 'main',
+                'environment' => 'DEV',
+                'head_version' => 'release',
+                'repository_id' => $repository->id,
+                'vcs_provider' => 'local-pc',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'queued');
+
+        $job = DeploymentJob::firstOrFail();
+
+        expect($job->repository_id)->toBe($repository->id)
+            ->and($job->repo)->toBe($storagePath)
+            ->and($job->vcs_provider)->toBe('local-pc')
+            ->and($job->project_name)->toBe('Local Queue Repo');
+
+        Queue::assertPushed(GenerateDeploymentPackageJob::class);
+    } finally {
+        File::deleteDirectory($storagePath);
+    }
 });
 
 test('invited package creator can queue a package for a connected repository', function () {
@@ -199,5 +266,39 @@ test('queued repository package job falls back to repository owner oauth', funct
 
     expect($service->call['repo'])->toBe('acme/oauth-repo')
         ->and($service->call['vcsToken'])->toBe('owner-oauth-token')
+        ->and($job->fresh()->status)->toBe('completed');
+});
+
+test('queued local repository package job uses stored mirror path without oauth', function () {
+    $owner = User::factory()->create(['github_token' => 'unused-token']);
+    $repository = packageRepositoryFor($owner, [
+        'name' => 'local-package-repo',
+        'provider' => 'local-pc',
+        'storage_path' => storage_path('app/repos/local-package-repo.git'),
+        'type' => 'uploaded',
+    ]);
+
+    $job = DeploymentJob::create([
+        'base_version' => 'main',
+        'environment' => 'DEV',
+        'head_version' => 'release',
+        'package_name' => 'DEV-local-package',
+        'project_name' => 'Local Package Repo',
+        'repo' => 'local-package-repo',
+        'repository_id' => $repository->id,
+        'status' => 'queued',
+        'user_id' => $owner->id,
+        'vcs_provider' => 'local-pc',
+    ]);
+
+    $service = new CreatePackageRepositoryCapturingService;
+    $oauthTokens = Mockery::mock(OAuthTokenService::class);
+    $oauthTokens->shouldNotReceive('accessToken');
+
+    (new GenerateDeploymentPackageJob($job->id))->handle($service, $oauthTokens);
+
+    expect($service->call['repo'])->toBe($repository->storage_path)
+        ->and($service->call['vcsProvider'])->toBe('local-pc')
+        ->and($service->call['vcsToken'])->toBe('')
         ->and($job->fresh()->status)->toBe('completed');
 });

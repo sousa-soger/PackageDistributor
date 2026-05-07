@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\AbstractProvider;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 class GitHubOAuthController extends Controller
@@ -16,10 +16,9 @@ class GitHubOAuthController extends Controller
         'user:email',
     ];
 
-    private function githubDriver(): Provider
+    private function githubDriver(): AbstractProvider
     {
-        return Socialite::driver('github')
-            ->scopes(self::SCOPES);
+        return Socialite::driver('github');
     }
 
     public function redirect(Request $request): SymfonyRedirectResponse
@@ -29,7 +28,15 @@ class GitHubOAuthController extends Controller
             $request->query('return_to', 'repositories')
         );
 
+        if ($this->usesGitHubAppClient()) {
+            return $this->githubDriver()
+                ->setScopes([])
+                ->stateless()
+                ->redirect();
+        }
+
         return $this->githubDriver()
+            ->scopes(self::SCOPES)
             ->with(['scope' => implode(' ', self::SCOPES)])
             ->stateless()
             ->redirect();
@@ -79,5 +86,10 @@ class GitHubOAuthController extends Controller
         return redirect()
             ->route('repositories')
             ->with('success', 'GitHub disconnected successfully.');
+    }
+
+    private function usesGitHubAppClient(): bool
+    {
+        return str_starts_with((string) config('services.github.client_id'), 'Iv');
     }
 }

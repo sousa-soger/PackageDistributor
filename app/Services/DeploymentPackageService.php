@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Process\Process;
 use ZipArchive;
 
 /**
@@ -70,7 +71,15 @@ class DeploymentPackageService
             $baseZipPath = $tempBasePath.DIRECTORY_SEPARATOR.'base.zip';
             $headZipPath = $tempBasePath.DIRECTORY_SEPARATOR.'head.zip';
 
-            if ($vcsProvider === 'gitlab') {
+            if ($vcsProvider === 'local-pc') {
+                $progressCallback(['packagingMessage' => 'Preparing base version from local repository...'], 'Preparing base version...');
+                $this->archiveLocalRepository($repo, $baseVersion, $baseZipPath);
+                $progressCallback(['fileDownloadProgress' => 50], 'Preparing head version from local repository...');
+
+                $this->archiveLocalRepository($repo, $headVersion, $headZipPath);
+                $progressCallback(['fileDownloadProgress' => 100], 'Local repository versions prepared.');
+
+            } elseif ($vcsProvider === 'gitlab') {
                 // ── GitLab archive download ───────────────────────────────
                 $base = rtrim(config('services.gitlab.base_url'), '/');
                 // GitLab requires the project ID or URL-encoded namespace path in URL segments
@@ -233,6 +242,30 @@ class DeploymentPackageService
                 'rollback_delete_count' => 0,
             ],
         ];
+    }
+
+    private function archiveLocalRepository(string $gitDirectory, string $ref, string $zipPath): void
+    {
+        if (! File::isDirectory($gitDirectory)) {
+            throw new \RuntimeException('Local repository mirror was not found. Reconnect or upload this repository again.');
+        }
+
+        $process = new Process([
+            'git',
+            "--git-dir={$gitDirectory}",
+            'archive',
+            '--format=zip',
+            "--output={$zipPath}",
+            $ref,
+        ]);
+        $process->setTimeout(120);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $output = trim($process->getErrorOutput() ?: $process->getOutput());
+
+            throw new \RuntimeException("Local repository: failed to prepare {$ref}. {$output}");
+        }
     }
 
     // ── Windows helpers ──────────────────────────────────────────────────────

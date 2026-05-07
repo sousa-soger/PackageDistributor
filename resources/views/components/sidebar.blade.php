@@ -34,6 +34,7 @@
                 Workspace
             </div>
             <ul class="space-y-0.5">
+                <!--
                 {{-- Dashboard --}}
                 <li>
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
@@ -52,6 +53,7 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+                -->
                 {{-- Repostiries combined --}}
                 <li>
                     <a href="{{ route('repositories') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group

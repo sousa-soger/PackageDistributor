@@ -103,12 +103,16 @@ test('non owner cannot manage repository members', function () {
 });
 
 test('repositories page renders repository bottom sheet without project or team assignment UI', function () {
-    $owner = User::factory()->create();
+    $owner = User::factory()->create([
+        'name' => 'Olivia Repository Owner',
+    ]);
     repositoryMembershipRepositoryFor($owner);
 
     $this->actingAs($owner)
         ->get(route('repositories'))
         ->assertOk()
+        ->assertSee('Olivia Repository Owner')
+        ->assertDontSee('Aaron Voon Wu Chun')
         ->assertSee('Connection')
         ->assertSee('People and Roles')
         ->assertSee('Change PAT')

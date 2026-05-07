@@ -15,6 +15,7 @@ class Repository extends Model
         'user_id',
         'project_id',
         'provider',
+        'type',
         'name',
         'display_name',
         'url',
@@ -26,6 +27,10 @@ class Repository extends Model
         'server_host',
         'server_path',
         'server_protocol',
+        'remote_ip',
+        'remote_path',
+        'storage_path',
+        'has_git_history',
         'username',
         'access_token',
         'last_synced_at',
@@ -36,6 +41,7 @@ class Repository extends Model
         'tags' => 'array',
         'last_synced_at' => 'datetime',
         'access_token' => 'encrypted',
+        'has_git_history' => 'boolean',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────

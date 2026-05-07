@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 
 class PackageController extends Controller
 {
@@ -102,8 +103,16 @@ class PackageController extends Controller
     private function packageableRepositoriesFor(User $user): Collection
     {
         return Repository::query()
-            ->whereIn('provider', ['github', 'gitlab'])
+            ->whereIn('provider', ['github', 'gitlab', 'local-pc'])
             ->where('status', 'connected')
+            ->where(function ($query) {
+                $query->whereIn('provider', ['github', 'gitlab'])
+                    ->orWhere(function ($query) {
+                        $query->where('provider', 'local-pc')
+                            ->whereIn('type', ['ssh-mirror', 'uploaded'])
+                            ->whereNotNull('storage_path');
+                    });
+            })
             ->where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)
                     ->orWhereHas('members', fn ($query) => $query
@@ -116,7 +125,8 @@ class PackageController extends Controller
             ])
             ->latest()
             ->get()
-            ->filter(fn (Repository $repository) => $user->can('createPackage', $repository))
+            ->filter(fn (Repository $repository) => $user->can('createPackage', $repository)
+                && ($repository->provider !== 'local-pc' || (filled($repository->storage_path) && File::isDirectory($repository->storage_path))))
             ->values();
     }
 
@@ -130,6 +140,7 @@ class PackageController extends Controller
             'name' => $repository->name,
             'provider' => $repository->provider,
             'providerLabel' => $this->providerLabel($repository->provider),
+            'type' => $repository->type,
             'defaultBranch' => $repository->default_branch ?? 'main',
             'branchCount' => $repository->branch_count,
             'tagCount' => $repository->tag_count,
@@ -144,6 +155,7 @@ class PackageController extends Controller
         return match ($provider) {
             'github' => 'GitHub',
             'gitlab' => 'GitLab',
+            'local-pc' => 'Local Repository',
             default => ucfirst(str_replace('-', ' ', $provider)),
         };
     }

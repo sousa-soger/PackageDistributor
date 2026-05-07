@@ -18,6 +18,7 @@
         repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
     })"
     x-init="init()"
+    @keydown.escape.window="baseVersionDropdownOpen = false; headVersionDropdownOpen = false"
 >
     <div x-show="phase === 'form'" x-cloak class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         
@@ -34,17 +35,80 @@
 
                 <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
                     <div class="space-y-2">
-                        <label class="text-sm font-medium leading-none">Repository</label>
-                        <select
-                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            x-model="selectedRepository"
-                            :disabled="repositories.length === 0"
-                        >
-                            <option value="">Choose repository</option>
-                            <template x-for="repo in repositories" :key="repo.id">
-                                <option :value="repo.id" x-text="repo.label + ' (' + repo.providerLabel + ')'"></option>
-                            </template>
-                        </select>
+                        <label class="text-sm font-medium leading-none mb-2">Repository</label>
+                        <div class="relative" x-data="{ repoDropdownOpen: false }" @keydown.escape.window="repoDropdownOpen = false">
+                            <button
+                                type="button"
+                                role="combobox"
+                                :aria-expanded="repoDropdownOpen"
+                                aria-autocomplete="none"
+                                :data-state="repoDropdownOpen ? 'open' : 'closed'"
+                                :disabled="repositories.length === 0"
+                                @click="repoDropdownOpen = !repoDropdownOpen"
+                                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                            >
+                                <span style="pointer-events: none;">
+                                    <template x-if="!selectedRepositoryOption">
+                                        <span class="text-muted-foreground">Choose repository</span>
+                                    </template>
+                                    <template x-if="selectedRepositoryOption">
+                                        <span class="flex items-center gap-2">
+                                            <span x-html="repoDropdownIcon(selectedRepositoryOption.provider)"></span>
+                                            <span x-text="selectedRepositoryOption.label"></span>
+                                        </span>
+                                    </template>
+                                </span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="lucide lucide-chevron-down h-4 w-4 opacity-50" aria-hidden="true">
+                                    <path d="m6 9 6 6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            <div
+                                x-show="repoDropdownOpen"
+                                x-cloak
+                                @click.outside="repoDropdownOpen = false"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute left-0 z-50 mt-1 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-md outline-none"
+                                role="listbox"
+                            >
+                                <div class="p-1 overflow-auto scrollbar-thin max-h-60">
+                                    <template x-for="repo in repositories" :key="repo.id">
+                                        <div
+                                            role="option"
+                                            :aria-selected="selectedRepository === repo.id"
+                                            :data-state="selectedRepository === repo.id ? 'checked' : 'unchecked'"
+                                            tabindex="-1"
+                                            class="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                            @click="selectedRepository = repo.id; repoDropdownOpen = false"
+                                        >
+                                            <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                                                <template x-if="selectedRepository === repo.id">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                        class="lucide lucide-check h-4 w-4">
+                                                        <path d="M20 6 9 17l-5-5"></path>
+                                                    </svg>
+                                                </template>
+                                            </span>
+                                            <span class="flex items-center gap-2">
+                                                <span x-html="repoDropdownIcon(repo.provider)"></span>
+                                                <span x-text="repo.label"></span>
+                                            </span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <a href="{{ route('repositories') }}"
@@ -55,7 +119,7 @@
 
                 <template x-if="repositories.length === 0">
                     <div class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
-                        Connect a GitHub or GitLab repository, or ask the owner to invite you as a Maintainer or Package Creator.
+                        Connect a GitHub, GitLab, or local repository, or ask the owner to invite you as a Maintainer or Package Creator.
                     </div>
                 </template>
 
@@ -84,17 +148,100 @@
                 <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
                     <div class="space-y-2">
                         <label class="text-sm font-medium leading-none">Base version</label>
-                        <select
-                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            x-model="form.base"
-                            :disabled="isLoadingVersions || allRepoVersions.length === 0"
-                            @change="handleVersionChange()"
-                        >
-                            <option value="">Select base</option>
-                            <template x-for="version in allRepoVersions" :key="'base-' + version.unique_key">
-                                <option :value="version.unique_key" x-text="version.typeLabel + ' · ' + version.name"></option>
-                            </template>
-                        </select>
+                        <div class="relative">
+                            <button
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between font-normal"
+                                type="button"
+                                role="combobox"
+                                :aria-expanded="baseVersionDropdownOpen ? 'true' : 'false'"
+                                aria-haspopup="dialog"
+                                aria-controls="base-version-dropdown"
+                                :data-state="baseVersionDropdownOpen ? 'open' : 'closed'"
+                                :disabled="isLoadingVersions || allRepoVersions.length === 0"
+                                @click="toggleVersionDropdown('base')"
+                            >
+                                <span class="flex items-center gap-2 truncate">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch h-3.5 w-3.5 text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                    <span class="truncate" :class="selectedBaseLabel ? '' : 'text-muted-foreground'" x-text="selectedBaseLabel || 'Select base'"></span>
+                                </span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down h-4 w-4 opacity-50 shrink-0"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+                            </button>
+
+                            <div
+                                id="base-version-dropdown"
+                                x-show="baseVersionDropdownOpen"
+                                x-cloak
+                                @click.outside="baseVersionDropdownOpen = false"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute left-0 z-50 mt-1 w-full rounded-md border border-border bg-popover p-0 text-popover-foreground shadow-md outline-none"
+                                tabindex="-1"
+                                data-side="bottom"
+                                data-align="start"
+                                :data-state="baseVersionDropdownOpen ? 'open' : 'closed'"
+                                role="dialog"
+                            >
+                                <div tabindex="-1" class="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground" cmdk-root="">
+                                    <label for="base-version-search" class="sr-only" cmdk-label="">Search base versions</label>
+                                    <div class="flex items-center border-b border-border px-3" cmdk-input-wrapper="">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2 h-4 w-4 shrink-0 opacity-50"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                                        <input
+                                            id="base-version-search"
+                                            x-ref="baseVersionSearchInput"
+                                            class="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                            placeholder="Search versions..."
+                                            x-model="baseVersionSearch"
+                                            cmdk-input=""
+                                            autocomplete="off"
+                                            autocorrect="off"
+                                            spellcheck="false"
+                                            aria-autocomplete="list"
+                                            role="combobox"
+                                            aria-expanded="true"
+                                            aria-controls="base-version-list"
+                                            type="text"
+                                        >
+                                    </div>
+
+                                    <div id="base-version-list" class="max-h-[300px] overflow-y-auto overflow-x-hidden scrollbar-thin" cmdk-list="" role="listbox" tabindex="-1" aria-label="Suggestions">
+                                        <div cmdk-list-sizer="">
+                                            <template x-for="group in filteredVersionGroups('base')" :key="'base-group-' + group.value">
+                                                <div class="overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground" cmdk-group="" role="presentation" :data-value="group.value">
+                                                    <div cmdk-group-heading="" aria-hidden="true" x-text="group.label"></div>
+                                                    <div cmdk-group-items="" role="group">
+                                                        <template x-for="version in group.items" :key="'base-dropdown-' + version.unique_key">
+                                                            <button
+                                                                type="button"
+                                                                class="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+                                                                role="option"
+                                                                :aria-selected="form.base === version.unique_key"
+                                                                :data-selected="form.base === version.unique_key"
+                                                                :data-value="version.name"
+                                                                cmdk-item=""
+                                                                @click="selectVersion('base', version.unique_key)"
+                                                            >
+                                                                <svg x-show="version.type === 'branch'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch mr-2 h-3.5 w-3.5 text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                                                <svg x-show="version.type !== 'branch'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag mr-2 h-3.5 w-3.5 text-muted-foreground"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                                                                <span class="flex-1 truncate text-left" x-text="version.name"></span>
+                                                                <svg x-show="form.base === version.unique_key" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-4 w-4"><path d="M20 6 9 17l-5-5"></path></svg>
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="filteredVersionGroups('base').length === 0">
+                                                <div class="px-3 py-6 text-center text-sm text-muted-foreground">No versions found.</div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <p class="text-[11px] text-muted-foreground">Suggested: last deployed version</p>
                     </div>
 
@@ -106,17 +253,100 @@
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium leading-none">Target version</label>
-                        <select
-                            class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            x-model="form.head"
-                            :disabled="isLoadingVersions || allRepoVersions.length === 0"
-                            @change="handleVersionChange()"
-                        >
-                            <option value="">Select target</option>
-                            <template x-for="version in allRepoVersions" :key="'head-' + version.unique_key">
-                                <option :value="version.unique_key" x-text="version.typeLabel + ' · ' + version.name"></option>
-                            </template>
-                        </select>
+                        <div class="relative">
+                            <button
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between font-normal"
+                                type="button"
+                                role="combobox"
+                                :aria-expanded="headVersionDropdownOpen ? 'true' : 'false'"
+                                aria-haspopup="dialog"
+                                aria-controls="head-version-dropdown"
+                                :data-state="headVersionDropdownOpen ? 'open' : 'closed'"
+                                :disabled="isLoadingVersions || allRepoVersions.length === 0"
+                                @click="toggleVersionDropdown('head')"
+                            >
+                                <span class="flex items-center gap-2 truncate">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch h-3.5 w-3.5 text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                    <span class="truncate" :class="selectedHeadLabel ? '' : 'text-muted-foreground'" x-text="selectedHeadLabel || 'Select target'"></span>
+                                </span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down h-4 w-4 opacity-50 shrink-0"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+                            </button>
+
+                            <div
+                                id="head-version-dropdown"
+                                x-show="headVersionDropdownOpen"
+                                x-cloak
+                                @click.outside="headVersionDropdownOpen = false"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute left-0 z-50 mt-1 w-full rounded-md border border-border bg-popover p-0 text-popover-foreground shadow-md outline-none"
+                                tabindex="-1"
+                                data-side="bottom"
+                                data-align="start"
+                                :data-state="headVersionDropdownOpen ? 'open' : 'closed'"
+                                role="dialog"
+                            >
+                                <div tabindex="-1" class="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground" cmdk-root="">
+                                    <label for="head-version-search" class="sr-only" cmdk-label="">Search target versions</label>
+                                    <div class="flex items-center border-b border-border px-3" cmdk-input-wrapper="">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2 h-4 w-4 shrink-0 opacity-50"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                                        <input
+                                            id="head-version-search"
+                                            x-ref="headVersionSearchInput"
+                                            class="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                            placeholder="Search versions..."
+                                            x-model="headVersionSearch"
+                                            cmdk-input=""
+                                            autocomplete="off"
+                                            autocorrect="off"
+                                            spellcheck="false"
+                                            aria-autocomplete="list"
+                                            role="combobox"
+                                            aria-expanded="true"
+                                            aria-controls="head-version-list"
+                                            type="text"
+                                        >
+                                    </div>
+
+                                    <div id="head-version-list" class="max-h-[300px] overflow-y-auto overflow-x-hidden scrollbar-thin" cmdk-list="" role="listbox" tabindex="-1" aria-label="Suggestions">
+                                        <div cmdk-list-sizer="">
+                                            <template x-for="group in filteredVersionGroups('head')" :key="'head-group-' + group.value">
+                                                <div class="overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground" cmdk-group="" role="presentation" :data-value="group.value">
+                                                    <div cmdk-group-heading="" aria-hidden="true" x-text="group.label"></div>
+                                                    <div cmdk-group-items="" role="group">
+                                                        <template x-for="version in group.items" :key="'head-dropdown-' + version.unique_key">
+                                                            <button
+                                                                type="button"
+                                                                class="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+                                                                role="option"
+                                                                :aria-selected="form.head === version.unique_key"
+                                                                :data-selected="form.head === version.unique_key"
+                                                                :data-value="version.name"
+                                                                cmdk-item=""
+                                                                @click="selectVersion('head', version.unique_key)"
+                                                            >
+                                                                <svg x-show="version.type === 'branch'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-branch mr-2 h-3.5 w-3.5 text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                                                <svg x-show="version.type !== 'branch'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag mr-2 h-3.5 w-3.5 text-muted-foreground"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                                                                <span class="flex-1 truncate text-left" x-text="version.name"></span>
+                                                                <svg x-show="form.head === version.unique_key" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-4 w-4"><path d="M20 6 9 17l-5-5"></path></svg>
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="filteredVersionGroups('head').length === 0">
+                                                <div class="px-3 py-6 text-center text-sm text-muted-foreground">No versions found.</div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <p class="text-[11px] text-muted-foreground">Suggested: latest tag</p>
                     </div>
                 </div>
@@ -252,7 +482,7 @@
                     <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Repository</span><span class="max-w-[60%] truncate font-medium" x-text="selectedRepositoryLabel || '—'"></span></div>
                     <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Base</span><span class="max-w-[60%] truncate font-mono text-xs font-medium" x-text="selectedBaseLabel || '—'"></span></div>
                     <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Target</span><span class="max-w-[60%] truncate font-mono text-xs font-medium" x-text="selectedHeadLabel || '—'"></span></div>
-                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Environment</span><span class="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold" x-text="form.environment"></span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Environment</span><span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wider" :class="form.environment === 'DEV' ? 'bg-running/10 text-running border-running/30' : form.environment === 'QA' ? 'bg-queued/10 text-queued border-queued/30' : 'bg-failed/10 text-failed border-failed/30'"><span class="h-1.5 w-1.5 rounded-full bg-current"></span><span x-text="form.environment"></span></span></div>
                     <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Rollback</span><span class="font-medium" x-text="form.rollback ? 'Included' : 'Skipped'"></span></div>
                     <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground">Format</span><span class="font-medium" x-text="form.format === 'both' ? 'Both' : form.format.toUpperCase()"></span></div>
                 </div>
@@ -397,6 +627,10 @@ function quickCreatePackage({
         repoTags: [],
         repoReleases: [],
         isLoadingVersions: false,
+        baseVersionDropdownOpen: false,
+        headVersionDropdownOpen: false,
+        baseVersionSearch: '',
+        headVersionSearch: '',
 
         form: {
             environment: 'DEV',
@@ -466,6 +700,19 @@ function quickCreatePackage({
             return 'Repository access';
         },
 
+        repoDropdownIcon(provider) {
+            if (provider === 'github') {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github h-3.5 w-3.5"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>`;
+            }
+            if (provider === 'gitlab') {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gitlab h-3.5 w-3.5"><path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path></svg>`;
+            }
+            if (provider === 'company-server') {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-server h-3.5 w-3.5"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>`;
+            }
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hard-drive h-3.5 w-3.5"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
+        },
+
         get allRepoVersions() {
             const releases = this.repoReleases.map(r => ({
                 unique_key: `release:${r.id ?? r.tag_name ?? r.name}`,
@@ -492,6 +739,35 @@ function quickCreatePackage({
             }));
 
             return [...releases, ...tags, ...branches];
+        },
+
+        filteredVersionGroups(field) {
+            const search = String(field === 'head' ? this.headVersionSearch : this.baseVersionSearch)
+                .trim()
+                .toLowerCase();
+
+            return [
+                { value: 'Tags', label: 'Tags', type: 'tag' },
+                { value: 'Branches', label: 'Branches', type: 'branch' },
+                { value: 'Releases', label: 'Releases', type: 'release' },
+            ].map(group => ({
+                ...group,
+                items: this.allRepoVersions.filter(version => {
+                    if (version.type !== group.type) {
+                        return false;
+                    }
+
+                    if (!search) {
+                        return true;
+                    }
+
+                    return [
+                        version.name,
+                        version.ref,
+                        version.typeLabel,
+                    ].some(value => String(value || '').toLowerCase().includes(search));
+                }),
+            })).filter(group => group.items.length > 0);
         },
 
         get selectedBaseObj() {
@@ -597,6 +873,10 @@ function quickCreatePackage({
             this.repoBranches = [];
             this.repoTags = [];
             this.repoReleases = [];
+            this.baseVersionDropdownOpen = false;
+            this.headVersionDropdownOpen = false;
+            this.baseVersionSearch = '';
+            this.headVersionSearch = '';
             this.form.base = '';
             this.form.head = '';
             this.form.customName = '';
@@ -605,6 +885,37 @@ function quickCreatePackage({
 
         handleVersionChange() {
             this.checkDuplicate();
+        },
+
+        toggleVersionDropdown(field) {
+            const isBase = field === 'base';
+
+            this.baseVersionDropdownOpen = isBase ? !this.baseVersionDropdownOpen : false;
+            this.headVersionDropdownOpen = isBase ? false : !this.headVersionDropdownOpen;
+
+            if (isBase && this.baseVersionDropdownOpen) {
+                this.baseVersionSearch = '';
+            }
+
+            if (!isBase && this.headVersionDropdownOpen) {
+                this.headVersionSearch = '';
+            }
+
+            if (this.baseVersionDropdownOpen || this.headVersionDropdownOpen) {
+                this.$nextTick(() => {
+                    const ref = isBase ? this.$refs.baseVersionSearchInput : this.$refs.headVersionSearchInput;
+                    ref?.focus();
+                });
+            }
+        },
+
+        selectVersion(field, uniqueKey) {
+            this.form[field] = uniqueKey;
+            this.baseVersionDropdownOpen = false;
+            this.headVersionDropdownOpen = false;
+            this.baseVersionSearch = '';
+            this.headVersionSearch = '';
+            this.handleVersionChange();
         },
 
         updatePackageName() {
@@ -778,6 +1089,10 @@ function quickCreatePackage({
 
         resetForm() {
             this.phase = 'form';
+            this.baseVersionDropdownOpen = false;
+            this.headVersionDropdownOpen = false;
+            this.baseVersionSearch = '';
+            this.headVersionSearch = '';
             this.confirmedProd = false;
             this.packagingResult = null;
             this.packagingError = '';

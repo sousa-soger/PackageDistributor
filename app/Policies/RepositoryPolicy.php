@@ -33,7 +33,7 @@ class RepositoryPolicy
 
     public function createPackage(User $user, Repository $repository): bool
     {
-        if (! in_array($repository->provider, ['github', 'gitlab'], true)) {
+        if (! $this->isPackageableRepository($repository)) {
             return false;
         }
 
@@ -50,5 +50,16 @@ class RepositoryPolicy
     protected function ownsRepository(User $user, Repository $repository): bool
     {
         return $user->id === $repository->user_id;
+    }
+
+    protected function isPackageableRepository(Repository $repository): bool
+    {
+        if (in_array($repository->provider, ['github', 'gitlab'], true)) {
+            return true;
+        }
+
+        return $repository->provider === 'local-pc'
+            && in_array($repository->type, ['ssh-mirror', 'uploaded'], true)
+            && filled($repository->storage_path);
     }
 }
