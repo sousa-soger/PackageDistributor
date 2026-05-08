@@ -11,6 +11,8 @@ class Repository extends Model
 {
     public const PACKAGE_CREATOR_ROLES = ['maintainer', 'creator'];
 
+    public const PACKAGE_DEPLOYER_ROLES = ['maintainer', 'deployer'];
+
     protected $fillable = [
         'user_id',
         'project_id',

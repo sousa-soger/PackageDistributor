@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\DeploymentJob;
 use App\Models\Project;
 use App\Models\Repository;
+use App\Policies\DeploymentJobPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\RepositoryPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(DeploymentJob::class, DeploymentJobPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Repository::class, RepositoryPolicy::class);
     }

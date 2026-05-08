@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Repositories')
 @section('subtitle', 'GitHub, GitLab, company servers and local repositories.')
@@ -39,7 +39,7 @@
         <p class="text-sm font-semibold" style="color:hsl(var(--foreground))">No repositories yet</p>
         <p class="text-xs mt-1 max-w-sm mx-auto leading-relaxed" style="color:hsl(var(--muted-foreground))">
           Connect your first repository to start generating deployment packages.
-          Supports GitHub, GitLab, company servers, and local paths.
+          Supports GitHub, GitLab, company servers, SSH mirrors, and uploads.
         </p>
         <button @click="window.dispatchEvent(new CustomEvent('open-repo-modal'))"
           class="inline-flex items-center gap-1.5 mt-5 px-4 py-2 rounded-lg text-sm font-semibold transition-base hover:opacity-90"
@@ -515,12 +515,6 @@
                         </button>
                       </template>
 
-                      <template x-if="selectedRepository.provider === 'local-pc'">
-                        <button type="button" @click="startCredentialEdit(selectedRepository, 'path')"
-                          class="w-full inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium transition-colors hover:bg-accent">
-                          Change local path
-                        </button>
-                      </template>
                     </div>
 
                     <div x-show="selectedRepository.credentialMode === 'pat'"
@@ -565,24 +559,6 @@
                       </div>
                     </div>
 
-                    <div x-show="selectedRepository.credentialMode === 'path'"
-                      class="mt-4 rounded-lg border border-border/60 p-3 space-y-3">
-                      <label class="block text-xs font-medium">Local folder path</label>
-                      <input type="text" x-model="selectedRepository.credentialPath"
-                        class="h-9 w-full rounded-md border border-border bg-background px-3 text-xs outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-ring/20"
-                        placeholder="/Users/you/code/repository">
-                      <div class="flex gap-2">
-                        <button type="button" @click="saveRepositoryCredentials(selectedRepository)"
-                          :disabled="selectedRepository.credentialsSaving || !selectedRepository.credentialPath"
-                          class="inline-flex h-8 flex-1 items-center justify-center rounded-md brand-gradient-bg px-3 text-xs font-medium text-[hsl(var(--on-brand))] disabled:opacity-50">
-                          Save
-                        </button>
-                        <button type="button" @click="cancelCredentialEdit(selectedRepository)"
-                          class="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
                   {{-- Members and roles --}}
@@ -753,7 +729,6 @@
         authMethod: 'oauth',
         token: '',
         host: '',
-        localPath: '',
         repoUrl: '',
 
         get filteredRepositories() {
@@ -801,9 +776,9 @@
           {
             id: 'local-pc',
             name: 'Local PC',
-            description: 'Index a local repository folder via the Cybix agent.',
-            authMethod: 'path',
-            authLabel: 'Local agent + folder path',
+            description: 'Connect a local repository through SSH access or upload.',
+            authMethod: 'local',
+            authLabel: 'SSH or upload',
             icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`,
           },
         ],
@@ -820,7 +795,6 @@
 
         get canSubmitDetails() {
           if (this.loading) return false;
-          if (this.provider?.authMethod === 'path') return this.localPath.trim() !== '';
           if (this.provider?.authMethod === 'ssh') return this.host.trim() !== '' && this.repoUrl.trim() !== '';
           return this.repoUrl.trim() !== '';
         },
@@ -936,7 +910,7 @@
             return `<svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>`;
           }
 
-          return `<svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
+          return `<svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
         },
 
         listProviderIcon(provider) {
@@ -969,7 +943,6 @@
           this.repoUrl = '';
           this.token = '';
           this.host = '';
-          this.localPath = '';
           this.authMethod = 'oauth';
           this.error = '';
           this.loading = false;
@@ -1035,9 +1008,8 @@
         },
 
         buildPayload() {
-          const isLocal = this.provider?.id === 'local-pc';
           const isCompanyServer = this.provider?.id === 'company-server';
-          const repositoryValue = isLocal ? this.localPath.trim() : this.repoUrl.trim();
+          const repositoryValue = this.repoUrl.trim();
 
           return {
             access_token: this.authMethod === 'pat' ? this.token.trim() : null,
@@ -1049,13 +1021,12 @@
             server_host: isCompanyServer ? this.host.trim() : null,
             server_path: isCompanyServer ? repositoryValue : null,
             server_protocol: isCompanyServer ? 'SSH' : null,
-            url: isLocal ? this.localPath.trim() : this.repoUrl.trim(),
+            url: this.repoUrl.trim(),
           };
         },
         savePendingConnectionState() {
           sessionStorage.setItem(pendingConnectionKey, JSON.stringify({
             host: this.host,
-            localPath: this.localPath,
             providerId: this.provider?.id ?? null,
             repoUrl: this.repoUrl,
           }));
@@ -1097,7 +1068,6 @@
           this.provider = provider;
           this.authMethod = 'oauth';
           this.host = pendingState.host || '';
-          this.localPath = pendingState.localPath || '';
           this.repoUrl = pendingState.repoUrl || '';
           this.step = 'details';
           this.oauthConnections[provider.id] = true;
@@ -1309,10 +1279,6 @@
               server_path: repo.credentialPath,
               server_protocol: repo.credentialProtocol || 'SSH',
             };
-
-          if (repo.credentialMode === 'path') {
-            body.server_path = repo.credentialPath;
-          }
 
           try {
             const payload = await this.requestJson(`/repositories/${repo.id}/credentials`, {

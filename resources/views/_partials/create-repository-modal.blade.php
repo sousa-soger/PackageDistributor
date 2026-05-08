@@ -177,35 +177,44 @@ x-init="init()">
                 </div>
               </template>
 
-              <template x-if="provider.authMethod === 'path'">
-                <div class="rounded-lg border p-3 space-y-1" style="border-color:hsl(var(--border)/0.7);background:hsl(var(--secondary)/0.3)">
-                  <div class="text-sm font-medium flex items-center gap-2" style="color:hsl(var(--foreground))">
-                    <svg class="h-4 w-4" style="color:hsl(var(--primary))" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                    Local agent detected
-                  </div>
-                  <div class="text-xs" style="color:hsl(var(--muted-foreground))">
-                    The Cybix agent is running on this machine. Continue to point at a folder.
-                  </div>
-                </div>
-              </template>
             </div>
           </template>
 
           {{-- STEP: local options --}}
           <template x-if="step === 'local-options'">
             <div class="space-y-4">
-              <p class="text-sm" style="color:hsl(var(--muted-foreground))">Choose how Cybix should connect to this local repository.</p>
-              <div class="grid gap-3 md:grid-cols-3">
+              {{-- Provider pill --}}
+              <div class="flex items-center gap-3 rounded-xl brand-soft-bg p-3 border border-border/60">
+                <div class="h-10 w-10 rounded-lg bg-card flex items-center justify-center text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hard-drive h-5 w-5"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-semibold">Local PC</div>
+                  <div class="text-xs text-muted-foreground">SSH access or upload</div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <p class="text-sm mb-3" style="color:hsl(var(--muted-foreground))">Pick a source for your repository.</p>
+
                 <template x-for="option in localOptions" :key="option.id">
-                  <button @click="pickLocalOption(option.id)"
-                          class="text-left rounded-xl border p-4 transition-base hover:shadow-soft"
-                          style="background:hsl(var(--card));border-color:hsl(var(--border)/0.7)"
-                          onmouseenter="this.style.borderColor='hsl(var(--primary)/0.4)'"
-                          onmouseleave="this.style.borderColor='hsl(var(--border)/0.7)'">
-                    <div class="h-11 w-11 rounded-lg brand-soft-bg flex items-center justify-center mb-4"
-                         style="color:hsl(var(--primary))" x-html="option.icon"></div>
-                    <div class="text-sm font-semibold mb-1" style="color:hsl(var(--foreground))" x-text="option.title"></div>
-                    <div class="text-xs leading-5" style="color:hsl(var(--muted-foreground))" x-text="option.description"></div>
+                  <button type="button"
+                          @click="pickLocalOption(option.id)"
+                          :class="selectedLocalOption === option.id ? 'border-primary/60 brand-soft-bg shadow-soft' : ''"
+                          :style="selectedLocalOption === option.id ? 'border-color:hsl(var(--primary)/0.6)' : 'background:hsl(var(--card));border-color:hsl(var(--border)/0.7)'"
+                          @mouseenter="$el.style.borderColor='hsl(var(--primary)/0.4)'"
+                          @mouseleave="$el.style.borderColor = selectedLocalOption === option.id ? 'hsl(var(--primary)/0.6)' : 'hsl(var(--border)/0.7)'"
+                          class="w-full text-left flex items-center gap-3 rounded-xl border p-3 hover:shadow-soft transition-base group">
+                    <div
+                      class="h-10 w-10 rounded-lg brand-soft-bg flex items-center justify-center shrink-0 transition-base group-hover:-translate-y-0.5"
+                      style="color:hsl(var(--primary))"
+                      x-html="option.icon">
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm font-semibold" style="color:hsl(var(--foreground))" x-text="option.title"></div>
+                      <div class="text-xs truncate" style="color:hsl(var(--muted-foreground))" x-text="option.description"></div>
+                    </div>
+                    <div class="text-[10px] font-medium uppercase tracking-wider" style="color:hsl(var(--muted-foreground))" x-text="option.authMethod"></div>
                   </button>
                 </template>
               </div>
@@ -233,14 +242,6 @@ x-init="init()">
           {{-- STEP: SSH Access --}}
           <template x-if="step === 'local-ssh'">
             <div class="space-y-4">
-              <button @click="step = 'local-options'"
-                      class="inline-flex items-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-2"
-                      style="color:hsl(var(--foreground))"
-                      onmouseenter="this.style.background='hsl(var(--accent))'"
-                      onmouseleave="this.style.background='transparent'">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
-                Back
-              </button>
 
               <div class="space-y-2">
                 <div class="flex items-center justify-between gap-3">
@@ -252,33 +253,29 @@ x-init="init()">
                 </div>
                 <textarea readonly rows="4" x-model="sshPublicKey"
                           :placeholder="sshKeyLoading ? 'Loading public key...' : 'Server public key unavailable'"
-                          class="w-full rounded-md border text-xs font-mono shadow-sm"
+                          class="w-full rounded-md border text-xs font-mono shadow-sm focus:outline-none"
                           style="background:hsl(var(--secondary)/0.35);border-color:hsl(var(--input, var(--border)));padding:0.75rem;color:hsl(var(--foreground))"></textarea>
               </div>
 
               <div class="space-y-2">
                 <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Step 2 — Enter your machine's IP address</label>
-                <input type="text" x-model="sshIp" placeholder="e.g. 192.168.1.50" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                <input type="text" x-model="sshIp" placeholder="e.g. 192.168.1.50" class="flex h-9 w-full rounded-md border text-sm shadow-sm focus:outline-none"
                        style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
               </div>
 
               <div class="space-y-2">
                 <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Step 3 — Enter the full path to your repository</label>
-                <input type="text" x-model="sshPath" placeholder="e.g. /home/john/projects/myrepo or C:/Users/john/myrepo" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                <input type="text" x-model="sshPath" placeholder="e.g. /home/john/projects/myrepo or C:/Users/john/myrepo" class="flex h-9 w-full rounded-md border text-sm shadow-sm focus:outline-none"
                        style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
               </div>
 
               <div class="space-y-2">
                 <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository name</label>
-                <input type="text" x-model="sshName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                <input type="text" x-model="sshName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm focus:outline-none"
                        style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
               </div>
 
-              <button @click="connectSsh()" :disabled="sshLoading || !canSubmitSsh"
-                      class="brand-gradient-bg shadow-soft inline-flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium transition-base h-10 px-3 disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg x-show="sshLoading" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                <span x-text="sshLoading ? 'Testing connection...' : 'Test Connection & Connect'"></span>
-              </button>
+
 
               <div x-show="sshError" x-cloak class="rounded-lg border px-3 py-2 text-sm"
                    style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)" x-text="sshError"></div>
@@ -288,14 +285,6 @@ x-init="init()">
           {{-- STEP: Upload Repository --}}
           <template x-if="step === 'local-upload'">
             <div class="space-y-4">
-              <button @click="step = 'local-options'"
-                      class="inline-flex items-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-2"
-                      style="color:hsl(var(--foreground))"
-                      onmouseenter="this.style.background='hsl(var(--accent))'"
-                      onmouseleave="this.style.background='transparent'">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
-                Back
-              </button>
 
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="rounded-xl border p-4 cursor-pointer transition-base hover:shadow-soft" style="border-color:hsl(var(--border)/0.7)">
@@ -318,13 +307,11 @@ x-init="init()">
 
               <div class="space-y-2">
                 <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository name</label>
-                <input type="text" x-model="uploadName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm"
+                <input type="text" x-model="uploadName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm focus:outline-none"
                        style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
               </div>
 
-              <div class="space-y-2">
-                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Owner's Local Path</label>
-                <input type="text" x-model="uploadLocalPath" placeholder="e.g. H:\xampp\htdocs\test-1 or /home/john/projects/test-1" class="flex h-9 w-full ro              <div x-show="uploadFile" x-cloak class="space-y-2">
+              <div x-show="uploadFile" x-cloak class="space-y-2">
                 <div class="flex items-center justify-between text-xs" style="color:hsl(var(--muted-foreground))">
                   <span x-text="uploadFile?.name"></span>
                   <span x-text="`${uploadProgress}%`"></span>
@@ -334,9 +321,6 @@ x-init="init()">
                 </div>
               </div>
 
-              <button @click="uploadRepository()" :disabled="uploadLoading || !canSubmitUpload"
-                      class="brand-gradient-bg shadow-soft inline-flex w-full items-center justify-center rounded-md text-sm font-medium transition-base h-10 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                      x-text="uploadLoading ? 'Uploading...' : 'Connect Uploaded Repository'"></button>
 
               <div x-show="uploadError" x-cloak class="rounded-lg border px-3 py-2 text-sm"
                    style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)" x-text="uploadError"></div>
@@ -346,24 +330,13 @@ x-init="init()">
           {{-- STEP: details --}}
           <template x-if="step === 'details' && provider">
             <div class="space-y-4">
-              <template x-if="provider.authMethod === 'path'">
-                <div class="space-y-2">
-                  <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Local folder path</label>
-                  <input type="text" x-model="localPath" placeholder="/Users/you/code/my-app"
-                         class="flex h-9 w-full rounded-md border text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                         style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
-                </div>
-              </template>
-
-              <template x-if="provider.authMethod !== 'path'">
-                <div class="space-y-2">
-                  <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository URL</label>
-                  <input type="text" x-model="repoUrl"
-                         :placeholder="provider.id === 'github' ? 'https://github.com/org/repo' : provider.id === 'gitlab' ? 'https://gitlab.com/group/repo' : 'git@git.company.internal:group/repo.git'"
-                         class="flex h-9 w-full rounded-md border text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                         style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
-                </div>
-              </template>
+              <div class="space-y-2">
+                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository URL</label>
+                <input type="text" x-model="repoUrl"
+                       :placeholder="provider.id === 'github' ? 'https://github.com/org/repo' : provider.id === 'gitlab' ? 'https://gitlab.com/group/repo' : 'git@git.company.internal:group/repo.git'"
+                       class="flex h-9 w-full rounded-md border text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
+              </div>
             </div>
           </template>
 
@@ -419,6 +392,35 @@ x-init="init()">
                         onmouseleave="this.style.background='hsl(var(--background))'">
                     <span x-text="step === 'done' ? 'Close' : 'Cancel'"></span>
                 </button>
+
+                <template x-if="step === 'local-options'">
+                    <button @click="confirmLocalOption()"
+                            :disabled="!selectedLocalOption"
+                            class="brand-gradient-bg shadow-soft inline-flex items-center justify-center rounded-md text-sm font-medium transition-base h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onmouseenter="if(!this.disabled) this.classList.add('shadow-md')"
+                            onmouseleave="this.classList.remove('shadow-md')">
+                        Continue
+                    </button>
+                </template>
+
+                <template x-if="step === 'local-ssh'">
+                    <button @click="connectSsh()" :disabled="sshLoading || !canSubmitSsh"
+                            class="brand-gradient-bg shadow-soft inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-base h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onmouseenter="if(!this.disabled) this.classList.add('shadow-md')"
+                            onmouseleave="this.classList.remove('shadow-md')">
+                        <svg x-show="sshLoading" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span x-text="sshLoading ? 'Testing connection...' : 'Test & Connect'"></span>
+                    </button>
+                </template>
+
+                <template x-if="step === 'local-upload'">
+                    <button @click="uploadRepository()" :disabled="uploadLoading || !canSubmitUpload"
+                            class="brand-gradient-bg shadow-soft inline-flex items-center justify-center rounded-md text-sm font-medium transition-base h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onmouseenter="if(!this.disabled) this.classList.add('shadow-md')"
+                            onmouseleave="this.classList.remove('shadow-md')">
+                        <span x-text="uploadLoading ? 'Uploading...' : 'Connect Repo'"></span>
+                    </button>
+                </template>
 
                 <template x-if="step === 'auth'">
                     <button @click="step = 'details'"
@@ -477,7 +479,6 @@ function connectRepoModal(config = {}) {
     authMethod: 'oauth',
     token: '',
     host: '',
-    localPath: '',
     repoUrl: '',
     sshPublicKey: '',
     sshKeyLoading: false,
@@ -494,6 +495,7 @@ function connectRepoModal(config = {}) {
     uploadProgress: 0,
     zipLoading: false,
     zipProgress: '',
+    selectedLocalOption: null,
 
     providers: [
       {
@@ -523,9 +525,9 @@ function connectRepoModal(config = {}) {
       {
         id: 'local-pc',
         name: 'Local PC',
-        description: 'Index a local repository folder via the Cybix agent.',
-        authMethod: 'path',
-        authLabel: 'Local agent + folder path',
+        description: 'Connect a local repository through SSH access or upload.',
+        authMethod: 'local',
+        authLabel: 'SSH or upload',
         icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`,
       },
     ],
@@ -535,19 +537,22 @@ function connectRepoModal(config = {}) {
         id: 'agent',
         title: 'Cybix Agent',
         description: 'Install our lightweight background app for automatic syncing',
-        icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8V4m-4 8H4m16 0h-4m-8 4v4m8-9a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6"/></svg>`,
+        authMethod: 'agent',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-workflow h-5 w-5"><rect width="8" height="8" x="3" y="3" rx="2"></rect><path d="M7 11v4a2 2 0 0 0 2 2h4"></path><rect width="8" height="8" x="13" y="13" rx="2"></rect></svg>`,
       },
       {
         id: 'ssh',
         title: 'SSH Access',
         description: 'Give the server SSH access to pull directly from your machine',
-        icon: `<svg class="h-5 w-5" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor"><g transform="scale(0.3287671233)"><g id="databases-and-servers/servers/ssh" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="terminal" transform="translate(11.000000, 17.000000)" fill="currentColor" fill-rule="nonzero"><path d="M49.2407485,0.0215730994 L1.65983626,0.0215730994 C0.743128655,0.0215730994 0,0.76480117 0,1.68140936 L0,9.94480117 L50.9005848,9.94480117 L50.9005848,1.68140936 C50.9005848,0.76480117 50.1574561,0.0215730994 49.2407485,0.0215730994 Z M32.0399298,7.19626901 C30.8196082,7.19626901 29.826848,6.20350877 29.826848,4.98318713 C29.826848,3.7628655 30.8196082,2.77010526 32.0399298,2.77010526 C33.2602515,2.77010526 34.2530117,3.7628655 34.2530117,4.98318713 C34.2530117,6.20350877 33.2602515,7.19626901 32.0399298,7.19626901 Z M38.0686667,7.19626901 C36.848345,7.19626901 35.8555848,6.20350877 35.8555848,4.98318713 C35.8555848,3.7628655 36.848345,2.77010526 38.0686667,2.77010526 C39.2889883,2.77010526 40.2817485,3.7628655 40.2817485,4.98318713 C40.2817485,6.20350877 39.2889883,7.19626901 38.0686667,7.19626901 Z M44.0974035,7.19626901 C42.8770819,7.19626901 41.8843216,6.20350877 41.8843216,4.98318713 C41.8843216,3.7628655 42.8770819,2.77010526 44.0974035,2.77010526 C45.3177251,2.77010526 46.3104854,3.7628655 46.3104854,4.98318713 C46.3104854,6.20350877 45.3177251,7.19626901 44.0974035,7.19626901 Z"></path><path d="M0,13.2643743 L0,37.0905205 C0,38.0071287 0.743128655,38.7503567 1.65983626,38.7503567 L49.240848,38.7503567 C50.1574561,38.7503567 50.9006842,38.0072281 50.9006842,37.0905205 L50.9006842,13.2643743 L0,13.2643743 Z M23.4073099,27.2714795 L17.9739708,31.8946842 C17.2758772,32.4887895 16.2283392,32.404386 15.6342339,31.706193 C15.0401287,31.0080994 15.1245322,29.9605614 15.8227251,29.3664561 L19.7704035,26.0073158 L15.8227251,22.6481754 C15.1245322,22.0540702 15.0402281,21.0066316 15.6342339,20.3084386 C16.2282398,19.6101462 17.2758772,19.5259415 17.9739708,20.1199474 L23.4073099,24.743152 C24.185731,25.4055556 24.185731,26.6091754 23.4073099,27.2714795 Z M34.0021871,32.2903567 L27.4453567,32.2903567 C26.5287485,32.2903567 25.7855205,31.5472281 25.7855205,30.6305205 C25.7855205,29.7138129 26.5286491,28.9706842 27.4453567,28.9706842 L34.0021871,28.9706842 C34.9187953,28.9706842 35.6620234,29.7138129 35.6620234,30.6305205 C35.6620234,31.5472281 34.9187953,32.2903567 34.0021871,32.2903567 Z"></path></g></g></g></svg>`,
+        authMethod: 'ssh',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-square h-5 w-5"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"></path><path d="m14 7 3 3"></path><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"></path></svg>`,
       },
       {
         id: 'upload',
         title: 'Upload Repository',
-        description: 'Upload a ZIP archive or Git bundle of your local repository',
-        icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>`,
+        description: 'Upload a ZIP archive or project file into the website.',
+        authMethod: 'upload',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>`,
       },
     ],
 
@@ -558,7 +563,7 @@ function connectRepoModal(config = {}) {
     },
 
     get showFooterBack() {
-      return ['auth', 'details', 'local-options'].includes(this.step);
+      return ['auth', 'details', 'local-options', 'local-ssh', 'local-upload'].includes(this.step);
     },
 
     get canSubmitAuth() {
@@ -571,7 +576,6 @@ function connectRepoModal(config = {}) {
 
     get canSubmitDetails() {
       if (this.loading) return false;
-      if (this.provider?.authMethod === 'path') return this.localPath.trim() !== '';
       if (this.provider?.authMethod === 'ssh') return this.host.trim() !== '' && this.repoUrl.trim() !== '';
       return this.repoUrl.trim() !== '';
     },
@@ -612,7 +616,6 @@ function connectRepoModal(config = {}) {
       this.repoUrl = '';
       this.token = '';
       this.host = '';
-      this.localPath = '';
       this.authMethod = 'oauth';
       this.error = '';
       this.loading = false;
@@ -631,6 +634,7 @@ function connectRepoModal(config = {}) {
       this.uploadProgress = 0;
       this.zipLoading = false;
       this.zipProgress = '';
+      this.selectedLocalOption = null;
     },
     pickProvider(provider) {
       this.provider = provider;
@@ -645,10 +649,27 @@ function connectRepoModal(config = {}) {
         return;
       }
 
+      if (['local-ssh', 'local-upload'].includes(this.step)) {
+        this.step = 'local-options';
+        return;
+      }
+
+      if (this.step === 'local-options') {
+        this.step = 'provider';
+        return;
+      }
+
       this.step = 'provider';
     },
     pickLocalOption(option) {
+      this.selectedLocalOption = option;
+    },
+    confirmLocalOption() {
+      const option = this.selectedLocalOption;
+      if (!option) return;
+
       this.error = '';
+
       if (option === 'agent') {
         this.step = 'local-agent';
         return;
@@ -778,7 +799,40 @@ function connectRepoModal(config = {}) {
 
       const formData = new FormData();
       formData.append('file', this.uploadFile);
-nd(formData);
+      formData.append('name', this.uploadName.trim());
+
+      const request = new XMLHttpRequest();
+      request.open('POST', '{{ route('repositories.upload') }}');
+      request.setRequestHeader('Accept', 'application/json');
+      request.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+
+      request.upload.addEventListener('progress', (event) => {
+        if (!event.lengthComputable) return;
+        this.uploadProgress = Math.round((event.loaded / event.total) * 100);
+      });
+
+      request.onload = () => {
+        const payload = this.safeParseJson(request.responseText);
+
+        if (request.status >= 200 && request.status < 300) {
+          const warning = payload?.warning;
+          sessionStorage.setItem('flash_toast_msg', warning || 'Repository connected successfully.');
+          sessionStorage.setItem('flash_toast_type', warning ? 'warning' : 'success');
+          this.closeModal(false);
+          window.location.reload();
+          return;
+        }
+
+        this.uploadError = this.extractErrorMessage(payload, 'Repository upload failed.');
+        this.uploadLoading = false;
+      };
+
+      request.onerror = () => {
+        this.uploadError = 'Repository upload failed. Check your connection and try again.';
+        this.uploadLoading = false;
+      };
+
+      request.send(formData);
     },
     async handleVerify() {
       if (!this.canSubmitDetails) return;
@@ -832,9 +886,8 @@ nd(formData);
     },
 
     buildPayload() {
-      const isLocal = this.provider?.id === 'local-pc';
       const isCompanyServer = this.provider?.id === 'company-server';
-      const repositoryValue = isLocal ? this.localPath.trim() : this.repoUrl.trim();
+      const repositoryValue = this.repoUrl.trim();
 
       return {
         access_token: this.authMethod === 'pat' ? this.token.trim() : null,
@@ -846,13 +899,12 @@ nd(formData);
         server_host: isCompanyServer ? this.host.trim() : null,
         server_path: isCompanyServer ? repositoryValue : null,
         server_protocol: isCompanyServer ? 'SSH' : null,
-        url: isLocal ? this.localPath.trim() : this.repoUrl.trim(),
+        url: this.repoUrl.trim(),
       };
     },
     savePendingConnectionState() {
       sessionStorage.setItem(pendingConnectionKey, JSON.stringify({
         host: this.host,
-        localPath: this.localPath,
         providerId: this.provider?.id ?? null,
         repoUrl: this.repoUrl,
       }));
@@ -888,7 +940,6 @@ nd(formData);
       this.provider = provider;
       this.authMethod = 'oauth';
       this.host = pendingState.host || '';
-      this.localPath = pendingState.localPath || '';
       this.repoUrl = pendingState.repoUrl || '';
       this.step = 'details';
       this.oauthConnections[provider.id] = true;

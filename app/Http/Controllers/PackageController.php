@@ -81,13 +81,59 @@ class PackageController extends Controller
         return view('packages.done', compact('packages'));
     }
 
-    public function packages(Request $request)
+    public function packages(Request $request): View
     {
-        $packages = DeploymentJob::where('user_id', auth()->id())
+        $user = $request->user();
+
+        $visibleRepositoryIds = Repository::query()
+            ->where(fn ($query) => $query
+                ->where('user_id', $user->id)
+                ->orWhereHas('members', fn ($query) => $query->whereKey($user->id)))
+            ->pluck('id');
+
+        $packages = DeploymentJob::query()
+            ->with([
+                'creator',
+                'repository.user',
+                'repository.members' => fn ($query) => $query->orderBy('name'),
+            ])
+            ->where(function ($query) use ($user, $visibleRepositoryIds) {
+                $query->where('user_id', $user->id);
+
+                if ($visibleRepositoryIds->isNotEmpty()) {
+                    $query->orWhereIn('repository_id', $visibleRepositoryIds);
+                }
+            })
             ->orderByDesc('created_at')
             ->get();
 
-        return view('packages', compact('packages'));
+        $packageGroups = $this->packageRepositoryGroups($packages);
+        $repositoryFilters = $packageGroups
+            ->map(fn (array $group) => [
+                'key' => $group['key'],
+                'name' => $group['name'],
+            ])
+            ->values();
+        $creatorFilters = $packages
+            ->pluck('creator')
+            ->filter()
+            ->unique('id')
+            ->sortBy(fn (User $creator) => $creator->name ?: $creator->email)
+            ->map(fn (User $creator) => $this->personPayload($creator))
+            ->values();
+        $repositoryClientIndex = $this->repositoryClientIndex($packageGroups);
+        $packageClientIndex = $this->packageClientIndex($packageGroups);
+        $packagePermissions = $this->packagePermissions($packages, $user);
+
+        return view('packages', compact(
+            'creatorFilters',
+            'packageClientIndex',
+            'packageGroups',
+            'packagePermissions',
+            'packages',
+            'repositoryClientIndex',
+            'repositoryFilters'
+        ));
     }
 
     public function queuedPackages()
@@ -158,5 +204,150 @@ class PackageController extends Controller
             'local-pc' => 'Local Repository',
             default => ucfirst(str_replace('-', ' ', $provider)),
         };
+    }
+
+    private function packageRepositoryGroups(Collection $packages): Collection
+    {
+        return $packages
+            ->groupBy(fn (DeploymentJob $package): string => $this->packageRepositoryGroupKey($package))
+            ->map(function (Collection $packages, string $key): array {
+                /** @var DeploymentJob $firstPackage */
+                $firstPackage = $packages->first();
+                $repository = $firstPackage->repository;
+                $owner = $repository?->user;
+                $ownerName = $owner?->name ?: $owner?->email;
+                $fallbackOwner = $firstPackage->creator?->name ?: $firstPackage->creator?->email;
+                $repositoryName = $repository?->label ?: ($firstPackage->repo ?: $firstPackage->project_name);
+
+                $contributors = collect();
+
+                if ($owner) {
+                    $contributors->push($this->personPayload($owner, 'Owner'));
+                }
+
+                if ($repository) {
+                    $repository->members
+                        ->each(fn (User $member) => $contributors->push(
+                            $this->personPayload($member, $this->roleLabel($member->pivot->role ?? null))
+                        ));
+                }
+
+                $packages
+                    ->pluck('creator')
+                    ->filter()
+                    ->each(fn (User $creator) => $contributors->push($this->personPayload($creator, 'Package Creator')));
+
+                $contributors = $contributors
+                    ->unique('id')
+                    ->values();
+
+                return [
+                    'key' => $key,
+                    'name' => $repositoryName ?: 'Unassigned repository',
+                    'ownerName' => $ownerName ?: ($fallbackOwner ?: 'Unknown owner'),
+                    'ownerInitials' => $this->initials($ownerName ?: $fallbackOwner),
+                    'contributors' => $contributors,
+                    'contributorCount' => $contributors->count(),
+                    'packages' => $packages->values(),
+                ];
+            })
+            ->values();
+    }
+
+    private function packageRepositoryGroupKey(DeploymentJob $package): string
+    {
+        if ($package->repository_id) {
+            return "repository-{$package->repository_id}";
+        }
+
+        return 'legacy-'.md5((string) ($package->repo ?: $package->project_name ?: $package->id));
+    }
+
+    private function repositoryClientIndex(Collection $packageGroups): array
+    {
+        return $packageGroups
+            ->mapWithKeys(fn (array $group) => [
+                $group['key'] => [
+                    'packageIds' => $group['packages']->pluck('id')->values()->all(),
+                ],
+            ])
+            ->all();
+    }
+
+    private function packageClientIndex(Collection $packageGroups): array
+    {
+        return $packageGroups
+            ->flatMap(fn (array $group) => $group['packages']->mapWithKeys(function (DeploymentJob $package) use ($group) {
+                $creatorName = $package->creator?->name ?: $package->creator?->email;
+
+                return [
+                    $package->id => [
+                        'repositoryKey' => $group['key'],
+                        'creatorId' => $package->user_id ? (string) $package->user_id : '',
+                        'search' => strtolower(implode(' ', array_filter([
+                            $package->package_name,
+                            $package->repo,
+                            $package->project_name,
+                            $package->environment,
+                            $package->base_version,
+                            $package->head_version,
+                            $group['name'],
+                            $group['ownerName'],
+                            $creatorName,
+                        ]))),
+                    ],
+                ];
+            }))
+            ->all();
+    }
+
+    private function packagePermissions(Collection $packages, User $viewer): array
+    {
+        return $packages
+            ->mapWithKeys(fn (DeploymentJob $package) => [
+                $package->id => [
+                    'canDelete' => $viewer->can('delete', $package),
+                    'canDeploy' => $viewer->can('deploy', $package),
+                ],
+            ])
+            ->all();
+    }
+
+    private function personPayload(User $user, ?string $role = null): array
+    {
+        $name = $user->name ?: $user->email ?: 'Unknown user';
+
+        return [
+            'avatar' => $user->avatar_url,
+            'id' => $user->id,
+            'initials' => $this->initials($name),
+            'name' => $name,
+            'role' => $role,
+        ];
+    }
+
+    private function roleLabel(?string $role): string
+    {
+        return match ($role) {
+            'maintainer' => 'Maintainer',
+            'creator' => 'Package Creator',
+            'deployer' => 'Deployer',
+            'viewer' => 'Viewer',
+            default => 'Contributor',
+        };
+    }
+
+    private function initials(?string $value): string
+    {
+        $parts = preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if ($parts === []) {
+            return '?';
+        }
+
+        return collect($parts)
+            ->map(fn (string $part) => strtoupper(substr($part, 0, 1)))
+            ->take(2)
+            ->implode('');
     }
 }

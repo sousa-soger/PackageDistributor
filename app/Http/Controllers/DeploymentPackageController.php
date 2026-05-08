@@ -443,7 +443,17 @@ class DeploymentPackageController extends Controller
             return response()->json(['message' => 'No packages selected.'], 400);
         }
 
-        $jobs = DeploymentJob::whereIn('id', $ids)->get();
+        $jobs = DeploymentJob::with('repository.members')
+            ->whereIn('id', $ids)
+            ->get();
+
+        if ($jobs->isEmpty()) {
+            return response()->json(['message' => 'No matching packages found.'], 404);
+        }
+
+        foreach ($jobs as $job) {
+            $this->authorize('delete', $job);
+        }
 
         foreach ($jobs as $job) {
             $folder = $job->package_name;

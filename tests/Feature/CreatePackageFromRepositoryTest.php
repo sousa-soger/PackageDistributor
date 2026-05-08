@@ -181,6 +181,38 @@ test('invited package creator can queue a package for a connected repository', f
     Queue::assertPushed(GenerateDeploymentPackageJob::class);
 });
 
+test('repository maintainer can queue and deploy packages for a connected repository', function () {
+    Queue::fake();
+
+    $owner = User::factory()->create();
+    $maintainer = User::factory()->create();
+    $repository = packageRepositoryFor($owner, [
+        'display_name' => 'Maintained Repo',
+        'name' => 'acme/maintained-repo',
+    ]);
+
+    $repository->members()->attach($maintainer->id, ['role' => 'maintainer', 'source' => 'ldap']);
+
+    $this->actingAs($maintainer)
+        ->postJson(route('deployments.queue-job'), [
+            'base_version' => 'v1.0.0',
+            'environment' => 'DEV',
+            'head_version' => 'v1.1.0',
+            'repository_id' => $repository->id,
+        ])
+        ->assertOk()
+        ->assertJsonPath('status', 'queued');
+
+    $job = DeploymentJob::firstOrFail();
+
+    expect($maintainer->can('deployPackage', $repository))->toBeTrue()
+        ->and($maintainer->can('deploy', $job))->toBeTrue()
+        ->and($job->user_id)->toBe($maintainer->id)
+        ->and($job->repository_id)->toBe($repository->id);
+
+    Queue::assertPushed(GenerateDeploymentPackageJob::class);
+});
+
 test('repository viewer cannot queue a package', function () {
     Queue::fake();
 
@@ -200,6 +232,127 @@ test('repository viewer cannot queue a package', function () {
         ->assertForbidden();
 
     expect(DeploymentJob::count())->toBe(0);
+});
+
+test('repository owner can delete packages created by repository members', function () {
+    $owner = User::factory()->create();
+    $creator = User::factory()->create();
+    $repository = packageRepositoryFor($owner);
+    $repository->members()->attach($creator->id, ['role' => 'creator', 'source' => 'ldap']);
+    $job = DeploymentJob::create([
+        'base_version' => 'v1.0.0',
+        'environment' => 'DEV',
+        'head_version' => 'v1.1.0',
+        'package_name' => 'DEV-owner-can-delete',
+        'project_name' => 'Package Source',
+        'repo' => $repository->name,
+        'repository_id' => $repository->id,
+        'status' => 'completed',
+        'user_id' => $creator->id,
+        'vcs_provider' => 'github',
+    ]);
+
+    $this->actingAs($owner)
+        ->deleteJson(route('deployments.bulk-delete'), ['ids' => [$job->id]])
+        ->assertOk();
+
+    $this->assertDatabaseMissing('deployment_jobs', ['id' => $job->id]);
+});
+
+test('repository maintainer can delete packages created by anyone in the repository', function () {
+    $owner = User::factory()->create();
+    $maintainer = User::factory()->create();
+    $creator = User::factory()->create();
+    $repository = packageRepositoryFor($owner);
+    $repository->members()->attach($maintainer->id, ['role' => 'maintainer', 'source' => 'ldap']);
+    $repository->members()->attach($creator->id, ['role' => 'creator', 'source' => 'ldap']);
+    $job = DeploymentJob::create([
+        'base_version' => 'v1.0.0',
+        'environment' => 'DEV',
+        'head_version' => 'v1.1.0',
+        'package_name' => 'DEV-maintainer-can-delete',
+        'project_name' => 'Package Source',
+        'repo' => $repository->name,
+        'repository_id' => $repository->id,
+        'status' => 'completed',
+        'user_id' => $creator->id,
+        'vcs_provider' => 'github',
+    ]);
+
+    $this->actingAs($maintainer)
+        ->deleteJson(route('deployments.bulk-delete'), ['ids' => [$job->id]])
+        ->assertOk();
+
+    $this->assertDatabaseMissing('deployment_jobs', ['id' => $job->id]);
+});
+
+test('package creator can delete only packages they created', function () {
+    $owner = User::factory()->create();
+    $creator = User::factory()->create();
+    $otherCreator = User::factory()->create();
+    $repository = packageRepositoryFor($owner);
+    $repository->members()->attach($creator->id, ['role' => 'creator', 'source' => 'ldap']);
+    $repository->members()->attach($otherCreator->id, ['role' => 'creator', 'source' => 'ldap']);
+    $ownJob = DeploymentJob::create([
+        'base_version' => 'v1.0.0',
+        'environment' => 'DEV',
+        'head_version' => 'v1.1.0',
+        'package_name' => 'DEV-creator-own',
+        'project_name' => 'Package Source',
+        'repo' => $repository->name,
+        'repository_id' => $repository->id,
+        'status' => 'completed',
+        'user_id' => $creator->id,
+        'vcs_provider' => 'github',
+    ]);
+    $otherJob = DeploymentJob::create([
+        'base_version' => 'v1.0.0',
+        'environment' => 'DEV',
+        'head_version' => 'v1.1.0',
+        'package_name' => 'DEV-creator-other',
+        'project_name' => 'Package Source',
+        'repo' => $repository->name,
+        'repository_id' => $repository->id,
+        'status' => 'completed',
+        'user_id' => $otherCreator->id,
+        'vcs_provider' => 'github',
+    ]);
+
+    $this->actingAs($creator)
+        ->deleteJson(route('deployments.bulk-delete'), ['ids' => [$otherJob->id]])
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('deployment_jobs', ['id' => $otherJob->id]);
+
+    $this->actingAs($creator)
+        ->deleteJson(route('deployments.bulk-delete'), ['ids' => [$ownJob->id]])
+        ->assertOk();
+
+    $this->assertDatabaseMissing('deployment_jobs', ['id' => $ownJob->id]);
+});
+
+test('packages page renders row zip download action', function () {
+    $owner = User::factory()->create();
+    $repository = packageRepositoryFor($owner);
+    $job = DeploymentJob::create([
+        'base_version' => 'v1.0.0',
+        'environment' => 'DEV',
+        'head_version' => 'v1.1.0',
+        'package_name' => 'DEV-row-zip-action',
+        'project_name' => 'Package Source',
+        'repo' => $repository->name,
+        'repository_id' => $repository->id,
+        'status' => 'completed',
+        'user_id' => $owner->id,
+        'vcs_provider' => 'github',
+        'zip_size' => '1.2 MB',
+    ]);
+
+    $this->actingAs($owner)
+        ->get(route('packages.index'))
+        ->assertOk()
+        ->assertSee('Download ZIP')
+        ->assertSee(route('download.archive', ['folder' => $job->package_name, 'format' => '.zip']));
 });
 
 test('queued repository package job uses repository owner pat', function () {

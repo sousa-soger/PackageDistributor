@@ -47,6 +47,18 @@ class RepositoryPolicy
             ->exists();
     }
 
+    public function deployPackage(User $user, Repository $repository): bool
+    {
+        if ($this->ownsRepository($user, $repository)) {
+            return true;
+        }
+
+        return $repository->members()
+            ->whereKey($user->id)
+            ->whereIn('repository_user.role', Repository::PACKAGE_DEPLOYER_ROLES)
+            ->exists();
+    }
+
     protected function ownsRepository(User $user, Repository $repository): bool
     {
         return $user->id === $repository->user_id;

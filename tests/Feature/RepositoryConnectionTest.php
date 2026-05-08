@@ -156,6 +156,22 @@ test('local ssh connection validates required fields', function () {
         ->assertJsonValidationErrors(['ip', 'name', 'path']);
 });
 
+test('local repositories cannot be connected through the legacy path store flow', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson(route('repositories.store'), [
+            'name' => 'H:\xampp\htdocs\test-1',
+            'provider' => 'local-pc',
+            'url' => 'H:\xampp\htdocs\test-1',
+        ]);
+
+    $response
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['provider']);
+});
+
 test('local upload rejects files that are not zip archives or git bundles', function () {
     $user = User::factory()->create();
 

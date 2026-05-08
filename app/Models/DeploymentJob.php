@@ -46,6 +46,11 @@ class DeploymentJob extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);

@@ -55,7 +55,7 @@ class RepositoryController extends Controller
             'auth_method' => ['nullable', Rule::in(['oauth', 'pat'])],
             'display_name' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:500'],
-            'provider' => ['required', Rule::in(['github', 'gitlab', 'company-server', 'local-pc'])],
+            'provider' => ['required', Rule::in(['github', 'gitlab', 'company-server'])],
             'server_host' => ['nullable', 'string', 'max:255'],
             'server_path' => ['nullable', 'string', 'max:500'],
             'server_protocol' => ['nullable', Rule::in(['SSH', 'SFTP', 'HTTP', 'HTTPS'])],
@@ -158,7 +158,7 @@ class RepositoryController extends Controller
                 : null;
         }
 
-        if (in_array($validated['provider'], ['company-server', 'local-pc'], true)) {
+        if ($validated['provider'] === 'company-server') {
             $metadata['access_token'] = $validated['access_token'] ?? null;
             $metadata['status'] = 'connected';
         }
@@ -1051,16 +1051,9 @@ class RepositoryController extends Controller
                 'status' => 'connected',
             ]);
         } elseif ($repository->provider === 'local-pc') {
-            $validated = $request->validate([
-                'server_path' => ['required', 'string', 'max:500'],
-            ]);
-
-            $repository->update([
-                'name' => $validated['server_path'],
-                'server_path' => $validated['server_path'],
-                'url' => $validated['server_path'],
-                'status' => 'connected',
-            ]);
+            return response()->json([
+                'message' => 'Local PC repositories are managed through SSH access or uploaded archives. Reconnect the repository to change its source.',
+            ], 422);
         }
 
         return response()->json([
