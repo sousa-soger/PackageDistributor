@@ -193,18 +193,6 @@ class DeploymentPackageService
         $progressCallback(['packagingMessage' => 'Creating TAR.GZ archive...'], 'Creating TAR.GZ archive...');
         $tarGzPath = $this->buildTarGz($packageRoot);
 
-        // ── Mark done ────────────────────────────────────────────────────
-        $progressCallback([
-            'fileDownloadProgress' => 100,
-            'headFileExtraction' => 100,
-            'baseFileExtraction' => 100,
-            'compareFilesProgress' => 100,
-            'packageGenProgress' => 100,
-            'compressionProgress' => 100,
-            'packagingProgress' => 100,
-            'packagingMessage' => 'Done.',
-        ], 'Done.');
-
         $zipSha256 = ($zipPath && file_exists($zipPath)) ? hash_file('sha256', $zipPath) : null;
         $targzSha256 = ($tarGzPath && file_exists($tarGzPath)) ? hash_file('sha256', $tarGzPath) : null;
 
@@ -223,6 +211,17 @@ class DeploymentPackageService
             }
         } catch (\Throwable $e) {
         }
+
+        $progressCallback([
+            'fileDownloadProgress' => 100,
+            'headFileExtraction' => 100,
+            'baseFileExtraction' => 100,
+            'compareFilesProgress' => 100,
+            'packageGenProgress' => 100,
+            'compressionProgress' => 100,
+            'packagingProgress' => 100,
+            'packagingMessage' => 'Done.',
+        ], 'Done.');
 
         return [
             'status' => 'success',

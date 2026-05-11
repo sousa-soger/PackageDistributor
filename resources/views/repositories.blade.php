@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Repositories')
 @section('subtitle', 'GitHub, GitLab, company servers and local repositories.')
@@ -170,15 +170,15 @@
                   Package
                 </a>
 
-                <button type="button" x-show="repo.canManageRepository" @click.stop="syncRepo(repo)" :disabled="syncing === repo.id"
+                <button type="button" x-show="repo.canManageRepository" @click.stop="handleRepositoryRefresh(repo)" :disabled="syncing === repo.id"
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base"
-                  style="background:hsl(var(--secondary));color:hsl(var(--foreground))" title="Sync branches and tags">
+                  style="background:hsl(var(--secondary));color:hsl(var(--foreground))" :title="repositoryRefreshTitle(repo)">
                   <svg class="h-3.5 w-3.5" :class="syncing === repo.id ? 'animate-spin' : ''" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span x-text="syncing === repo.id ? 'Syncing...' : 'Sync'"></span>
+                  <span x-text="syncing === repo.id ? repositoryRefreshLoadingLabel(repo) : repositoryRefreshLabel(repo)"></span>
                 </button>
 
                 <button type="button" x-show="repo.canManageRepository" @click.stop="removeRepo(repo)"
@@ -221,19 +221,19 @@
 
       {{-- ── List view ─────────────────────────────────────────────────────────── --}}
       <div x-show="viewMode === 'list'" class="section-card p-0 overflow-hidden">
-        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_auto_auto_auto_auto] gap-3 px-5 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 border-b border-border/60 font-semibold">
+        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_7rem_4rem_4rem_6rem] gap-3 px-5 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 border-b border-border/60 font-semibold">
           <div>Repository</div>
           <div class="hidden md:block">Owner</div>
           <div class="hidden md:block">Provider</div>
           <div class="hidden md:block text-right">Branches</div>
           <div class="hidden md:block text-right">Members</div>
-          <div class="text-right">Status</div>
+          <div class="text-center">Status</div>
         </div>
         <ul class="divide-y divide-border/60">
           <template x-for="repo in filteredRepositories" :key="'list-' + repo.id">
             <li>
               <button @click="setSelected(repo.id)"
-                class="w-full grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_auto_auto_auto_auto] gap-3 items-center px-5 py-3 hover:bg-secondary/40 transition-base text-left"
+                class="w-full grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_7rem_4rem_4rem_6rem] gap-3 items-center px-5 py-3 hover:bg-secondary/40 transition-base text-left"
                 :class="selectedId === repo.id ? 'bg-primary/5' : ''">
 
                 {{-- Repository name + url --}}
@@ -276,10 +276,9 @@
                 <div class="hidden md:block text-xs text-muted-foreground" x-text="repo.providerLabel"></div>
 
                 {{-- Branches --}}
-                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-right" x-text="repo.branchCount"></div>
-
+                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-center" x-text="repo.branchCount"></div>
                 {{-- Members --}}
-                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-right" x-text="repo.memberCount"></div>
+                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-center" x-text="repo.memberCount"></div>
 
                 {{-- Status badge --}}
                 <div class="text-right">
@@ -399,10 +398,10 @@
                         </svg>
                         Create package
                       </a>
-                      <button type="button" x-show="selectedRepository.canManageRepository" @click="syncRepo(selectedRepository)"
+                      <button type="button" x-show="selectedRepository.canManageRepository" @click="handleRepositoryRefresh(selectedRepository)"
                         :disabled="syncing === selectedRepository.id"
                         class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
-                        title="Sync repository">
+                        :title="repositoryRefreshTitle(selectedRepository)">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
                           :class="syncing === selectedRepository.id ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none"
                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -483,7 +482,7 @@
                     </div>
 
                     <div class="mt-4 space-y-2" x-show="selectedRepository.canManageRepository">
-                      <button type="button" @click="syncRepo(selectedRepository)"
+                      <button type="button" @click="handleRepositoryRefresh(selectedRepository)"
                         :disabled="syncing === selectedRepository.id"
                         class="w-full inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50">
                         <svg class="h-3.5 w-3.5" :class="syncing === selectedRepository.id ? 'animate-spin' : ''"
@@ -491,7 +490,7 @@
                           <path stroke-linecap="round" stroke-linejoin="round"
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span x-text="syncing === selectedRepository.id ? 'Syncing...' : 'Sync now'"></span>
+                        <span x-text="syncing === selectedRepository.id ? repositoryRefreshLoadingLabel(selectedRepository) : repositoryRefreshLabel(selectedRepository)"></span>
                       </button>
 
                       <template
@@ -697,6 +696,110 @@
       </div>
     </template>
 
+    <div x-show="uploadVersionModal" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style="background:hsl(220 30% 5% / 0.55);backdrop-filter:blur(4px)"
+         @click.self="closeUploadVersionModal()">
+      <div class="w-full max-w-lg animate-slide-up overflow-hidden"
+           style="background:hsl(var(--card));border-radius:calc(var(--radius) * 1.5);border:1px solid hsl(var(--border)/0.7);box-shadow:var(--shadow-lg)"
+           role="dialog" aria-modal="true">
+        <div class="brand-soft-bg px-6 py-5 border-b border-border/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h2 class="font-semibold tracking-tight text-xl" style="color:hsl(var(--foreground))">Upload New Version</h2>
+              <p class="mt-1 text-sm" style="color:hsl(var(--muted-foreground))">
+                <span>Replace</span>
+                <span class="font-medium" style="color:hsl(var(--foreground))" x-text="uploadVersionRepository?.label"></span>
+                <span>with a full project upload.</span>
+              </p>
+            </div>
+            <button type="button" @click="closeUploadVersionModal()"
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent"
+                    aria-label="Close">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-6 py-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
+          <div class="space-y-4">
+            <label for="upload-version-archive"
+                   class="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/70 bg-secondary/30 px-6 py-9 text-center cursor-pointer transition-all hover:border-primary/60 hover:bg-secondary/50"
+                   :class="uploadVersionDropActive ? 'border-primary/60 bg-secondary/50' : ''"
+                   @dragenter.prevent="uploadVersionDropActive = true"
+                   @dragover.prevent="uploadVersionDropActive = true"
+                   @dragleave.self.prevent="uploadVersionDropActive = false"
+                   @drop.prevent="handleUploadVersionDrop($event)">
+              <div class="h-14 w-14 rounded-2xl brand-soft-bg flex items-center justify-center text-primary transition-transform group-hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" x2="12" y1="3" y2="15" />
+                </svg>
+              </div>
+              <div class="space-y-1">
+                <div class="text-base font-semibold">Drag &amp; Drop the full project</div>
+                <p class="text-xs text-muted-foreground max-w-sm">Upload the complete folder, ZIP, or Git bundle again. Missing files in this upload will be treated as removed.</p>
+                <p class="text-xs text-muted-foreground">Click to browse for a ZIP or bundle file.</p>
+              </div>
+              <input id="upload-version-archive" type="file" accept=".zip,.bundle" class="hidden" @change="handleUploadVersionArchiveSelection($event)">
+            </label>
+
+            <div class="flex items-center justify-between gap-3 rounded-lg border border-dashed p-3 text-xs"
+                 style="border-color:hsl(var(--border));background:hsl(var(--secondary)/0.35);color:hsl(var(--muted-foreground))">
+              <span>Need to browse a folder instead of an archive?</span>
+              <button type="button" @click="$refs.uploadVersionFolderInput.click()"
+                      class="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-border bg-background px-3 font-medium transition-colors hover:bg-accent"
+                      style="color:hsl(var(--foreground))">
+                Browse Folder
+              </button>
+              <input x-ref="uploadVersionFolderInput" type="file" webkitdirectory multiple class="hidden" @change="handleUploadVersionFolderSelection($event)">
+            </div>
+
+            <div x-show="uploadVersionZipLoading" x-cloak class="text-sm" style="color:hsl(var(--muted-foreground))" x-text="uploadVersionZipProgress"></div>
+
+            <div x-show="uploadVersionFile" x-cloak class="space-y-2">
+              <div class="flex items-center justify-between gap-3 text-xs" style="color:hsl(var(--muted-foreground))">
+                <span class="truncate" x-text="uploadVersionFile?.name"></span>
+                <span x-text="`${uploadVersionProgress}%`"></span>
+              </div>
+              <div class="h-2 rounded-full overflow-hidden" style="background:hsl(var(--border))">
+                <div class="h-full transition-all" :style="`width:${uploadVersionProgress}%;background:var(--gradient-brand)`"></div>
+              </div>
+            </div>
+
+            <div x-show="uploadVersionError" x-cloak class="rounded-lg border px-3 py-2 text-sm"
+                 style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)"
+                 x-text="uploadVersionError"></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t"
+             style="border-color:hsl(var(--border)/0.6);background:hsl(var(--secondary)/0.5)">
+          <button type="button" @click="closeUploadVersionModal()"
+                  class="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-accent">
+            Cancel
+          </button>
+          <button type="button" @click="uploadRepositoryVersion()"
+                  :disabled="uploadVersionLoading || !uploadVersionFile"
+                  class="brand-gradient-bg shadow-soft inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-text="uploadVersionLoading ? 'Uploading...' : 'Upload New Version'"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     @include('_partials.create-repository-modal')
 
   </div>{{-- /page --}}
@@ -719,6 +822,15 @@
         loading: false,
         syncing: null,
         error: '',
+        uploadVersionModal: false,
+        uploadVersionRepository: null,
+        uploadVersionFile: null,
+        uploadVersionError: '',
+        uploadVersionLoading: false,
+        uploadVersionProgress: 0,
+        uploadVersionDropActive: false,
+        uploadVersionZipLoading: false,
+        uploadVersionZipProgress: '',
         roleOptions: Array.isArray(config.roleOptions) ? config.roleOptions : [],
         csrfToken: config.csrfToken ?? '',
         createPackageBaseUrl: config.createPackageBaseUrl ?? '/create-package',
@@ -818,6 +930,11 @@
           }
 
           document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.uploadVersionModal) {
+              this.closeUploadVersionModal();
+              return;
+            }
+
             if (e.key === 'Escape' && this.selectedId) {
               this.selectedId = null;
             }
@@ -863,6 +980,33 @@
           url.searchParams.set('repository', repo.id);
 
           return `${url.pathname}${url.search}`;
+        },
+
+        isUploadedArchive(repo) {
+          return repo?.provider === 'local-pc' && repo?.type === 'uploaded';
+        },
+
+        repositoryRefreshLabel(repo) {
+          return this.isUploadedArchive(repo) ? 'Upload New Version' : 'Sync';
+        },
+
+        repositoryRefreshLoadingLabel(repo) {
+          return this.isUploadedArchive(repo) ? 'Uploading...' : 'Syncing...';
+        },
+
+        repositoryRefreshTitle(repo) {
+          return this.isUploadedArchive(repo)
+            ? 'Upload a full project folder, ZIP, or Git bundle'
+            : 'Sync branches and tags';
+        },
+
+        handleRepositoryRefresh(repo) {
+          if (this.isUploadedArchive(repo)) {
+            this.openUploadVersionModal(repo);
+            return;
+          }
+
+          this.syncRepo(repo);
         },
 
         memberLabel(repo) {
@@ -1111,6 +1255,13 @@
 
           return response.json();
         },
+        safeParseJson(value) {
+          try {
+            return JSON.parse(value);
+          } catch (error) {
+            return null;
+          }
+        },
 
         applyMembersPayload(repo, payload) {
           repo.users = Array.isArray(payload.users) ? payload.users : [];
@@ -1309,6 +1460,214 @@
           }
 
           this.selectedId = normalized.id;
+        },
+
+        openUploadVersionModal(repo) {
+          this.uploadVersionRepository = repo;
+          this.uploadVersionFile = null;
+          this.uploadVersionError = '';
+          this.uploadVersionLoading = false;
+          this.uploadVersionProgress = 0;
+          this.uploadVersionDropActive = false;
+          this.uploadVersionZipLoading = false;
+          this.uploadVersionZipProgress = '';
+          this.uploadVersionModal = true;
+        },
+
+        closeUploadVersionModal() {
+          if (this.uploadVersionLoading) return;
+
+          this.uploadVersionModal = false;
+          this.uploadVersionRepository = null;
+          this.uploadVersionFile = null;
+          this.uploadVersionError = '';
+          this.uploadVersionProgress = 0;
+          this.uploadVersionDropActive = false;
+          this.uploadVersionZipLoading = false;
+          this.uploadVersionZipProgress = '';
+        },
+
+        async handleUploadVersionDrop(event) {
+          const items = Array.from(event.dataTransfer?.items || []);
+          const files = Array.from(event.dataTransfer?.files || []);
+
+          this.uploadVersionDropActive = false;
+
+          const entries = items
+            .map((item) => item.webkitGetAsEntry?.())
+            .filter(Boolean);
+          const directories = entries.filter((entry) => entry.isDirectory);
+
+          if (directories.length) {
+            const fileEntries = [];
+
+            for (const directory of directories) {
+              fileEntries.push(...await this.collectUploadVersionFiles(directory));
+            }
+
+            await this.zipUploadVersionFiles(fileEntries);
+            return;
+          }
+
+          const archive = files.find((file) => /\.(zip|bundle)$/i.test(file.name));
+
+          if (archive) {
+            this.setUploadVersionArchive(archive);
+            return;
+          }
+
+          await this.zipUploadVersionLocalFiles(files);
+        },
+
+        async handleUploadVersionFolderSelection(event) {
+          const files = Array.from(event.target.files || []);
+          if (!files.length) return;
+
+          await this.zipUploadVersionLocalFiles(files);
+          event.target.value = '';
+        },
+
+        handleUploadVersionArchiveSelection(event) {
+          const file = event.target.files?.[0];
+          if (!file) return;
+
+          if (!/\.(zip|bundle)$/i.test(file.name)) {
+            this.uploadVersionError = 'Upload a ZIP archive or Git bundle file.';
+            event.target.value = '';
+            return;
+          }
+
+          this.setUploadVersionArchive(file);
+          event.target.value = '';
+        },
+
+        setUploadVersionArchive(file) {
+          this.uploadVersionFile = file;
+          this.uploadVersionError = '';
+          this.uploadVersionProgress = 0;
+        },
+
+        async zipUploadVersionLocalFiles(files) {
+          await this.zipUploadVersionFiles(files.map((file) => ({
+            file,
+            path: file.webkitRelativePath || file.name,
+          })));
+        },
+
+        async zipUploadVersionFiles(fileEntries) {
+          if (!fileEntries.length) return;
+
+          if (!window.JSZip) {
+            this.uploadVersionError = 'The ZIP helper could not load. Try uploading a ZIP archive instead.';
+            return;
+          }
+
+          this.uploadVersionZipLoading = true;
+          this.uploadVersionError = '';
+          this.uploadVersionProgress = 0;
+
+          try {
+            const zip = new JSZip();
+            fileEntries.forEach((entry) => {
+              zip.file(entry.path, entry.file);
+            });
+
+            const rootName = (fileEntries[0].path || '').split('/')[0] || this.uploadVersionRepository?.name || 'repository';
+            const blob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+              this.uploadVersionZipProgress = `Zipping ${fileEntries.length} files... ${Math.round(metadata.percent)}%`;
+            });
+
+            this.uploadVersionFile = new File([blob], `${rootName}.zip`, { type: 'application/zip' });
+          } catch (error) {
+            this.uploadVersionError = 'Could not zip the selected folder.';
+          } finally {
+            this.uploadVersionZipLoading = false;
+          }
+        },
+
+        async collectUploadVersionFiles(entry, pathPrefix = '') {
+          if (entry.isFile) {
+            return new Promise((resolve, reject) => {
+              entry.file(
+                (file) => resolve([{ file, path: `${pathPrefix}${file.name}` }]),
+                reject,
+              );
+            });
+          }
+
+          if (!entry.isDirectory) {
+            return [];
+          }
+
+          const reader = entry.createReader();
+          const children = await new Promise((resolve, reject) => {
+            const entries = [];
+            const readEntries = () => {
+              reader.readEntries((results) => {
+                if (!results.length) {
+                  resolve(entries);
+                  return;
+                }
+
+                entries.push(...results);
+                readEntries();
+              }, reject);
+            };
+
+            readEntries();
+          });
+
+          const nestedEntries = await Promise.all(
+            children.map((child) => this.collectUploadVersionFiles(child, `${pathPrefix}${entry.name}/`)),
+          );
+
+          return nestedEntries.flat();
+        },
+
+        uploadRepositoryVersion() {
+          if (!this.uploadVersionRepository || !this.uploadVersionFile || this.uploadVersionLoading) return;
+
+          const repository = this.uploadVersionRepository;
+          this.uploadVersionLoading = true;
+          this.uploadVersionError = '';
+          this.uploadVersionProgress = 0;
+          this.syncing = repository.id;
+
+          const formData = new FormData();
+          formData.append('file', this.uploadVersionFile);
+
+          const request = new XMLHttpRequest();
+          request.open('POST', `/api/repositories/${repository.id}/upload-version`);
+          request.setRequestHeader('Accept', 'application/json');
+          request.setRequestHeader('X-CSRF-TOKEN', this.csrfToken);
+
+          request.upload.addEventListener('progress', (event) => {
+            if (!event.lengthComputable) return;
+            this.uploadVersionProgress = Math.round((event.loaded / event.total) * 100);
+          });
+
+          request.onload = () => {
+            const payload = this.safeParseJson(request.responseText);
+
+            if (request.status >= 200 && request.status < 300) {
+              sessionStorage.setItem('flash_toast_msg', payload?.warning || 'Repository version uploaded successfully.');
+              sessionStorage.setItem('flash_toast_type', payload?.warning ? 'warning' : 'success');
+              window.location.reload();
+              return;
+            }
+
+            this.uploadVersionError = this.extractErrorMessage(payload, 'Repository version upload failed.');
+            this.uploadVersionLoading = false;
+            this.syncing = null;
+          };
+
+          request.onerror = () => {
+            this.uploadVersionError = 'Repository version upload failed. Check your connection and try again.';
+            this.uploadVersionLoading = false;
+            this.syncing = null;
+          };
+
+          request.send(formData);
         },
 
         async syncRepo(repoOrId) {

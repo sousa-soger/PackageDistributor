@@ -18,6 +18,14 @@
 node_modules
 npm-debug.log
 yarn-error.log
+.fleet
 .idea
 .vscode
 .DS_Store
+
+# Temporary, test, and generated files at root
+/*.html
+/*.png
+/compiled_test.php
+/user_info.json
+/ldap_error.log

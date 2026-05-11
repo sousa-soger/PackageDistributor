@@ -286,29 +286,47 @@ x-init="init()">
           <template x-if="step === 'local-upload'">
             <div class="space-y-4">
 
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label class="rounded-xl border p-4 cursor-pointer transition-base hover:shadow-soft" style="border-color:hsl(var(--border)/0.7)">
-                  <input type="file" webkitdirectory multiple class="hidden" @change="handleFolderSelection($event)">
-                  <div class="text-sm font-semibold mb-1" style="color:hsl(var(--foreground))">Browse Folder</div>
-                  <div class="text-xs leading-5" style="color:hsl(var(--muted-foreground))">Zip a selected folder in your browser before uploading.</div>
+              <div class="space-y-3">
+                <label for="repo-drop-zone"
+                       class="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/70 bg-secondary/30 px-6 py-10 text-center cursor-pointer transition-all hover:border-primary/60 hover:bg-secondary/50"
+                       :class="isRepositoryDropActive ? 'border-primary/60 bg-secondary/50' : ''"
+                       @dragenter.prevent="isRepositoryDropActive = true"
+                       @dragover.prevent="isRepositoryDropActive = true"
+                       @dragleave.self.prevent="isRepositoryDropActive = false"
+                       @drop.prevent="handleRepositoryDrop($event)">
+                  <div class="transition-transform group-hover:scale-105">
+                    <svg width="120" height="96" viewBox="0 0 120 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="repo-dropzone-grad" x1="0" y1="0" x2="120" y2="96" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stop-color="hsl(var(--primary))"></stop>
+                          <stop offset="100%" stop-color="hsl(var(--primary-glow, var(--primary)))" stop-opacity="0.7"></stop>
+                        </linearGradient>
+                      </defs>
+                      <path d="M6 24 L6 78 Q6 84 12 84 L70 84 Q76 84 76 78 L76 32 Q76 26 70 26 L40 26 L32 18 L12 18 Q6 18 6 24 Z" stroke="url(#repo-dropzone-grad)" stroke-width="2.5" stroke-linejoin="round" fill="none"></path>
+                      <path d="M58 14 L100 14 L114 28 L114 86 Q114 90 110 90 L58 90 Q54 90 54 86 L54 18 Q54 14 58 14 Z" stroke="url(#repo-dropzone-grad)" stroke-width="2.5" stroke-linejoin="round" fill="hsl(var(--card))"></path>
+                      <path d="M100 14 L100 28 L114 28" stroke="url(#repo-dropzone-grad)" stroke-width="2.5" stroke-linejoin="round" fill="none"></path>
+                      <text x="84" y="78" text-anchor="middle" font-size="11" font-weight="700" font-family="ui-sans-serif, system-ui, sans-serif" fill="url(#repo-dropzone-grad)" letter-spacing="0.5">ZIP</text>
+                      <path d="M84 62 L84 44 M76 52 L84 44 L92 52" stroke="url(#repo-dropzone-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+                    </svg>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-base font-semibold">Drag &amp; Drop your project</div>
+                    <p class="text-xs text-muted-foreground max-w-sm">Simply drop your project folder or archive file. Accepts both local directories and ZIP files.</p>
+                    <p class="text-xs text-muted-foreground">Supports automatic processing</p>
+                  </div>
+                  <input id="repo-drop-zone" type="file" accept=".zip,.bundle" class="hidden" @change="handleArchiveSelection($event)">
                 </label>
-                <label class="rounded-xl border p-4 cursor-pointer transition-base hover:shadow-soft" style="border-color:hsl(var(--border)/0.7)">
-                  <input type="file" accept=".zip,.bundle" class="hidden" @change="handleArchiveSelection($event)">
-                  <div class="text-sm font-semibold mb-1" style="color:hsl(var(--foreground))">Upload ZIP or Bundle</div>
-                  <div class="text-xs leading-5" style="color:hsl(var(--muted-foreground))">Use a prepared archive or Git bundle file.</div>
-                </label>
-              </div>
 
-              <div class="rounded-lg border border-dashed p-3 text-xs" style="border-color:hsl(var(--border));background:hsl(var(--secondary)/0.35);color:hsl(var(--muted-foreground))">
-                Note: some browsers may exclude hidden folders like .git when browsing. For full git history, use Upload ZIP instead.
-              </div>
+                <div class="rounded-lg border border-dashed p-3 text-xs" style="border-color:hsl(var(--border));background:hsl(var(--secondary)/0.35);color:hsl(var(--muted-foreground))">
+                  Note: some browsers may exclude hidden folders like .git when browsing. For full git history, use Upload ZIP instead.
+                </div>
 
-              <div x-show="zipLoading" x-cloak class="text-sm" style="color:hsl(var(--muted-foreground))" x-text="zipProgress"></div>
+                <div x-show="zipLoading" x-cloak class="text-sm" style="color:hsl(var(--muted-foreground))" x-text="zipProgress"></div>
 
-              <div class="space-y-2">
-                <label class="text-sm font-medium leading-none" style="color:hsl(var(--foreground))">Repository name</label>
-                <input type="text" x-model="uploadName" placeholder="e.g. my-project" class="flex h-9 w-full rounded-md border text-sm shadow-sm focus:outline-none"
-                       style="background:transparent;border-color:hsl(var(--input, var(--border)));padding-left:0.75rem;padding-right:0.75rem;color:hsl(var(--foreground))">
+                <div class="space-y-2">
+                  <label for="upload-repository-name" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Repository name</label>
+                  <input id="upload-repository-name" type="text" x-model="uploadName" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" placeholder="e.g. my-project">
+                </div>
               </div>
 
               <div x-show="uploadFile" x-cloak class="space-y-2">
@@ -495,6 +513,7 @@ function connectRepoModal(config = {}) {
     uploadProgress: 0,
     zipLoading: false,
     zipProgress: '',
+    isRepositoryDropActive: false,
     selectedLocalOption: null,
 
     providers: [
@@ -634,6 +653,7 @@ function connectRepoModal(config = {}) {
       this.uploadProgress = 0;
       this.zipLoading = false;
       this.zipProgress = '';
+      this.isRepositoryDropActive = false;
       this.selectedLocalOption = null;
     },
     pickProvider(provider) {
@@ -749,12 +769,74 @@ function connectRepoModal(config = {}) {
         this.sshLoading = false;
       }
     },
+    async handleRepositoryDrop(event) {
+      const items = Array.from(event.dataTransfer?.items || []);
+      const files = Array.from(event.dataTransfer?.files || []);
+
+      this.isRepositoryDropActive = false;
+
+      const entries = items
+        .map((item) => item.webkitGetAsEntry?.())
+        .filter(Boolean);
+      const directories = entries.filter((entry) => entry.isDirectory);
+
+      if (directories.length) {
+        const fileEntries = [];
+
+        for (const directory of directories) {
+          fileEntries.push(...await this.collectDroppedFiles(directory));
+        }
+
+        await this.zipFileEntries(fileEntries);
+        return;
+      }
+
+      const archive = files.find((file) => /\.(zip|bundle)$/i.test(file.name));
+
+      if (archive) {
+        this.setUploadArchive(archive);
+        return;
+      }
+
+      await this.zipLocalFiles(files);
+    },
     async handleFolderSelection(event) {
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
 
+      await this.zipLocalFiles(files);
+      event.target.value = '';
+    },
+    handleArchiveSelection(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (!/\.(zip|bundle)$/i.test(file.name)) {
+        this.uploadError = 'Upload a ZIP archive or Git bundle file.';
+        event.target.value = '';
+        return;
+      }
+
+      this.setUploadArchive(file);
+      event.target.value = '';
+    },
+    setUploadArchive(file) {
+      this.uploadFile = file;
+      this.uploadError = '';
+      this.uploadProgress = 0;
+      this.uploadName = this.uploadName || file.name.replace(/\.(zip|bundle)$/i, '');
+    },
+    async zipLocalFiles(files) {
+      await this.zipFileEntries(files.map((file) => ({
+        file,
+        path: file.webkitRelativePath || file.name,
+      })));
+    },
+    async zipFileEntries(fileEntries) {
+      if (!fileEntries.length) return;
+
       if (!window.JSZip) {
-        this.uploadError = 'The ZIP helper could not load. Try Upload ZIP instead.';
+        this.uploadError = 'The ZIP helper could not load. Try uploading a ZIP archive instead.';
         return;
       }
 
@@ -764,14 +846,14 @@ function connectRepoModal(config = {}) {
 
       try {
         const zip = new JSZip();
-        files.forEach((file) => {
-          zip.file(file.webkitRelativePath || file.name, file);
+        fileEntries.forEach((entry) => {
+          zip.file(entry.path, entry.file);
         });
 
-        const rootName = (files[0].webkitRelativePath || '').split('/')[0] || 'repository';
+        const rootName = (fileEntries[0].path || '').split('/')[0] || 'repository';
         this.uploadName = this.uploadName || rootName;
         const blob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
-          this.zipProgress = `Zipping ${files.length} files... ${Math.round(metadata.percent)}%`;
+          this.zipProgress = `Zipping ${fileEntries.length} files... ${Math.round(metadata.percent)}%`;
         });
 
         this.uploadFile = new File([blob], `${this.uploadName || rootName}.zip`, { type: 'application/zip' });
@@ -781,14 +863,43 @@ function connectRepoModal(config = {}) {
         this.zipLoading = false;
       }
     },
-    handleArchiveSelection(event) {
-      const file = event.target.files?.[0];
-      if (!file) return;
+    async collectDroppedFiles(entry, pathPrefix = '') {
+      if (entry.isFile) {
+        return new Promise((resolve, reject) => {
+          entry.file(
+            (file) => resolve([{ file, path: `${pathPrefix}${file.name}` }]),
+            reject,
+          );
+        });
+      }
 
-      this.uploadFile = file;
-      this.uploadError = '';
-      this.uploadProgress = 0;
-      this.uploadName = this.uploadName || file.name.replace(/\.(zip|bundle)$/i, '');
+      if (!entry.isDirectory) {
+        return [];
+      }
+
+      const reader = entry.createReader();
+      const children = await new Promise((resolve, reject) => {
+        const entries = [];
+        const readEntries = () => {
+          reader.readEntries((results) => {
+            if (!results.length) {
+              resolve(entries);
+              return;
+            }
+
+            entries.push(...results);
+            readEntries();
+          }, reject);
+        };
+
+        readEntries();
+      });
+
+      const nestedEntries = await Promise.all(
+        children.map((child) => this.collectDroppedFiles(child, `${pathPrefix}${entry.name}/`)),
+      );
+
+      return nestedEntries.flat();
     },
     uploadRepository() {
       if (!this.canSubmitUpload || this.uploadLoading) return;

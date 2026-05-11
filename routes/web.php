@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/repositories/ssh-public-key', [RepositoryController::class, 'sshPublicKey'])->name('repositories.ssh-public-key');
     Route::post('/api/repositories/connect-ssh', [RepositoryController::class, 'connectSsh'])->name('repositories.connect-ssh');
     Route::post('/api/repositories/upload', [RepositoryController::class, 'upload'])->name('repositories.upload');
+    Route::post('/api/repositories/{repository}/upload-version', [RepositoryController::class, 'uploadVersion'])->name('repositories.upload-version');
     Route::post('/api/repositories/{repository}/sync-ssh', [RepositoryController::class, 'syncSsh'])->name('repositories.sync-ssh');
     Route::get('/repositories/{repository}/versions', [RepositoryController::class, 'versions'])->name('repositories.versions');
     Route::get('/repositories/{repository}/members', [RepositoryController::class, 'members'])->name('repositories.members.show');

@@ -13,6 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class JobCancelledException extends \RuntimeException {}
@@ -23,7 +24,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
 
     public int $tries = 1;
 
-    public int $timeout = 600;
+    public int $timeout = 1800;
 
     public function __construct(public readonly int $deploymentJobId) {}
 
@@ -75,7 +76,7 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 );
             }
 
-            Cache::put($cacheKey, $merged, 600);
+            Cache::put($cacheKey, $merged, DeploymentJob::PROGRESS_CACHE_TTL_SECONDS);
 
             if ($nowMs - $lastDbWrite >= $dbThrottleMs) {
                 $lastDbWrite = $nowMs;
@@ -139,7 +140,9 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 $vcsToken
             );
 
-            $job->refresh();
+            $this->reconnectDatabase();
+            $job = DeploymentJob::findOrFail($this->deploymentJobId);
+
             if ($job->status === 'cancelled') {
                 Log::info("GenerateDeploymentPackageJob: job #{$job->id} completed but status is 'cancelled' - discarding result.");
 
@@ -157,22 +160,46 @@ class GenerateDeploymentPackageJob implements ShouldQueue
                 'compressionProgress' => 100,
                 'packagingProgress' => 100,
                 'packagingMessage' => 'Done.',
-            ], 600);
+            ], DeploymentJob::PROGRESS_CACHE_TTL_SECONDS);
         } catch (JobCancelledException $e) {
             Log::info("GenerateDeploymentPackageJob: job #{$job->id} was cancelled mid-run and stopped cleanly.");
         } catch (\Throwable $e) {
             Log::error("GenerateDeploymentPackageJob #{$this->deploymentJobId} failed: ".$e->getMessage(), [
                 'exception' => $e,
             ]);
-            $job->markFailed($e->getMessage());
+            $this->markDeploymentJobFailed($e->getMessage());
         }
     }
 
     public function failed(\Throwable $exception): void
     {
+        $this->reconnectDatabase();
+
         $job = DeploymentJob::find($this->deploymentJobId);
         if ($job && $job->status === 'running') {
             $job->markFailed('Job was killed by the queue worker: '.$exception->getMessage());
+        }
+    }
+
+    private function reconnectDatabase(): void
+    {
+        $connection = DB::connection();
+
+        if ($connection->getDriverName() === 'sqlite' && $connection->getDatabaseName() === ':memory:') {
+            return;
+        }
+
+        DB::disconnect($connection->getName());
+        DB::reconnect($connection->getName());
+    }
+
+    private function markDeploymentJobFailed(string $message): void
+    {
+        $this->reconnectDatabase();
+
+        $job = DeploymentJob::find($this->deploymentJobId);
+        if ($job) {
+            $job->markFailed($message);
         }
     }
 }

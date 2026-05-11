@@ -277,27 +277,29 @@ class PackageController extends Controller
     private function packageClientIndex(Collection $packageGroups): array
     {
         return $packageGroups
-            ->flatMap(fn (array $group) => $group['packages']->mapWithKeys(function (DeploymentJob $package) use ($group) {
-                $creatorName = $package->creator?->name ?: $package->creator?->email;
+            ->mapWithKeys(fn (array $group) => $group['packages']
+                ->mapWithKeys(function (DeploymentJob $package) use ($group) {
+                    $creatorName = $package->creator?->name ?: $package->creator?->email;
 
-                return [
-                    $package->id => [
-                        'repositoryKey' => $group['key'],
-                        'creatorId' => $package->user_id ? (string) $package->user_id : '',
-                        'search' => strtolower(implode(' ', array_filter([
-                            $package->package_name,
-                            $package->repo,
-                            $package->project_name,
-                            $package->environment,
-                            $package->base_version,
-                            $package->head_version,
-                            $group['name'],
-                            $group['ownerName'],
-                            $creatorName,
-                        ]))),
-                    ],
-                ];
-            }))
+                    return [
+                        $package->id => [
+                            'repositoryKey' => $group['key'],
+                            'creatorId' => $package->user_id ? (string) $package->user_id : '',
+                            'search' => strtolower(implode(' ', array_filter([
+                                $package->package_name,
+                                $package->repo,
+                                $package->project_name,
+                                $package->environment,
+                                $package->base_version,
+                                $package->head_version,
+                                $group['name'],
+                                $group['ownerName'],
+                                $creatorName,
+                            ]))),
+                        ],
+                    ];
+                })
+                ->all())
             ->all();
     }
 

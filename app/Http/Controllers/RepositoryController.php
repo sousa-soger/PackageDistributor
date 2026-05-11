@@ -405,8 +405,8 @@ class RepositoryController extends Controller
             'url' => $uploadedFile->getClientOriginalName(),
         ]);
 
-        $storagePath = storage_path("app/repos/{$repository->id}.git");
-        $tmpDir = storage_path("app/tmp/{$repository->id}");
+        $storagePath = $this->availableRepositoryStoragePath($repository);
+        $tmpDir = storage_path('app/tmp/'.$repository->id.'-upload-'.uniqid());
         $warning = null;
 
         try {
@@ -450,6 +450,79 @@ class RepositoryController extends Controller
             ], 422);
         } finally {
             File::deleteDirectory($tmpDir);
+        }
+    }
+
+    public function uploadVersion(Request $request, Repository $repository): JsonResponse
+    {
+        $this->authorize('update', $repository);
+
+        if ($repository->provider !== 'local-pc' || $repository->type !== 'uploaded') {
+            return response()->json([
+                'message' => 'Only uploaded Local PC repositories can receive a new uploaded version.',
+                'success' => false,
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'max:512000'],
+        ]);
+
+        $uploadedFile = $validated['file'];
+        $extension = strtolower($uploadedFile->getClientOriginalExtension());
+
+        if (! in_array($extension, ['bundle', 'zip'], true)) {
+            return response()->json([
+                'message' => 'Upload a ZIP archive or Git bundle file.',
+                'success' => false,
+            ], 422);
+        }
+
+        $storagePath = $repository->storage_path ?: storage_path("app/repos/{$repository->id}.git");
+        $tmpDir = storage_path('app/tmp/'.$repository->id.'-upload-version-'.uniqid());
+        $replacementPath = storage_path('app/repos/'.$repository->id.'.upload-version.'.uniqid().'.git');
+        $warning = null;
+
+        try {
+            File::ensureDirectoryExists($tmpDir);
+            File::ensureDirectoryExists(dirname($storagePath));
+            File::ensureDirectoryExists(dirname($replacementPath));
+
+            $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+            $tmpFile = $uploadedFile->move($tmpDir, $safeName)->getPathname();
+
+            $hasGitHistory = $extension === 'bundle'
+                ? $this->processBundleUploadVersion($tmpFile, $replacementPath)
+                : $this->processZipUploadVersion($tmpFile, $tmpDir, $storagePath, $replacementPath);
+
+            if (! $hasGitHistory) {
+                $warning = 'No .git folder found. A new snapshot commit was created from the uploaded files.';
+            }
+
+            $this->replaceDirectory($replacementPath, $storagePath);
+
+            $repository->fill(array_merge([
+                'has_git_history' => $hasGitHistory,
+                'last_synced_at' => now(),
+                'status' => 'connected',
+                'storage_path' => $storagePath,
+                'url' => $uploadedFile->getClientOriginalName(),
+            ], $this->localRepositoryRefAttributes($storagePath)))->save();
+
+            return response()->json([
+                'message' => 'Repository version uploaded.',
+                'repository' => $this->repositoryPayload($repository->fresh(), $request->user()),
+                'success' => true,
+                'warning' => $warning,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $this->humanGitError($e->getMessage()),
+                'success' => false,
+            ], 422);
+        } finally {
+            File::deleteDirectory($tmpDir);
+            File::deleteDirectory($replacementPath);
         }
     }
 
@@ -595,9 +668,28 @@ class RepositoryController extends Controller
         }
     }
 
+    protected function availableRepositoryStoragePath(Repository $repository): string
+    {
+        $storagePath = storage_path("app/repos/{$repository->id}.git");
+
+        if (! File::isDirectory($storagePath)) {
+            return $storagePath;
+        }
+
+        return storage_path('app/repos/'.$repository->id.'-'.uniqid().'.git');
+    }
+
+    protected function processBundleUploadVersion(string $bundlePath, string $replacementPath): bool
+    {
+        $this->processBundleUpload($bundlePath, $replacementPath);
+
+        return true;
+    }
+
     protected function processZipUpload(string $zipPath, string $tmpDir, string $storagePath): bool
     {
         $extractDir = "{$tmpDir}/extracted";
+        File::deleteDirectory($extractDir);
         File::ensureDirectoryExists($extractDir);
 
         $zip = new ZipArchive;
@@ -626,6 +718,42 @@ class RepositoryController extends Controller
 
         $contentRoot = $this->uploadedContentRoot($extractDir);
         $this->importFilesIntoBareRepository($contentRoot, $storagePath);
+
+        return false;
+    }
+
+    protected function processZipUploadVersion(string $zipPath, string $tmpDir, string $storagePath, string $replacementPath): bool
+    {
+        $extractDir = "{$tmpDir}/version-extracted";
+        File::deleteDirectory($extractDir);
+        File::ensureDirectoryExists($extractDir);
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath) !== true) {
+            throw new \RuntimeException('The ZIP archive could not be opened.');
+        }
+
+        $zip->extractTo($extractDir);
+        $zip->close();
+
+        $gitDirectory = $this->findGitDirectory($extractDir);
+
+        if ($gitDirectory) {
+            File::copyDirectory($gitDirectory, $replacementPath);
+
+            $config = new Process(['git', "--git-dir={$replacementPath}", 'config', '--bool', 'core.bare', 'true']);
+            $config->setTimeout(120);
+            $config->run();
+
+            if (! $config->isSuccessful()) {
+                throw new \RuntimeException($config->getErrorOutput() ?: $config->getOutput());
+            }
+
+            return true;
+        }
+
+        $contentRoot = $this->uploadedContentRoot($extractDir);
+        $this->importSnapshotVersionIntoBareRepository($contentRoot, $storagePath, $replacementPath, "{$tmpDir}/version-worktree");
 
         return false;
     }
@@ -691,6 +819,112 @@ class RepositoryController extends Controller
             if (! $process->isSuccessful()) {
                 throw new \RuntimeException($process->getErrorOutput() ?: $process->getOutput());
             }
+        }
+    }
+
+    protected function importSnapshotVersionIntoBareRepository(string $contentRoot, string $storagePath, string $replacementPath, string $workTree): void
+    {
+        if (! File::isDirectory($storagePath)) {
+            $this->importFilesIntoBareRepository($contentRoot, $replacementPath);
+
+            return;
+        }
+
+        $clone = new Process(['git', 'clone', $storagePath, $workTree]);
+        $clone->setTimeout(120);
+        $clone->run();
+
+        if (! $clone->isSuccessful()) {
+            throw new \RuntimeException($clone->getErrorOutput() ?: $clone->getOutput());
+        }
+
+        $this->clearWorkingTree($workTree);
+        File::copyDirectory($contentRoot, $workTree);
+
+        $commands = [
+            ['git', 'add', '-A', '--force'],
+            ['git', '-c', 'user.name=Cybix Upload', '-c', 'user.email=cybix@example.invalid', 'commit', '--allow-empty', '-m', 'Import uploaded repository snapshot'],
+            ['git', 'clone', '--mirror', $workTree, $replacementPath],
+        ];
+
+        foreach ($commands as $command) {
+            $process = new Process($command, in_array('clone', $command, true) ? null : $workTree);
+            $process->setTimeout(120);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                throw new \RuntimeException($process->getErrorOutput() ?: $process->getOutput());
+            }
+        }
+    }
+
+    protected function clearWorkingTree(string $workTree): void
+    {
+        foreach (File::files($workTree) as $file) {
+            File::delete($file->getPathname());
+        }
+
+        foreach (File::directories($workTree) as $directory) {
+            if (basename($directory) === '.git') {
+                continue;
+            }
+
+            File::deleteDirectory($directory);
+        }
+    }
+
+    protected function replaceDirectory(string $source, string $target): void
+    {
+        if (File::isDirectory($target)) {
+            $this->refreshExistingMirror($source, $target);
+            File::deleteDirectory($source);
+
+            return;
+        }
+
+        if (File::moveDirectory($source, $target)) {
+            return;
+        }
+
+        if (File::copyDirectory($source, $target)) {
+            File::deleteDirectory($source);
+
+            return;
+        }
+
+        throw new \RuntimeException('Could not store the uploaded repository mirror.');
+    }
+
+    protected function refreshExistingMirror(string $source, string $target): void
+    {
+        $removeRemote = new Process(['git', "--git-dir={$target}", 'remote', 'remove', 'upload-replacement']);
+        $removeRemote->setTimeout(30);
+        $removeRemote->run();
+
+        $commands = [
+            ['git', "--git-dir={$target}", 'remote', 'add', '--mirror=fetch', 'upload-replacement', $source],
+            ['git', "--git-dir={$target}", 'fetch', '--prune', 'upload-replacement'],
+            ['git', "--git-dir={$target}", 'remote', 'remove', 'upload-replacement'],
+        ];
+
+        foreach ($commands as $command) {
+            $process = new Process($command);
+            $process->setTimeout(120);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                throw new \RuntimeException($process->getErrorOutput() ?: $process->getOutput());
+            }
+        }
+
+        $branches = $this->localGitRefs($source, 'refs/heads');
+        $defaultBranch = $this->localDefaultBranch($source, $branches);
+        $setHead = new Process(['git', "--git-dir={$target}", 'symbolic-ref', 'HEAD', "refs/heads/{$defaultBranch}"]);
+        $setHead->setTimeout(30);
+        $setHead->run();
+
+        if (! $setHead->isSuccessful()) {
+            throw new \RuntimeException($setHead->getErrorOutput() ?: $setHead->getOutput());
         }
     }
 

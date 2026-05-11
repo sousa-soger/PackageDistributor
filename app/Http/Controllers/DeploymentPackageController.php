@@ -174,7 +174,7 @@ class DeploymentPackageController extends Controller
         ]);
 
         // Seed the cache so progress polling returns something useful immediately
-        Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), 600);
+        Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), DeploymentJob::PROGRESS_CACHE_TTL_SECONDS);
 
         // Dispatch to the database queue
         GenerateDeploymentPackageJob::dispatch($job->id);
@@ -283,7 +283,7 @@ class DeploymentPackageController extends Controller
         ]);
 
         // Seed a fresh progress entry so polling returns something immediately
-        Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), 600);
+        Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), DeploymentJob::PROGRESS_CACHE_TTL_SECONDS);
 
         // Dispatch a new queue job
         GenerateDeploymentPackageJob::dispatch($job->id);

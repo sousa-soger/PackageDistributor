@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Cache;
 
 class DeploymentJob extends Model
 {
+    public const PROGRESS_CACHE_TTL_SECONDS = 3600;
+
     protected $fillable = [
         'user_id',
         'project_id',
@@ -78,16 +80,18 @@ class DeploymentJob extends Model
 
     public function markCompleted(array $result): void
     {
+        $resultForStorage = $this->resultForStorage($result);
+
         $this->update([
             'status' => 'completed',
-            'result_json' => $result,
+            'result_json' => $resultForStorage,
             'finished_at' => now(),
             'message' => 'Done.',
             'progress' => $this->fullProgressArray(100),
-            'zip_size' => $result['zip_size'] ?? null,
-            'zip_sha256' => $result['zip_sha256'] ?? null,
-            'targz_size' => $result['targz_size'] ?? null,
-            'targz_sha256' => $result['targz_sha256'] ?? null,
+            'zip_size' => $resultForStorage['zip_size'] ?? null,
+            'zip_sha256' => $resultForStorage['zip_sha256'] ?? null,
+            'targz_size' => $resultForStorage['targz_size'] ?? null,
+            'targz_sha256' => $resultForStorage['targz_sha256'] ?? null,
         ]);
 
         Cache::forget($this->progressCacheKey());
@@ -130,7 +134,7 @@ class DeploymentJob extends Model
             $merged['packagingMessage'] = $message;
         }
 
-        Cache::put($cacheKey, $merged, 600);
+        Cache::put($cacheKey, $merged, self::PROGRESS_CACHE_TTL_SECONDS);
 
         if ($persistToDB) {
             $this->update([
@@ -168,5 +172,23 @@ class DeploymentJob extends Model
             'packagingProgress' => $value,
             'packagingMessage' => 'Done.',
         ];
+    }
+
+    private function resultForStorage(array $result): array
+    {
+        $changedFiles = $result['changed_files'] ?? [];
+        $changedFilesCount = is_countable($changedFiles)
+            ? count($changedFiles)
+            : (int) ($result['summary']['total_changes'] ?? 0);
+
+        unset($result['changed_files']);
+
+        $result['changed_files_count'] = $changedFilesCount;
+        $result['summary'] = array_merge(
+            ['total_changes' => $changedFilesCount],
+            is_array($result['summary'] ?? null) ? $result['summary'] : []
+        );
+
+        return $result;
     }
 }

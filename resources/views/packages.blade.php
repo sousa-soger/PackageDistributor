@@ -106,6 +106,23 @@
                     </svg>
                 </div>
             </div>
+
+            <button type="button" @click="allCollapsed() ? expandAll() : collapseAll()"
+                class="ml-auto inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
+                <template x-if="allCollapsed()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down h-3.5 w-3.5">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                    </svg>
+                </template>
+                <template x-if="!allCollapsed()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up h-3.5 w-3.5">
+                        <path d="m7 20 5-5 5 5"></path>
+                        <path d="m7 4 5 5 5-5"></path>
+                    </svg>
+                </template>
+                <span x-text="allCollapsed() ? 'Expand all' : 'Collapse all'"></span>
+            </button>
         </div>
 
         @if ($packages->isEmpty())
@@ -502,6 +519,24 @@
                 toggleRepository(repositoryKey) {
                     this.openRepositories[repositoryKey] = !this.isRepositoryOpen(repositoryKey);
                     this.saveRepositoryState();
+                },
+
+                collapseAll() {
+                    Object.keys(this.openRepositories).forEach((key) => {
+                        this.openRepositories[key] = false;
+                    });
+                    this.saveRepositoryState();
+                },
+
+                expandAll() {
+                    Object.keys(this.openRepositories).forEach((key) => {
+                        this.openRepositories[key] = true;
+                    });
+                    this.saveRepositoryState();
+                },
+
+                allCollapsed() {
+                    return Object.keys(this.openRepositories).every((key) => !this.openRepositories[key]);
                 },
 
                 isRepositoryOpen(repositoryKey) {

@@ -216,6 +216,7 @@ test('local upload preserves git history when zip includes hidden git directory'
     $repoDir = $root.DIRECTORY_SEPARATOR.'repo';
     $zipPath = $root.DIRECTORY_SEPARATOR.'repository.zip';
     $uploadedRepositoryId = null;
+    $uploadedRepositoryStoragePath = null;
 
     File::ensureDirectoryExists($repoDir);
 
@@ -287,9 +288,10 @@ test('local upload preserves git history when zip includes hidden git directory'
             'user_id' => $user->id,
         ]);
 
-        expect(File::exists(storage_path("app/repos/{$uploadedRepositoryId}.git/config")))->toBeTrue();
-
         $repository = Repository::findOrFail($uploadedRepositoryId);
+        $uploadedRepositoryStoragePath = $repository->storage_path;
+
+        expect(File::exists($uploadedRepositoryStoragePath.DIRECTORY_SEPARATOR.'config'))->toBeTrue();
 
         expect($repository->branches)
             ->toContain('main')
@@ -301,6 +303,144 @@ test('local upload preserves git history when zip includes hidden git directory'
 
         if ($uploadedRepositoryId) {
             File::deleteDirectory(storage_path("app/repos/{$uploadedRepositoryId}.git"));
+        }
+
+        if ($uploadedRepositoryStoragePath) {
+            File::deleteDirectory($uploadedRepositoryStoragePath);
+        }
+    }
+});
+
+test('uploaded local repository can receive a new snapshot version', function () {
+    if (! class_exists(ZipArchive::class)) {
+        $this->markTestSkipped('ZipArchive is not available.');
+    }
+
+    $gitVersion = new Process(['git', '--version']);
+    $gitVersion->setTimeout(30);
+    $gitVersion->run();
+
+    if (! $gitVersion->isSuccessful()) {
+        $this->markTestSkipped('Git is not available.');
+    }
+
+    $user = User::factory()->create();
+    $root = storage_path('framework/testing/upload-version-'.uniqid());
+    $uploadedRepositoryId = null;
+    $uploadedRepositoryStoragePath = null;
+
+    $createZip = function (string $name, array $files) use ($root): string {
+        $sourceDir = $root.DIRECTORY_SEPARATOR.pathinfo($name, PATHINFO_FILENAME);
+        $zipPath = $root.DIRECTORY_SEPARATOR.$name;
+
+        File::ensureDirectoryExists($sourceDir);
+
+        foreach ($files as $path => $contents) {
+            $filePath = $sourceDir.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
+            File::ensureDirectoryExists(dirname($filePath));
+            File::put($filePath, $contents);
+        }
+
+        $zip = new ZipArchive;
+        expect($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE))->toBeTrue();
+
+        $items = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($items as $item) {
+            $relativePath = 'repo/'.str_replace('\\', '/', substr($item->getPathname(), strlen($sourceDir) + 1));
+
+            if ($item->isDir()) {
+                $zip->addEmptyDir($relativePath);
+            } else {
+                $zip->addFile($item->getPathname(), $relativePath);
+            }
+        }
+
+        $zip->close();
+
+        return $zipPath;
+    };
+
+    $runGit = function (array $command) {
+        $process = new Process($command);
+        $process->setTimeout(30);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $this->fail($process->getErrorOutput() ?: $process->getOutput());
+        }
+
+        return trim($process->getOutput());
+    };
+
+    try {
+        File::ensureDirectoryExists($root);
+
+        $initialZip = $createZip('initial.zip', [
+            'README.md' => '# Initial',
+            'removed.txt' => 'Remove me',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->post(route('repositories.upload'), [
+                'file' => new UploadedFile($initialZip, 'initial.zip', 'application/zip', null, true),
+                'name' => 'snapshot-local',
+            ], [
+                'Accept' => 'application/json',
+            ]);
+
+        $response->assertCreated();
+
+        $uploadedRepositoryId = $response->json('repository.id');
+        $repository = Repository::findOrFail($uploadedRepositoryId);
+        $branch = $repository->default_branch;
+        $storagePath = $repository->storage_path;
+        $uploadedRepositoryStoragePath = $storagePath;
+
+        $nextZip = $createZip('next.zip', [
+            'README.md' => '# Updated',
+            'added.txt' => 'New file',
+        ]);
+
+        $versionResponse = $this
+            ->actingAs($user)
+            ->post(route('repositories.upload-version', $repository), [
+                'file' => new UploadedFile($nextZip, 'next.zip', 'application/zip', null, true),
+            ], [
+                'Accept' => 'application/json',
+            ]);
+
+        $versionResponse
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+            ]);
+
+        $repository->refresh();
+
+        expect($repository->has_git_history)->toBeFalse()
+            ->and($repository->url)->toBe('next.zip')
+            ->and((int) $runGit(['git', "--git-dir={$storagePath}", 'rev-list', '--count', $branch]))->toBe(2);
+
+        $tree = $runGit(['git', "--git-dir={$storagePath}", 'ls-tree', '-r', '--name-only', $branch]);
+
+        expect($tree)
+            ->toContain('README.md')
+            ->toContain('added.txt')
+            ->not->toContain('removed.txt');
+    } finally {
+        File::deleteDirectory($root);
+
+        if ($uploadedRepositoryId) {
+            File::deleteDirectory(storage_path("app/repos/{$uploadedRepositoryId}.git"));
+        }
+
+        if ($uploadedRepositoryStoragePath) {
+            File::deleteDirectory($uploadedRepositoryStoragePath);
         }
     }
 });
