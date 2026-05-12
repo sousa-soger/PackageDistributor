@@ -268,6 +268,7 @@ window.dispatchEvent(new CustomEvent('open-repo-modal'))
             </div>
           </template>
 
+          <!--
           {{-- STEP: SSH Access --}}
           <template x-if="step === 'local-ssh'">
             <div class="space-y-4">
@@ -319,6 +320,7 @@ window.dispatchEvent(new CustomEvent('open-repo-modal'))
                 x-text="sshError"></div>
             </div>
           </template>
+        -->
 
           {{-- STEP: Upload Repository --}}
           <template x-if="step === 'local-upload'">
@@ -635,13 +637,14 @@ window.dispatchEvent(new CustomEvent('open-repo-modal'))
           authMethod: 'agent',
           icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-workflow h-5 w-5"><rect width="8" height="8" x="3" y="3" rx="2"></rect><path d="M7 11v4a2 2 0 0 0 2 2h4"></path><rect width="8" height="8" x="13" y="13" rx="2"></rect></svg>`,
         },
+        /*
         {
           id: 'ssh',
           title: 'SSH Access',
           description: 'Give the server SSH access to pull directly from your machine',
           authMethod: 'ssh',
           icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-square h-5 w-5"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"></path><path d="m14 7 3 3"></path><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"></path></svg>`,
-        },
+        },*/
         {
           id: 'upload',
           title: 'Upload Repository',
