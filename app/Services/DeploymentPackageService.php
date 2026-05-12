@@ -63,15 +63,27 @@ class DeploymentPackageService
 
         if ($repo) {
             // ── Temp workspace ────────────────────────────────────────────
-            $tempTimestamp = now()->format('YmdHis');
-            $tempBasePath = storage_path("app/temp/{$tempTimestamp}");
+            if ($vcsProvider === 'gitless') {
+                $tempBasePath = $repo;
+            } else {
+                $tempTimestamp = now()->format('YmdHis');
+                $tempBasePath = storage_path("app/temp/{$tempTimestamp}");
+            }
+
             File::ensureDirectoryExists($tempBasePath);
             $this->grantWindowsPermissions($tempBasePath);
 
             $baseZipPath = $tempBasePath.DIRECTORY_SEPARATOR.'base.zip';
             $headZipPath = $tempBasePath.DIRECTORY_SEPARATOR.'head.zip';
 
-            if ($vcsProvider === 'local-pc') {
+            if ($vcsProvider === 'gitless') {
+                if (! File::isFile($baseZipPath) || ! File::isFile($headZipPath)) {
+                    throw new \RuntimeException('Gitless package archives were not found. Upload the base and target folders again.');
+                }
+
+                $progressCallback(['fileDownloadProgress' => 100], 'Uploaded folders prepared.');
+
+            } elseif ($vcsProvider === 'local-pc') {
                 $progressCallback(['packagingMessage' => 'Preparing base version from local repository...'], 'Preparing base version...');
                 $this->archiveLocalRepository($repo, $baseVersion, $baseZipPath);
                 $progressCallback(['fileDownloadProgress' => 50], 'Preparing head version from local repository...');
@@ -327,10 +339,10 @@ class DeploymentPackageService
 
     private function getZipManifest(string $zipPath): array
     {
-        $manifest = [];
+        $entries = [];
         $zip = new ZipArchive;
         if ($zip->open($zipPath) !== true) {
-            return $manifest;
+            return [];
         }
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
@@ -339,18 +351,57 @@ class DeploymentPackageService
             if (substr($internalPath, -1) === '/') {
                 continue;
             }
-            $parts = explode('/', $internalPath, 2);
-            if (count($parts) === 2) {
-                $manifest[$parts[1]] = [
-                    'crc' => $stat['crc'],
-                    'size' => $stat['size'],
-                    'internal_path' => $internalPath,
-                ];
-            }
+
+            $entries[$internalPath] = [
+                'crc' => $stat['crc'],
+                'size' => $stat['size'],
+                'internal_path' => $internalPath,
+            ];
         }
         $zip->close();
 
+        $manifest = [];
+        $rootPrefix = $this->commonArchiveRootPrefix(array_keys($entries));
+
+        foreach ($entries as $internalPath => $entry) {
+            $relativePath = $rootPrefix && str_starts_with($internalPath, $rootPrefix)
+                ? substr($internalPath, strlen($rootPrefix))
+                : $internalPath;
+
+            if ($relativePath === '') {
+                continue;
+            }
+
+            $manifest[$relativePath] = $entry;
+        }
+
         return $manifest;
+    }
+
+    /**
+     * @param  list<string>  $paths
+     */
+    private function commonArchiveRootPrefix(array $paths): ?string
+    {
+        if ($paths === []) {
+            return null;
+        }
+
+        $firstPath = $paths[0];
+
+        if (! str_contains($firstPath, '/')) {
+            return null;
+        }
+
+        $root = explode('/', $firstPath, 2)[0];
+
+        foreach ($paths as $path) {
+            if (! str_starts_with($path, "{$root}/")) {
+                return null;
+            }
+        }
+
+        return "{$root}/";
     }
 
     /**

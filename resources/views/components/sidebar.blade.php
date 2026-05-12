@@ -240,13 +240,14 @@
     </nav>
 
     {{-- Pro tip --}}
+    <!--
     <div class="m-3 p-4 rounded-xl brand-soft-bg" style="border: 1px solid hsl(var(--border) / 0.6);">
         <div class="text-xs font-semibold mb-1" style="color: hsl(var(--foreground));">Pro tip</div>
         <p class="text-xs leading-relaxed" style="color: hsl(var(--muted-foreground));">
             Always generate a rollback package alongside production updates.
         </p>
     </div>
-
+    -->
 </aside>
 
 <style>

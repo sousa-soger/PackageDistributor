@@ -15,17 +15,17 @@
 
 @section('content')
   <div class="animate-fade-in px-4 sm:px-6 lg:px-8 py-6 lg:py-8" x-data="repositoriesPage({
-               repositories: @js($repositoryCards),
-               oauthConnections: @js($oauthConnections),
-               oauthProvider: @js(request('oauth_provider')),
-               roleOptions: @js($repositoryRoleOptions),
-               csrfToken: @js(csrf_token()),
-               createPackageBaseUrl: @js(route('create-package')),
-               oauthReconnectUrls: {
-                 github: @js(route('github.oauth.redirect', ['return_to' => 'repositories'])),
-                 gitlab: @js(route('gitlab.oauth.redirect', ['return_to' => 'repositories'])),
-               },
-             })" x-init="init()">
+                           repositories: @js($repositoryCards),
+                           oauthConnections: @js($oauthConnections),
+                           oauthProvider: @js(request('oauth_provider')),
+                           roleOptions: @js($repositoryRoleOptions),
+                           csrfToken: @js(csrf_token()),
+                           createPackageBaseUrl: @js(route('create-package')),
+                           oauthReconnectUrls: {
+                             github: @js(route('github.oauth.redirect', ['return_to' => 'repositories'])),
+                             gitlab: @js(route('gitlab.oauth.redirect', ['return_to' => 'repositories'])),
+                           },
+                         })" x-init="init()">
 
     {{-- ── Empty state ─────────────────────────────────────────────────────── --}}
     @if($repositories->isEmpty())
@@ -62,16 +62,11 @@
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.3-4.3"></path>
           </svg>
-          <input
-            type="search"
-            x-model.debounce.200ms="searchQuery"
-            placeholder="Search repositories…"
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9"
-          >
+          <input type="search" x-model.debounce.200ms="searchQuery" placeholder="Search repositories…"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9">
         </div>
         <div class="ml-auto inline-flex items-center rounded-lg border border-border/70 bg-card p-1 shadow-sm">
-          <button
-            @click="setViewMode('cards')"
+          <button @click="setViewMode('cards')"
             :class="viewMode === 'cards' ? 'brand-soft-bg text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'"
             class="px-2.5 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-base"
             aria-label="Card view">
@@ -85,8 +80,7 @@
             </svg>
             Cards
           </button>
-          <button
-            @click="setViewMode('list')"
+          <button @click="setViewMode('list')"
             :class="viewMode === 'list' ? 'brand-soft-bg text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'"
             class="px-2.5 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-base"
             aria-label="List view">
@@ -115,24 +109,31 @@
 
             <div class="relative">
               <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="h-12 w-12 rounded-lg brand-soft-bg flex items-center justify-center flex-shrink-0 text-primary"
-                  x-html="providerIcon(repo.provider)"></div>
+                <div class="flex items-center gap-3 min-w-0">
+                  <div
+                    class="h-12 w-12 rounded-lg brand-soft-bg flex items-center justify-center flex-shrink-0 text-primary"
+                    x-html="providerIcon(repo.provider)">
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-sm font-semibold truncate" style="color:hsl(var(--foreground))" x-text="repo.label">
+                    </div>
+                    <div class="text-xs mt-0.5 truncate" style="color:hsl(var(--muted-foreground))">
+                      <span x-text="repo.providerLabel"></span>
+                      <span x-show="repo.serverHost" x-text="` - ${repo.serverHost}`"></span>
+                    </div>
+                  </div>
+                </div>
 
-                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md border" :class="statusBadgeClass(repo.status)"
-                  x-text="repo.statusLabel"></span>
-              </div>
-
-              <div class="text-sm font-semibold truncate" style="color:hsl(var(--foreground))" x-text="repo.label"></div>
-              <div class="text-xs mt-0.5 truncate" style="color:hsl(var(--muted-foreground))">
-                <span x-text="repo.providerLabel"></span>
-                <span x-show="repo.serverHost" x-text="` - ${repo.serverHost}`"></span>
+                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md border shrink-0"
+                  :class="statusBadgeClass(repo.status)" x-text="repo.statusLabel"></span>
               </div>
 
               <div class="mt-3 flex flex-wrap gap-1.5">
                 <span x-show="repo.ownerName"
                   class="inline-flex items-center gap-1.5 text-[11px] font-semibold pl-1 pr-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 text-foreground">
                   <span class="relative flex shrink-0 overflow-hidden rounded-full h-4 w-4">
-                    <span class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
+                    <span
+                      class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
                       x-text="repo.ownerInitials"></span>
                   </span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -145,17 +146,18 @@
                   </svg>
                   <span x-text="`Owner - ${repo.ownerName}`"></span>
                 </span>
+              </div>
+
+              <div class="mt-3 flex flex-wrap gap-1.5">
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded"
                   style="background:hsl(var(--secondary));color:hsl(var(--muted-foreground))"
                   x-text="`${repo.branchCount} branches`"></span>
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded"
                   style="background:hsl(var(--secondary));color:hsl(var(--muted-foreground))"
                   x-text="`${repo.tagCount} tags`"></span>
-                <!--
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded"
                   style="background:hsl(var(--secondary));color:hsl(var(--muted-foreground))"
                   x-text="`default - ${repo.defaultBranch}`"></span>
-                -->
               </div>
 
               <div class="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-base">
@@ -163,22 +165,27 @@
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base brand-gradient-bg text-[hsl(var(--on-brand))]"
                   title="Create package">
                   <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 16h6M19 13v6M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l2-1.14M7.5 4.27l9 5.15"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M16 16h6M19 13v6M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l2-1.14M7.5 4.27l9 5.15">
+                    </path>
                     <polyline stroke-linecap="round" stroke-linejoin="round" points="3.29 7 12 12 20.71 7"></polyline>
                     <line stroke-linecap="round" stroke-linejoin="round" x1="12" x2="12" y1="22" y2="12"></line>
                   </svg>
-                  Package
+                  Create Package
                 </a>
 
-                <button type="button" x-show="repo.canManageRepository" @click.stop="handleRepositoryRefresh(repo)" :disabled="syncing === repo.id"
+                <button type="button" x-show="repo.canManageRepository" @click.stop="handleRepositoryRefresh(repo)"
+                  :disabled="syncing === repo.id"
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base"
-                  style="background:hsl(var(--secondary));color:hsl(var(--foreground))" :title="repositoryRefreshTitle(repo)">
+                  style="background:hsl(var(--secondary));color:hsl(var(--foreground))"
+                  :title="repositoryRefreshTitle(repo)">
                   <svg class="h-3.5 w-3.5" :class="syncing === repo.id ? 'animate-spin' : ''" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span x-text="syncing === repo.id ? repositoryRefreshLoadingLabel(repo) : repositoryRefreshLabel(repo)"></span>
+                  <span
+                    x-text="syncing === repo.id ? repositoryRefreshLoadingLabel(repo) : repositoryRefreshLabel(repo)"></span>
                 </button>
 
                 <button type="button" x-show="repo.canManageRepository" @click.stop="removeRepo(repo)"
@@ -221,7 +228,8 @@
 
       {{-- ── List view ─────────────────────────────────────────────────────────── --}}
       <div x-show="viewMode === 'list'" class="section-card p-0 overflow-hidden">
-        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_7rem_4rem_4rem_6rem] gap-3 px-5 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 border-b border-border/60 font-semibold">
+        <div
+          class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_7rem_4rem_4rem_6rem] gap-3 px-5 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 border-b border-border/60 font-semibold">
           <div>Repository</div>
           <div class="hidden md:block">Owner</div>
           <div class="hidden md:block">Provider</div>
@@ -251,7 +259,8 @@
                   <template x-if="repo.ownerName">
                     <div class="flex items-center gap-2 min-w-0">
                       <span class="relative flex overflow-hidden rounded-full h-6 w-6 shrink-0">
-                        <span class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[10px] font-semibold"
+                        <span
+                          class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[10px] font-semibold"
                           x-text="repo.ownerInitials"></span>
                       </span>
                       <div class="min-w-0">
@@ -259,7 +268,9 @@
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-crown h-2.5 w-2.5 text-primary">
-                            <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"></path>
+                            <path
+                              d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z">
+                            </path>
                             <path d="M5 21h14"></path>
                           </svg>
                           <span x-text="repo.ownerName"></span>
@@ -276,13 +287,16 @@
                 <div class="hidden md:block text-xs text-muted-foreground" x-text="repo.providerLabel"></div>
 
                 {{-- Branches --}}
-                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-center" x-text="repo.branchCount"></div>
+                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-center"
+                  x-text="repo.branchCount"></div>
                 {{-- Members --}}
-                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-center" x-text="repo.memberCount"></div>
+                <div class="hidden md:block text-xs text-muted-foreground tabular-nums text-center"
+                  x-text="repo.memberCount"></div>
 
                 {{-- Status badge --}}
                 <div class="text-right">
-                  <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border whitespace-nowrap"
+                  <span
+                    class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border whitespace-nowrap"
                     :class="statusBadgeClass(repo.status)">
                     <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
                     <span x-text="repo.statusLabel"></span>
@@ -294,8 +308,7 @@
         </ul>
 
         {{-- Empty search result inside list view --}}
-        <div x-show="filteredRepositories.length === 0"
-          class="py-10 text-center text-sm text-muted-foreground">
+        <div x-show="filteredRepositories.length === 0" class="py-10 text-center text-sm text-muted-foreground">
           No repositories match your search.
         </div>
       </div>
@@ -325,7 +338,8 @@
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center gap-2 flex-wrap">
                         <h2 class="text-2xl font-semibold truncate" x-text="selectedRepository.label"></h2>
-                        <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border"
+                        <span
+                          class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border"
                           :class="statusBadgeClass(selectedRepository.status)">
                           <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
                           <span x-text="selectedRepository.statusLabel"></span>
@@ -341,7 +355,8 @@
                         <span x-show="selectedRepository.ownerName"
                           class="inline-flex items-center gap-1.5 text-[11px] font-semibold pl-1 pr-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 text-foreground">
                           <span class="relative flex shrink-0 overflow-hidden rounded-full h-4 w-4">
-                            <span class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
+                            <span
+                              class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
                               x-text="selectedRepository.ownerInitials"></span>
                           </span>
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -354,7 +369,8 @@
                           </svg>
                           <span x-text="`Owner - ${selectedRepository.ownerName}`"></span>
                         </span>
-                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
+                        <span
+                          class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-git-branch h-3 w-3">
@@ -365,16 +381,20 @@
                           </svg>
                           <span x-text="selectedRepository.branchCount + ' branches'"></span>
                         </span>
-                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
+                        <span
+                          class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-tag h-3 w-3">
-                            <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path>
+                            <path
+                              d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z">
+                            </path>
                             <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>
                           </svg>
                           <span x-text="selectedRepository.tagCount + ' tags'"></span>
                         </span>
-                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
+                        <span
+                          class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-users h-3 w-3">
@@ -391,15 +411,19 @@
                       <a x-show="selectedRepository.canCreatePackage" :href="createPackageUrl(selectedRepository)"
                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-base brand-gradient-bg text-[hsl(var(--on-brand))]"
                         title="Create package">
-                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 16h6M19 13v6M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l2-1.14M7.5 4.27l9 5.15"></path>
-                            <polyline stroke-linecap="round" stroke-linejoin="round" points="3.29 7 12 12 20.71 7"></polyline>
-                            <line stroke-linecap="round" stroke-linejoin="round" x1="12" x2="12" y1="22" y2="12"></line>
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                          stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16 16h6M19 13v6M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l2-1.14M7.5 4.27l9 5.15">
+                          </path>
+                          <polyline stroke-linecap="round" stroke-linejoin="round" points="3.29 7 12 12 20.71 7">
+                          </polyline>
+                          <line stroke-linecap="round" stroke-linejoin="round" x1="12" x2="12" y1="22" y2="12"></line>
                         </svg>
                         Create package
                       </a>
-                      <button type="button" x-show="selectedRepository.canManageRepository" @click="handleRepositoryRefresh(selectedRepository)"
-                        :disabled="syncing === selectedRepository.id"
+                      <button type="button" x-show="selectedRepository.canManageRepository"
+                        @click="handleRepositoryRefresh(selectedRepository)" :disabled="syncing === selectedRepository.id"
                         class="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
                         :title="repositoryRefreshTitle(selectedRepository)">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
@@ -490,7 +514,8 @@
                           <path stroke-linecap="round" stroke-linejoin="round"
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span x-text="syncing === selectedRepository.id ? repositoryRefreshLoadingLabel(selectedRepository) : repositoryRefreshLabel(selectedRepository)"></span>
+                        <span
+                          x-text="syncing === selectedRepository.id ? repositoryRefreshLoadingLabel(selectedRepository) : repositoryRefreshLabel(selectedRepository)"></span>
                       </button>
 
                       <template
@@ -696,34 +721,31 @@
       </div>
     </template>
 
-    <div x-show="uploadVersionModal" x-cloak
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style="background:hsl(220 30% 5% / 0.55);backdrop-filter:blur(4px)"
-         @click.self="closeUploadVersionModal()">
+    <div x-show="uploadVersionModal" x-cloak x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style="background:hsl(220 30% 5% / 0.55);backdrop-filter:blur(4px)" @click.self="closeUploadVersionModal()">
       <div class="w-full max-w-lg animate-slide-up overflow-hidden"
-           style="background:hsl(var(--card));border-radius:calc(var(--radius) * 1.5);border:1px solid hsl(var(--border)/0.7);box-shadow:var(--shadow-lg)"
-           role="dialog" aria-modal="true">
+        style="background:hsl(var(--card));border-radius:calc(var(--radius) * 1.5);border:1px solid hsl(var(--border)/0.7);box-shadow:var(--shadow-lg)"
+        role="dialog" aria-modal="true">
         <div class="brand-soft-bg px-6 py-5 border-b border-border/60">
           <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <h2 class="font-semibold tracking-tight text-xl" style="color:hsl(var(--foreground))">Upload New Version</h2>
+              <h2 class="font-semibold tracking-tight text-xl" style="color:hsl(var(--foreground))">Upload New Version
+              </h2>
               <p class="mt-1 text-sm" style="color:hsl(var(--muted-foreground))">
                 <span>Replace</span>
-                <span class="font-medium" style="color:hsl(var(--foreground))" x-text="uploadVersionRepository?.label"></span>
+                <span class="font-medium" style="color:hsl(var(--foreground))"
+                  x-text="uploadVersionRepository?.label"></span>
                 <span>with a full project upload.</span>
               </p>
             </div>
             <button type="button" @click="closeUploadVersionModal()"
-                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent"
-                    aria-label="Close">
+              class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent"
+              aria-label="Close">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 6 6 18" />
                 <path d="m6 6 12 12" />
               </svg>
@@ -734,15 +756,14 @@
         <div class="px-6 py-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
           <div class="space-y-4">
             <label for="upload-version-archive"
-                   class="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/70 bg-secondary/30 px-6 py-9 text-center cursor-pointer transition-all hover:border-primary/60 hover:bg-secondary/50"
-                   :class="uploadVersionDropActive ? 'border-primary/60 bg-secondary/50' : ''"
-                   @dragenter.prevent="uploadVersionDropActive = true"
-                   @dragover.prevent="uploadVersionDropActive = true"
-                   @dragleave.self.prevent="uploadVersionDropActive = false"
-                   @drop.prevent="handleUploadVersionDrop($event)">
-              <div class="h-14 w-14 rounded-2xl brand-soft-bg flex items-center justify-center text-primary transition-transform group-hover:scale-105">
+              class="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/70 bg-secondary/30 px-6 py-9 text-center cursor-pointer transition-all hover:border-primary/60 hover:bg-secondary/50"
+              :class="uploadVersionDropActive ? 'border-primary/60 bg-secondary/50' : ''"
+              @dragenter.prevent="uploadVersionDropActive = true" @dragover.prevent="uploadVersionDropActive = true"
+              @dragleave.self.prevent="uploadVersionDropActive = false" @drop.prevent="handleUploadVersionDrop($event)">
+              <div
+                class="h-14 w-14 rounded-2xl brand-soft-bg flex items-center justify-center text-primary transition-transform group-hover:scale-105">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" x2="12" y1="3" y2="15" />
@@ -750,24 +771,28 @@
               </div>
               <div class="space-y-1">
                 <div class="text-base font-semibold">Drag &amp; Drop the full project</div>
-                <p class="text-xs text-muted-foreground max-w-sm">Upload the complete folder, ZIP, or Git bundle again. Missing files in this upload will be treated as removed.</p>
+                <p class="text-xs text-muted-foreground max-w-sm">Upload the complete folder, ZIP, or Git bundle again.
+                  Missing files in this upload will be treated as removed.</p>
                 <p class="text-xs text-muted-foreground">Click to browse for a ZIP or bundle file.</p>
               </div>
-              <input id="upload-version-archive" type="file" accept=".zip,.bundle" class="hidden" @change="handleUploadVersionArchiveSelection($event)">
+              <input id="upload-version-archive" type="file" accept=".zip,.bundle" class="hidden"
+                @change="handleUploadVersionArchiveSelection($event)">
             </label>
 
             <div class="flex items-center justify-between gap-3 rounded-lg border border-dashed p-3 text-xs"
-                 style="border-color:hsl(var(--border));background:hsl(var(--secondary)/0.35);color:hsl(var(--muted-foreground))">
+              style="border-color:hsl(var(--border));background:hsl(var(--secondary)/0.35);color:hsl(var(--muted-foreground))">
               <span>Need to browse a folder instead of an archive?</span>
               <button type="button" @click="$refs.uploadVersionFolderInput.click()"
-                      class="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-border bg-background px-3 font-medium transition-colors hover:bg-accent"
-                      style="color:hsl(var(--foreground))">
+                class="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-border bg-background px-3 font-medium transition-colors hover:bg-accent"
+                style="color:hsl(var(--foreground))">
                 Browse Folder
               </button>
-              <input x-ref="uploadVersionFolderInput" type="file" webkitdirectory multiple class="hidden" @change="handleUploadVersionFolderSelection($event)">
+              <input x-ref="uploadVersionFolderInput" type="file" webkitdirectory multiple class="hidden"
+                @change="handleUploadVersionFolderSelection($event)">
             </div>
 
-            <div x-show="uploadVersionZipLoading" x-cloak class="text-sm" style="color:hsl(var(--muted-foreground))" x-text="uploadVersionZipProgress"></div>
+            <div x-show="uploadVersionZipLoading" x-cloak class="text-sm" style="color:hsl(var(--muted-foreground))"
+              x-text="uploadVersionZipProgress"></div>
 
             <div x-show="uploadVersionFile" x-cloak class="space-y-2">
               <div class="flex items-center justify-between gap-3 text-xs" style="color:hsl(var(--muted-foreground))">
@@ -775,25 +800,25 @@
                 <span x-text="`${uploadVersionProgress}%`"></span>
               </div>
               <div class="h-2 rounded-full overflow-hidden" style="background:hsl(var(--border))">
-                <div class="h-full transition-all" :style="`width:${uploadVersionProgress}%;background:var(--gradient-brand)`"></div>
+                <div class="h-full transition-all"
+                  :style="`width:${uploadVersionProgress}%;background:var(--gradient-brand)`"></div>
               </div>
             </div>
 
             <div x-show="uploadVersionError" x-cloak class="rounded-lg border px-3 py-2 text-sm"
-                 style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)"
-                 x-text="uploadVersionError"></div>
+              style="border-color:hsl(var(--failed)/0.30);color:hsl(var(--failed));background:hsl(var(--failed)/0.05)"
+              x-text="uploadVersionError"></div>
           </div>
         </div>
 
         <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t"
-             style="border-color:hsl(var(--border)/0.6);background:hsl(var(--secondary)/0.5)">
+          style="border-color:hsl(var(--border)/0.6);background:hsl(var(--secondary)/0.5)">
           <button type="button" @click="closeUploadVersionModal()"
-                  class="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-accent">
+            class="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-accent">
             Cancel
           </button>
-          <button type="button" @click="uploadRepositoryVersion()"
-                  :disabled="uploadVersionLoading || !uploadVersionFile"
-                  class="brand-gradient-bg shadow-soft inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="button" @click="uploadRepositoryVersion()" :disabled="uploadVersionLoading || !uploadVersionFile"
+            class="brand-gradient-bg shadow-soft inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
             <span x-text="uploadVersionLoading ? 'Uploading...' : 'Upload New Version'"></span>
           </button>
         </div>

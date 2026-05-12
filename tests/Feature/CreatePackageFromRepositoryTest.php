@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\DeploymentPackageService;
 use App\Services\OAuthTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 
@@ -145,6 +146,41 @@ test('connected local repository can queue a package', function () {
         Queue::assertPushed(GenerateDeploymentPackageJob::class);
     } finally {
         File::deleteDirectory($storagePath);
+    }
+});
+
+test('gitless archives can queue a one time package', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('deployments.queue-gitless-job'), [
+            'base_archive' => UploadedFile::fake()->create('base.zip', 1, 'application/zip'),
+            'environment' => 'DEV',
+            'head_archive' => UploadedFile::fake()->create('target.zip', 1, 'application/zip'),
+            'package_name' => 'DEV-gitless-test',
+            'project_name' => 'Gitless folders',
+        ], [
+            'Accept' => 'application/json',
+        ])
+        ->assertOk()
+        ->assertJsonPath('status', 'queued');
+
+    $job = DeploymentJob::firstOrFail();
+
+    try {
+        expect($job->user_id)->toBe($user->id)
+            ->and($job->repository_id)->toBeNull()
+            ->and($job->vcs_provider)->toBe('gitless')
+            ->and($job->project_name)->toBe('Gitless folders')
+            ->and(File::isDirectory($job->repo))->toBeTrue()
+            ->and(File::isFile($job->repo.DIRECTORY_SEPARATOR.'base.zip'))->toBeTrue()
+            ->and(File::isFile($job->repo.DIRECTORY_SEPARATOR.'head.zip'))->toBeTrue();
+
+        Queue::assertPushed(GenerateDeploymentPackageJob::class);
+    } finally {
+        File::deleteDirectory($job->repo);
     }
 });
 
@@ -454,4 +490,37 @@ test('queued local repository package job uses stored mirror path without oauth'
         ->and($service->call['vcsProvider'])->toBe('local-pc')
         ->and($service->call['vcsToken'])->toBe('')
         ->and($job->fresh()->status)->toBe('completed');
+});
+
+test('queued gitless package job uses uploaded archive workspace without oauth', function () {
+    $user = User::factory()->create(['github_token' => 'unused-token']);
+    $workspace = storage_path('app/temp/gitless-job-test');
+    File::ensureDirectoryExists($workspace);
+
+    try {
+        $job = DeploymentJob::create([
+            'base_version' => 'base-folder',
+            'environment' => 'DEV',
+            'head_version' => 'target-folder',
+            'package_name' => 'DEV-gitless-package',
+            'project_name' => 'Gitless folders',
+            'repo' => $workspace,
+            'status' => 'queued',
+            'user_id' => $user->id,
+            'vcs_provider' => 'gitless',
+        ]);
+
+        $service = new CreatePackageRepositoryCapturingService;
+        $oauthTokens = Mockery::mock(OAuthTokenService::class);
+        $oauthTokens->shouldNotReceive('accessToken');
+
+        (new GenerateDeploymentPackageJob($job->id))->handle($service, $oauthTokens);
+
+        expect($service->call['repo'])->toBe($workspace)
+            ->and($service->call['vcsProvider'])->toBe('gitless')
+            ->and($service->call['vcsToken'])->toBe('')
+            ->and($job->fresh()->status)->toBe('completed');
+    } finally {
+        File::deleteDirectory($workspace);
+    }
 });

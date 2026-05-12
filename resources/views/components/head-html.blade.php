@@ -8,14 +8,32 @@
 
     <script>
         (() => {
-            const savedTheme = localStorage.getItem('theme') || 'system';
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const root = document.documentElement;
+            const storageKey = 'theme';
+            const disableTransitionsClass = 'theme-switching';
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const resolveDarkMode = (theme) => theme === 'dark' || (theme === 'system' && mediaQuery.matches);
 
-            if (savedTheme === 'dark' || (savedTheme === 'system' && systemPrefersDark)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            window.applyThemePreference = (theme, persist = true) => {
+                root.classList.add(disableTransitionsClass);
+                root.classList.toggle('dark', resolveDarkMode(theme));
+
+                if (persist) {
+                    if (theme === 'system') {
+                        localStorage.removeItem(storageKey);
+                    } else {
+                        localStorage.setItem(storageKey, theme);
+                    }
+                }
+
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(() => {
+                        root.classList.remove(disableTransitionsClass);
+                    });
+                });
+            };
+
+            root.classList.toggle('dark', resolveDarkMode(localStorage.getItem(storageKey) || 'system'));
         })();
     </script>
 

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\QueueDeploymentPackageRequest;
+use App\Http\Requests\QueueGitlessDeploymentPackageRequest;
 use App\Jobs\GenerateDeploymentPackageJob;
 use App\Models\DeploymentJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -186,6 +188,78 @@ class DeploymentPackageController extends Controller
         ]);
     }
 
+    public function queueGitlessJob(QueueGitlessDeploymentPackageRequest $request): JsonResponse
+    {
+        session()->save();
+
+        $validated = $request->validated();
+        /** @var UploadedFile $baseArchive */
+        $baseArchive = $validated['base_archive'];
+        /** @var UploadedFile $headArchive */
+        $headArchive = $validated['head_archive'];
+
+        if (! $this->isZipArchiveUpload($baseArchive)) {
+            return response()->json([
+                'message' => 'Upload a ZIP archive for the base folder.',
+            ], 422);
+        }
+
+        if (! $this->isZipArchiveUpload($headArchive)) {
+            return response()->json([
+                'message' => 'Upload a ZIP archive for the target folder.',
+            ], 422);
+        }
+
+        $environment = strtoupper(trim($validated['environment']));
+        $projectName = trim($validated['project_name'] ?? '') ?: 'Gitless folders';
+        $baseVersion = 'base-folder';
+        $headVersion = 'target-folder';
+        $packageName = trim($validated['package_name'] ?? '');
+
+        if ($packageName === '') {
+            $safeProject = preg_replace('/[^\w.\-]+/', '_', $projectName);
+            $timestamp = now()->format('Ymd-Hi');
+            $packageName = "{$environment}-{$safeProject}-{$baseVersion}-to-{$headVersion}-{$timestamp}";
+        }
+
+        $workspace = storage_path('app/temp/gitless-'.auth()->id().'-'.uniqid());
+
+        try {
+            File::ensureDirectoryExists($workspace);
+
+            $baseArchive->move($workspace, 'base.zip');
+            $headArchive->move($workspace, 'head.zip');
+
+            $job = DeploymentJob::create([
+                'user_id' => auth()->id(),
+                'repo' => $workspace,
+                'vcs_provider' => 'gitless',
+                'project_name' => $projectName,
+                'environment' => $environment,
+                'base_version' => $baseVersion,
+                'head_version' => $headVersion,
+                'package_name' => $packageName,
+                'status' => 'queued',
+            ]);
+
+            Cache::put($job->progressCacheKey(), $job->defaultProgressArray(), DeploymentJob::PROGRESS_CACHE_TTL_SECONDS);
+
+            GenerateDeploymentPackageJob::dispatch($job->id);
+
+            return response()->json([
+                'status' => 'queued',
+                'job_id' => $job->id,
+                'package_name' => $job->package_name,
+            ]);
+        } catch (\Throwable $e) {
+            File::deleteDirectory($workspace);
+
+            return response()->json([
+                'message' => 'Failed to queue gitless package: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Poll progress for a specific queued job (by DB ID).
      * Fast reads from cache; falls back to DB progress column when cache is cold.
@@ -329,6 +403,11 @@ class DeploymentPackageController extends Controller
         }
 
         return response()->download($archivePath, "{$folderName}{$format}");
+    }
+
+    private function isZipArchiveUpload(UploadedFile $uploadedFile): bool
+    {
+        return strtolower($uploadedFile->getClientOriginalExtension()) === 'zip';
     }
 
     private function createZip(string $packageRoot, string $folderName): ?string

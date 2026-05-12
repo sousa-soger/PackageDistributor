@@ -103,6 +103,10 @@ class GenerateDeploymentPackageJob implements ShouldQueue
             $vcsProvider = 'local-pc';
         }
 
+        if ($vcsProvider === 'gitless') {
+            $packageRepository = $job->repo;
+        }
+
         if (in_array($vcsProvider, ['github', 'gitlab'], true)) {
             if ($repository?->access_token) {
                 $vcsToken = $repository->access_token;

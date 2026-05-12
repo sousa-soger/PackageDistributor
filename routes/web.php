@@ -155,6 +155,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/deployments/queue-job', [DeploymentPackageController::class, 'queueJob'])
         ->name('deployments.queue-job');
 
+    Route::post('/deployments/queue-gitless-job', [DeploymentPackageController::class, 'queueGitlessJob'])
+        ->name('deployments.queue-gitless-job');
+
     // Poll progress + status by job DB ID
     Route::get('/deployments/jobs/{id}/progress', [DeploymentPackageController::class, 'jobProgress'])
         ->where('id', '[0-9]+')
