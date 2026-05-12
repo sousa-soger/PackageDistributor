@@ -152,15 +152,7 @@
                                         :class="isRepositoryOpen(@js($group['key'])) ? '' : '-rotate-90'">
                                         <path d="m6 9 6 6 6-6"></path>
                                     </svg>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="lucide lucide-git-branch h-4 w-4 shrink-0 text-primary">
-                                        <line x1="6" x2="6" y1="3" y2="15"></line>
-                                        <circle cx="18" cy="6" r="3"></circle>
-                                        <circle cx="6" cy="18" r="3"></circle>
-                                        <path d="M18 9a9 9 0 0 1-9 9"></path>
-                                    </svg>
+                                    <span x-html="repoIcon(@js($group['provider'] ?? ''))"></span>
                                     <div class="min-w-0 text-left">
                                         <div class="truncate font-mono text-sm">{{ $group['name'] }}</div>
                                         <div class="truncate text-[11px] text-muted-foreground">
@@ -550,6 +542,28 @@
                 isPackageExpanded(packageId) {
                     return this.expandedPackageId === packageId;
                 },
+
+                get selectedRepositoryProvider() {
+                    return this.selectedRepositoryOption?.provider || '';
+                },
+
+                get selectedRepositoryProviderLabel() {
+                    return this.selectedRepositoryOption?.providerLabel || '';
+                },
+                
+                repoIcon(provider) {
+                    if (provider === 'github') {
+                        return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github h-3.5 w-3.5"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>`;
+                    }
+                    if (provider === 'gitlab') {
+                        return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gitlab h-3.5 w-3.5"><path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26a.42.42 0 0 0-.1-.18.38.38 0 0 0-.26-.08.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z"></path></svg>`;
+                    }
+                    if (provider === 'company-server') {
+                        return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-server h-3.5 w-3.5"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>`;
+                    }
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hard-drive h-3.5 w-3.5"><line x1="22" x2="2" y1="12" y2="12"></line><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" x2="6.01" y1="16" y2="16"></line><line x1="10" x2="10.01" y1="16" y2="16"></line></svg>`;
+                },
+
 
                 loadRepositoryState() {
                     try {

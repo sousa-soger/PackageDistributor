@@ -447,7 +447,7 @@
     }
 
     .nav-item-active .icon-container {
-        @apply bg-white shadow-[0_1px_2px_rgba(0, 0, 0, 0.05)] ring-1 ring-slate-200 text-blue-600;
+        @apply bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 text-blue-600;
     }
 
     .nav-item-modern:not(.nav-item-active):hover .icon-container {

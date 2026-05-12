@@ -217,7 +217,10 @@ class PackageController extends Controller
                 $owner = $repository?->user;
                 $ownerName = $owner?->name ?: $owner?->email;
                 $fallbackOwner = $firstPackage->creator?->name ?: $firstPackage->creator?->email;
-                $repositoryName = $repository?->label ?: ($firstPackage->repo ?: $firstPackage->project_name);
+                $isGitlessGroup = $this->isGitlessPackage($firstPackage);
+                $repositoryName = $isGitlessGroup
+                    ? 'Gitless packages'
+                    : ($repository?->label ?: ($firstPackage->repo ?: $firstPackage->project_name));
 
                 $contributors = collect();
 
@@ -244,6 +247,7 @@ class PackageController extends Controller
                 return [
                     'key' => $key,
                     'name' => $repositoryName ?: 'Unassigned repository',
+                    'provider' => $isGitlessGroup ? 'gitless' : ($repository?->provider ?? ''),
                     'ownerName' => $ownerName ?: ($fallbackOwner ?: 'Unknown owner'),
                     'ownerInitials' => $this->initials($ownerName ?: $fallbackOwner),
                     'contributors' => $contributors,
@@ -256,11 +260,20 @@ class PackageController extends Controller
 
     private function packageRepositoryGroupKey(DeploymentJob $package): string
     {
+        if ($this->isGitlessPackage($package)) {
+            return 'gitless';
+        }
+
         if ($package->repository_id) {
             return "repository-{$package->repository_id}";
         }
 
         return 'legacy-'.md5((string) ($package->repo ?: $package->project_name ?: $package->id));
+    }
+
+    private function isGitlessPackage(DeploymentJob $package): bool
+    {
+        return $package->vcs_provider === 'gitless';
     }
 
     private function repositoryClientIndex(Collection $packageGroups): array

@@ -162,7 +162,7 @@ class DeploymentPackageController extends Controller
             $project = trim($validated['project_name']);
             $base = preg_replace('/[^\w.\-]+/', '_', $validated['base_version']);
             $head = preg_replace('/[^\w.\-]+/', '_', $validated['head_version']);
-            $timestamp = now()->format('Ymd-Hi');
+            $timestamp = now()->format('ymd-Hi');
             $validated['package_name'] = "{$environment}-{$project}-{$base}-to-{$head}-{$timestamp}";
         }
 
@@ -223,9 +223,11 @@ class DeploymentPackageController extends Controller
         $packageName = trim($validated['package_name'] ?? '');
 
         if ($packageName === '') {
-            $safeProject = preg_replace('/[^\w.\-]+/', '_', $projectName);
-            $timestamp = now()->format('Ymd-Hi');
-            $packageName = "{$environment}-{$safeProject}-{$baseVersion}-to-{$headVersion}-{$timestamp}";
+            $packageName = $this->gitlessPackageName(
+                $environment,
+                $baseArchive->getClientOriginalName(),
+                $headArchive->getClientOriginalName()
+            );
         }
 
         $workspace = storage_path('app/temp/gitless-'.auth()->id().'-'.uniqid());
@@ -264,6 +266,28 @@ class DeploymentPackageController extends Controller
                 'message' => 'Failed to queue gitless package: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    private function gitlessPackageName(string $environment, string $baseArchiveName, string $headArchiveName): string
+    {
+        $baseName = $this->gitlessPackageNamePart($baseArchiveName);
+        $headName = $this->gitlessPackageNamePart($headArchiveName);
+        $timestamp = now()->format('ymd-Hi');
+
+        if ($baseName === $headName) {
+            return "{$environment}-{$baseName}-{$timestamp}";
+        }
+
+        return "{$environment}-{$baseName}-to-{$headName}-{$timestamp}";
+    }
+
+    private function gitlessPackageNamePart(string $archiveName): string
+    {
+        $name = preg_replace('/\.zip$/i', '', $archiveName) ?? $archiveName;
+        $name = preg_replace('/[^\w.\-]+/', '_', trim($name)) ?? '';
+        $name = trim($name, '_');
+
+        return $name !== '' ? $name : 'folder';
     }
 
     public function previewChanges(

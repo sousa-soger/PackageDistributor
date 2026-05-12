@@ -955,11 +955,34 @@
                     <button type="button"
                         class="inline-flex h-9 items-center justify-center rounded-md bg-primary text-primary-foreground px-4 text-sm font-medium shadow hover:bg-primary/90 transition-colors">Deploy
                         Package</button>
+                    <button type="button" x-show="packagingResult?.zip_size"
+                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-running/30 bg-card px-2.5 text-xs font-semibold text-running transition-colors hover:bg-running/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        @click="downloadPackage('.zip')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-download h-3.5 w-3.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" x2="12" y1="15" y2="3"></line>
+                        </svg>
+                        zip
+                    </button>
+                    <button type="button" x-show="packagingResult?.targz_size"
+                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-running/30 bg-card px-2.5 text-xs font-semibold text-running transition-colors hover:bg-running/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        @click="downloadPackage('.tar.gz')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-download h-3.5 w-3.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" x2="12" y1="15" y2="3"></line>
+                        </svg>
+                        tar.gz
+                    </button>
                     <button type="button"
                         class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 text-sm font-medium shadow-sm transition-colors"
-                        @click="downloadPackage(form.format)">Download</button>
-                    <button type="button"
-                        class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground hover:bg-secondary/80 transition-colors"
                         @click="resetForm()">Create Another</button>
                 </div>
             </section>
@@ -1298,12 +1321,34 @@
                 },
 
                 get autoPackageName() {
-                    if (!this.packageProjectLabel || !this.baseRef || !this.headRef) return '';
                     const safe = value => String(value).replace(/[^\w.\-]+/g, '_');
                     const now = new Date();
                     const pad = n => String(n).padStart(2, '0');
-                    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+                    const ts = `${String(now.getFullYear()).slice(-2)}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+
+                    if (this.sourceMode === 'gitless') {
+                        if (!this.form.environment || !this.gitless.baseArchive || !this.gitless.headArchive) return '';
+
+                        const baseName = this.gitlessPackageNamePart(this.gitless.baseArchive.name);
+                        const headName = this.gitlessPackageNamePart(this.gitless.headArchive.name);
+
+                        if (baseName === headName) {
+                            return `${this.form.environment}-${baseName}-${ts}`;
+                        }
+
+                        return `${this.form.environment}-${baseName}-to-${headName}-${ts}`;
+                    }
+
+                    if (!this.packageProjectLabel || !this.baseRef || !this.headRef) return '';
+
                     return `${this.form.environment}-${safe(this.packageProjectLabel)}-${safe(this.baseRef)}-to-${safe(this.headRef)}-${ts}`;
+                },
+
+                gitlessPackageNamePart(fileName) {
+                    return String(fileName || '')
+                        .replace(/\.zip$/i, '')
+                        .replace(/[^\w.\-]+/g, '_')
+                        .replace(/^_+|_+$/g, '') || 'folder';
                 },
 
                 get finalPackageName() {

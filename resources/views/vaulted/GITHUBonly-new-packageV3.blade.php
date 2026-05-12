@@ -273,7 +273,7 @@
                     const proj = this.selectedRepositoryLabel || '[Project]';
                     const now = new Date();
                     const pad = n => String(n).padStart(2, '0');
-                    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+                    const ts = `${String(now.getFullYear()).slice(-2)}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
 
                     this.packageRows.forEach(row => {
                         if (!row.customName && (row.base || row.head)) {

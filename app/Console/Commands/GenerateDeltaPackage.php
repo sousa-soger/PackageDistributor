@@ -39,7 +39,7 @@ class GenerateDeltaPackage extends Command
         $head = trim($this->argument('head'));
         $repo = $this->option('repo') ?? '';
 
-        $timestamp = now()->format('Ymd-Hi');
+        $timestamp = now()->format('ymd-Hi');
         $folderName = $this->option('name') ?: "{$environment}-{$project}-{$this->safe($base)}-to-{$this->safe($head)}-{$timestamp}";
 
         // Progress callback — writes to cache keyed by folder name (V1/V2 compat)

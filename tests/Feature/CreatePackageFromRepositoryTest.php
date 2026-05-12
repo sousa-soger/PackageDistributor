@@ -8,6 +8,7 @@ use App\Services\DeploymentPackageService;
 use App\Services\OAuthTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 
@@ -184,6 +185,68 @@ test('gitless archives can queue a one time package', function () {
     }
 });
 
+test('gitless package auto name uses different archive names', function () {
+    Queue::fake();
+    Carbon::setTestNow(Carbon::parse('2026-05-13 14:05:00'));
+
+    $user = User::factory()->create();
+    $job = null;
+
+    try {
+        $this->actingAs($user)
+            ->post(route('deployments.queue-gitless-job'), [
+                'base_archive' => UploadedFile::fake()->create('website-base.zip', 1, 'application/zip'),
+                'environment' => 'QA',
+                'head_archive' => UploadedFile::fake()->create('website-target.zip', 1, 'application/zip'),
+                'project_name' => 'Gitless folders',
+            ], [
+                'Accept' => 'application/json',
+            ])
+            ->assertOk()
+            ->assertJsonPath('package_name', 'QA-website-base-to-website-target-260513-1405');
+
+        $job = DeploymentJob::firstOrFail();
+
+        expect($job->package_name)->toBe('QA-website-base-to-website-target-260513-1405');
+    } finally {
+        Carbon::setTestNow();
+        if ($job) {
+            File::deleteDirectory($job->repo);
+        }
+    }
+});
+
+test('gitless package auto name uses one archive name when both names match', function () {
+    Queue::fake();
+    Carbon::setTestNow(Carbon::parse('2026-05-13 14:05:00'));
+
+    $user = User::factory()->create();
+    $job = null;
+
+    try {
+        $this->actingAs($user)
+            ->post(route('deployments.queue-gitless-job'), [
+                'base_archive' => UploadedFile::fake()->create('portal.zip', 1, 'application/zip'),
+                'environment' => 'DEV',
+                'head_archive' => UploadedFile::fake()->create('portal.zip', 1, 'application/zip'),
+                'project_name' => 'Gitless folders',
+            ], [
+                'Accept' => 'application/json',
+            ])
+            ->assertOk()
+            ->assertJsonPath('package_name', 'DEV-portal-260513-1405');
+
+        $job = DeploymentJob::firstOrFail();
+
+        expect($job->package_name)->toBe('DEV-portal-260513-1405');
+    } finally {
+        Carbon::setTestNow();
+        if ($job) {
+            File::deleteDirectory($job->repo);
+        }
+    }
+});
+
 test('invited package creator can queue a package for a connected repository', function () {
     Queue::fake();
 
@@ -215,6 +278,34 @@ test('invited package creator can queue a package for a connected repository', f
         ->and($job->project_name)->toBe('Owner Credentials Repo');
 
     Queue::assertPushed(GenerateDeploymentPackageJob::class);
+});
+
+test('repository package auto name uses two digit year timestamp', function () {
+    Queue::fake();
+    Carbon::setTestNow(Carbon::parse('2026-05-13 14:05:00'));
+
+    $owner = User::factory()->create();
+    $repository = packageRepositoryFor($owner, [
+        'display_name' => 'Package Source',
+        'name' => 'acme/package-source',
+    ]);
+
+    try {
+        $this->actingAs($owner)
+            ->postJson(route('deployments.queue-job'), [
+                'base_version' => 'v1.0.0',
+                'environment' => 'PROD',
+                'head_version' => 'v1.1.0',
+                'repository_id' => $repository->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('package_name', 'PROD-Package Source-v1.0.0-to-v1.1.0-260513-1405');
+
+        expect(DeploymentJob::firstOrFail()->package_name)
+            ->toBe('PROD-Package Source-v1.0.0-to-v1.1.0-260513-1405');
+    } finally {
+        Carbon::setTestNow();
+    }
 });
 
 test('repository maintainer can queue and deploy packages for a connected repository', function () {
@@ -389,6 +480,43 @@ test('packages page renders row zip download action', function () {
         ->assertOk()
         ->assertSee('Download ZIP')
         ->assertSee(route('download.archive', ['folder' => $job->package_name, 'format' => '.zip']));
+});
+
+test('packages page groups all gitless packages together', function () {
+    $user = User::factory()->create();
+
+    DeploymentJob::create([
+        'base_version' => 'base-folder',
+        'environment' => 'DEV',
+        'head_version' => 'target-folder',
+        'package_name' => 'DEV-gitless-one',
+        'project_name' => 'Gitless Project One',
+        'repo' => storage_path('app/temp/gitless-one'),
+        'status' => 'completed',
+        'user_id' => $user->id,
+        'vcs_provider' => 'gitless',
+    ]);
+    DeploymentJob::create([
+        'base_version' => 'base-folder',
+        'environment' => 'QA',
+        'head_version' => 'target-folder',
+        'package_name' => 'QA-gitless-two',
+        'project_name' => 'Gitless Project Two',
+        'repo' => storage_path('app/temp/gitless-two'),
+        'status' => 'completed',
+        'user_id' => $user->id,
+        'vcs_provider' => 'gitless',
+    ]);
+
+    $content = $this->actingAs($user)
+        ->get(route('packages.index'))
+        ->assertOk()
+        ->assertSee('DEV-gitless-one')
+        ->assertSee('QA-gitless-two')
+        ->content();
+
+    expect(substr_count($content, '<option value="gitless">Gitless packages</option>'))->toBe(1)
+        ->and(substr_count($content, '<div class="truncate font-mono text-sm">Gitless packages</div>'))->toBe(1);
 });
 
 test('queued repository package job uses repository owner pat', function () {
