@@ -5,17 +5,18 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-6 pt-4 pb-12" x-data="quickCreatePackage({
-                    repositories: @js($repositories),
-                    queueUrl: '{{ route('deployments.queue-job') }}',
-                    gitlessQueueUrl: '{{ route('deployments.queue-gitless-job') }}',
-                    jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                    downloadUrl: '{{ route('download.archive') }}',
-                    csrfToken: '{{ csrf_token() }}',
-                    completedPackages: @js($packages),
-                    dbQueuedPackages: @js($queuedPackages),
-                    selectedRepositoryId: @js($selectedRepositoryId),
-                    repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
-                })" x-init="init()"
+                                repositories: @js($repositories),
+                                queueUrl: '{{ route('deployments.queue-job') }}',
+                                gitlessQueueUrl: '{{ route('deployments.queue-gitless-job') }}',
+                                previewUrl: '{{ route('deployments.preview-changes') }}',
+                                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                                downloadUrl: '{{ route('download.archive') }}',
+                                csrfToken: '{{ csrf_token() }}',
+                                completedPackages: @js($packages),
+                                dbQueuedPackages: @js($queuedPackages),
+                                selectedRepositoryId: @js($selectedRepositoryId),
+                                repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
+                            })" x-init="init()"
         @keydown.escape.window="baseVersionDropdownOpen = false; headVersionDropdownOpen = false">
         <div x-show="phase === 'form'" x-cloak class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
 
@@ -27,9 +28,9 @@
                             class="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all"
                             :class="sourceMode === 'repository' ? 'bg-card shadow-soft text-foreground' : 'text-muted-foreground hover:text-foreground'"
                             @click="setSourceMode('repository')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="lucide lucide-git-branch h-4 w-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="lucide lucide-git-branch h-4 w-4">
                                 <line x1="6" x2="6" y1="3" y2="15"></line>
                                 <circle cx="18" cy="6" r="3"></circle>
                                 <circle cx="6" cy="18" r="3"></circle>
@@ -41,15 +42,16 @@
                             class="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all"
                             :class="sourceMode === 'gitless' ? 'bg-card shadow-soft text-foreground' : 'text-muted-foreground hover:text-foreground'"
                             @click="setSourceMode('gitless')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="lucide lucide-folder-open h-4 w-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="lucide lucide-folder-open h-4 w-4">
                                 <path
                                     d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2">
                                 </path>
                             </svg>
                             Gitless folders
-                            <span class="ml-1 rounded-full brand-soft-bg px-1.5 py-0.5 text-[10px] font-semibold text-primary">One-time</span>
+                            <span
+                                class="ml-1 rounded-full brand-soft-bg px-1.5 py-0.5 text-[10px] font-semibold text-primary">One-time</span>
                         </button>
                     </div>
                     <p class="mt-2 px-2 pb-1 text-[11px] text-muted-foreground"
@@ -179,7 +181,8 @@
                             1</div>
                         <div>
                             <h2 class="text-base font-semibold tracking-tight">Project folders</h2>
-                            <p class="text-xs text-muted-foreground mt-0.5">Drag &amp; drop the base and target folders. We'll diff them locally - no git required.</p>
+                            <p class="text-xs text-muted-foreground mt-0.5">Drag &amp; drop the base and target folders.
+                                We'll diff them locally - no git required.</p>
                         </div>
                     </div>
 
@@ -187,7 +190,8 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between gap-3">
                                 <label for="gitless-base-folder"
-                                    class="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-xs font-medium">Base folder</label>
+                                    class="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-xs font-medium">Base
+                                    folder</label>
                                 <span class="text-[10px] text-muted-foreground">Older / current version</span>
                             </div>
                             <label for="gitless-base-folder"
@@ -197,18 +201,19 @@
                                 @dragover.prevent="gitless.baseDropActive = true"
                                 @dragleave.self.prevent="gitless.baseDropActive = false"
                                 @drop.prevent="handleGitlessDrop($event, 'base')">
-                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-running/10 text-running transition-base">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="lucide lucide-upload h-5 w-5">
+                                <div
+                                    class="flex h-11 w-11 items-center justify-center rounded-lg bg-running/10 text-running transition-base">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="lucide lucide-upload h-5 w-5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                         <polyline points="17 8 12 3 7 8"></polyline>
                                         <line x1="12" x2="12" y1="3" y2="15"></line>
                                     </svg>
                                 </div>
                                 <div class="max-w-full truncate text-sm font-medium"
-                                    x-text="gitless.baseArchive ? gitless.baseArchive.name : 'Drop base folder or .zip'"></div>
+                                    x-text="gitless.baseArchive ? gitless.baseArchive.name : 'Drop base folder or .zip'">
+                                </div>
                                 <div class="text-[11px] text-muted-foreground">or click to browse</div>
                                 <input id="gitless-base-folder" type="file" class="hidden" multiple webkitdirectory
                                     directory @change="handleGitlessFolderSelection($event, 'base')">
@@ -217,10 +222,9 @@
 
                         <div class="hidden md:flex items-center justify-center">
                             <div class="h-9 w-9 rounded-full brand-soft-bg flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round"
-                                    class="lucide lucide-arrow-right h-4 w-4 text-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-arrow-right h-4 w-4 text-primary">
                                     <path d="M5 12h14"></path>
                                     <path d="m12 5 7 7-7 7"></path>
                                 </svg>
@@ -230,7 +234,8 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between gap-3">
                                 <label for="gitless-head-folder"
-                                    class="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-xs font-medium">Target folder</label>
+                                    class="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-xs font-medium">Target
+                                    folder</label>
                                 <span class="text-[10px] text-muted-foreground">Newer version to ship</span>
                             </div>
                             <label for="gitless-head-folder"
@@ -240,18 +245,19 @@
                                 @dragover.prevent="gitless.headDropActive = true"
                                 @dragleave.self.prevent="gitless.headDropActive = false"
                                 @drop.prevent="handleGitlessDrop($event, 'head')">
-                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-success/10 text-success transition-base">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="lucide lucide-upload h-5 w-5">
+                                <div
+                                    class="flex h-11 w-11 items-center justify-center rounded-lg bg-success/10 text-success transition-base">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="lucide lucide-upload h-5 w-5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                         <polyline points="17 8 12 3 7 8"></polyline>
                                         <line x1="12" x2="12" y1="3" y2="15"></line>
                                     </svg>
                                 </div>
                                 <div class="max-w-full truncate text-sm font-medium"
-                                    x-text="gitless.headArchive ? gitless.headArchive.name : 'Drop target folder or .zip'"></div>
+                                    x-text="gitless.headArchive ? gitless.headArchive.name : 'Drop target folder or .zip'">
+                                </div>
                                 <div class="text-[11px] text-muted-foreground">or click to browse</div>
                                 <input id="gitless-head-folder" type="file" class="hidden" multiple webkitdirectory
                                     directory @change="handleGitlessFolderSelection($event, 'head')">
@@ -604,8 +610,20 @@
 
                     <template x-if="duplicatePackage">
                         <div
-                            class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
-                            A package with this repository, environment, base, and target already exists.
+                            class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-3 py-2 text-sm text-amber-500 flex items-center justify-between gap-3">
+                            <span>A package with this repository, environment, base, and target already exists.</span>
+                            <a href="{{ route('packages.index') }}"
+                                class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-400/50 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500 transition-colors hover:bg-amber-500/20 whitespace-nowrap">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
+                                    <path d="m7.5 4.27 9 5.15" />
+                                    <polyline points="3.29 7 12 12 20.71 7" />
+                                    <line x1="12" x2="12" y1="22" y2="12" />
+                                </svg>
+                                View Packages
+                            </a>
                         </div>
                     </template>
 
@@ -625,8 +643,10 @@
                                 </svg>
                                 Detected changes
                             </div>
-                            <span class="text-xs text-muted-foreground">Calculating...</span>
+                            <span class="text-xs text-muted-foreground" x-text="diffPreviewStatusLabel"></span>
                         </div>
+                        <p x-show="diffPreviewError" x-cloak class="mb-3 text-xs text-amber-500" x-text="diffPreviewError">
+                        </p>
                         <div class="grid grid-cols-3 gap-3">
                             <div class="rounded-xl border p-3.5 border-success/25 bg-success/8">
                                 <div class="flex items-center gap-2 text-xs font-medium text-success"><svg
@@ -638,7 +658,9 @@
                                         <path d="M3 15h6"></path>
                                         <path d="M6 12v6"></path>
                                     </svg> Added</div>
-                                <div class="mt-1.5 text-2xl font-semibold tabular-nums">—</div>
+                                <div class="mt-1.5 text-2xl font-semibold tabular-nums"
+                                    :class="isLoadingDiffPreview ? 'animate-pulse' : ''" x-text="diffPreview.added ?? '-'">
+                                </div>
                             </div>
                             <div class="rounded-xl border p-3.5 border-running/25 bg-running/8">
                                 <div class="flex items-center gap-2 text-xs font-medium text-running"><svg
@@ -653,7 +675,9 @@
                                         </path>
                                         <path d="M8 18h1"></path>
                                     </svg> Modified</div>
-                                <div class="mt-1.5 text-2xl font-semibold tabular-nums">—</div>
+                                <div class="mt-1.5 text-2xl font-semibold tabular-nums"
+                                    :class="isLoadingDiffPreview ? 'animate-pulse' : ''"
+                                    x-text="diffPreview.modified ?? '-'"></div>
                             </div>
                             <div class="rounded-xl border p-3.5 border-failed/25 bg-failed/8">
                                 <div class="flex items-center gap-2 text-xs font-medium text-failed"><svg
@@ -664,7 +688,9 @@
                                         <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
                                         <path d="M9 15h6"></path>
                                     </svg> Deleted</div>
-                                <div class="mt-1.5 text-2xl font-semibold tabular-nums">—</div>
+                                <div class="mt-1.5 text-2xl font-semibold tabular-nums"
+                                    :class="isLoadingDiffPreview ? 'animate-pulse' : ''"
+                                    x-text="diffPreview.deleted ?? '-'"></div>
                             </div>
                         </div>
                     </div>
@@ -732,46 +758,48 @@
                             </label>
                         </div>
                     </template>
-                    <div class="mt-5">
-                        <button type="button"
-                            class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
-                            @click="showAdvanced = !showAdvanced">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                class="lucide lucide-chevron-down h-4 w-4 transition-transform"
-                                :class="showAdvanced ? 'rotate-180' : ''">
-                                <path d="m6 9 6 6 6-6"></path>
-                            </svg>
-                            Advanced settings
-                        </button>
+                    <!--
+                            <div class="mt-5">
+                                <button type="button"
+                                    class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
+                                    @click="showAdvanced = !showAdvanced">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        class="lucide lucide-chevron-down h-4 w-4 transition-transform"
+                                        :class="showAdvanced ? 'rotate-180' : ''">
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                    Advanced settings
+                                </button>
 
-                        <div x-show="showAdvanced"
-                            class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div class="space-y-2">
-                                    <label class="text-sm font-medium leading-none">Output format</label>
-                                    <select
-                                        class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                        x-model="form.format">
-                                        <option value=".zip">ZIP</option>
-                                        <option value=".tar.gz">TAR.GZ</option>
-                                        <option value="both">Both</option>
-                                    </select>
+                                <div x-show="showAdvanced"
+                                    class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div class="space-y-2">
+                                            <label class="text-sm font-medium leading-none">Output format</label>
+                                            <select
+                                                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                x-model="form.format">
+                                                <option value=".zip">ZIP</option>
+                                                <option value=".tar.gz">TAR.GZ</option>
+                                                <option value="both">Both</option>
+                                            </select>
+                                        </div>
+                                        <label
+                                            class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
+                                            <span>
+                                                <span class="block text-sm font-medium leading-none">Generate rollback
+                                                    package</span>
+                                                <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently
+                                                    generates update and rollback together.</span>
+                                            </span>
+                                            <input type="checkbox" class="rounded border-input text-primary focus:ring-primary"
+                                                x-model="form.rollback" checked>
+                                        </label>
+                                    </div>
                                 </div>
-                                <label
-                                    class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
-                                    <span>
-                                        <span class="block text-sm font-medium leading-none">Generate rollback
-                                            package</span>
-                                        <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently
-                                            generates update and rollback together.</span>
-                                    </span>
-                                    <input type="checkbox" class="rounded border-input text-primary focus:ring-primary"
-                                        x-model="form.rollback" checked>
-                                </label>
                             </div>
-                        </div>
-                    </div>
+                        -->
                 </section>
             </div>
 
@@ -783,8 +811,7 @@
                     </div>
 
                     <div class="space-y-3 text-sm">
-                        <div class="flex items-center justify-between gap-3"><span
-                                class="text-xs text-muted-foreground"
+                        <div class="flex items-center justify-between gap-3"><span class="text-xs text-muted-foreground"
                                 x-text="sourceMode === 'gitless' ? 'Source' : 'Repository'"></span><span
                                 class="max-w-[60%] truncate font-medium" x-text="selectedRepositoryLabel || '-'"></span>
                         </div>
@@ -951,6 +978,7 @@
             repositories,
             queueUrl,
             gitlessQueueUrl,
+            previewUrl,
             jobProgressBaseUrl,
             downloadUrl,
             csrfToken,
@@ -986,6 +1014,7 @@
                 })),
                 queueUrl,
                 gitlessQueueUrl,
+                previewUrl,
                 jobProgressBaseUrl,
                 downloadUrl,
                 csrfToken,
@@ -1032,6 +1061,16 @@
                 packagingMessage: '',
                 packagingResult: null,
                 packagingError: '',
+                diffPreview: {
+                    added: null,
+                    deleted: null,
+                    modified: null,
+                    total: null,
+                },
+                diffPreviewAbortController: null,
+                diffPreviewError: '',
+                diffPreviewRequestId: 0,
+                isLoadingDiffPreview: false,
 
                 stages: [
                     { key: 'queued', label: 'Queued', value: 5 },
@@ -1061,6 +1100,8 @@
                         return;
                     }
 
+                    this.cancelDiffPreviewRequest();
+                    this.resetDiffPreview();
                     this.sourceMode = mode;
                     this.baseVersionDropdownOpen = false;
                     this.headVersionDropdownOpen = false;
@@ -1224,6 +1265,38 @@
                     return this.form.base && this.form.head && this.form.base === this.form.head;
                 },
 
+                get canPreviewDiff() {
+                    return this.sourceMode === 'repository' &&
+                        this.selectedRepository &&
+                        this.baseRef &&
+                        this.headRef &&
+                        !this.identicalVersions;
+                },
+
+                get diffPreviewStatusLabel() {
+                    if (!this.canPreviewDiff) {
+                        return '';
+                    }
+
+                    if (this.isLoadingDiffPreview) {
+                        return 'Calculating...';
+                    }
+
+                    if (this.diffPreviewError) {
+                        return 'Preview unavailable';
+                    }
+
+                    if (this.diffPreview.total === null) {
+                        return 'Choose two versions';
+                    }
+
+                    if (this.diffPreview.total === 0) {
+                        return 'No file changes';
+                    }
+
+                    return `${this.diffPreview.total} change${this.diffPreview.total === 1 ? '' : 's'}`;
+                },
+
                 get autoPackageName() {
                     if (!this.packageProjectLabel || !this.baseRef || !this.headRef) return '';
                     const safe = value => String(value).replace(/[^\w.\-]+/g, '_');
@@ -1302,10 +1375,12 @@
                         this.form.base = versions[1].unique_key;
                     }
 
-                    this.checkDuplicate();
+                    this.handleVersionChange();
                 },
 
                 resetVersionState() {
+                    this.cancelDiffPreviewRequest();
+                    this.resetDiffPreview();
                     this.repoBranches = [];
                     this.repoTags = [];
                     this.repoReleases = [];
@@ -1321,6 +1396,7 @@
 
                 handleVersionChange() {
                     this.checkDuplicate();
+                    this.previewDetectedChanges();
                 },
 
                 toggleVersionDropdown(field) {
@@ -1378,6 +1454,100 @@
                             pkg.head_version === this.headRef &&
                             pkg.environment === this.form.environment;
                     }) || null;
+                },
+
+                resetDiffPreview() {
+                    this.diffPreview = {
+                        added: null,
+                        deleted: null,
+                        modified: null,
+                        total: null,
+                    };
+                    this.diffPreviewError = '';
+                    this.isLoadingDiffPreview = false;
+                },
+
+                cancelDiffPreviewRequest() {
+                    if (this.diffPreviewAbortController) {
+                        this.diffPreviewAbortController.abort();
+                        this.diffPreviewAbortController = null;
+                    }
+                },
+
+                async previewDetectedChanges() {
+                    this.cancelDiffPreviewRequest();
+
+                    if (!this.canPreviewDiff) {
+                        this.resetDiffPreview();
+                        return;
+                    }
+
+                    const requestId = ++this.diffPreviewRequestId;
+                    const controller = new AbortController();
+
+                    this.diffPreviewAbortController = controller;
+                    this.isLoadingDiffPreview = true;
+                    this.diffPreviewError = '';
+                    this.diffPreview = {
+                        added: null,
+                        deleted: null,
+                        modified: null,
+                        total: null,
+                    };
+
+                    try {
+                        const res = await fetch(this.previewUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                base_version: this.baseRef,
+                                head_version: this.headRef,
+                                repository_id: this.selectedRepository,
+                            }),
+                            signal: controller.signal,
+                        });
+
+                        const data = await res.json();
+
+                        if (requestId !== this.diffPreviewRequestId) {
+                            return;
+                        }
+
+                        if (!res.ok) {
+                            throw new Error(data.message || 'Unable to preview changes.');
+                        }
+
+                        this.diffPreview = {
+                            added: Number(data.summary?.added ?? 0),
+                            deleted: Number(data.summary?.deleted ?? 0),
+                            modified: Number(data.summary?.modified ?? 0),
+                            total: Number(data.summary?.total ?? 0),
+                        };
+                    } catch (error) {
+                        if (error.name === 'AbortError' || requestId !== this.diffPreviewRequestId) {
+                            return;
+                        }
+
+                        this.diffPreviewError = error.message || 'Unable to preview changes.';
+                        this.diffPreview = {
+                            added: null,
+                            deleted: null,
+                            modified: null,
+                            total: null,
+                        };
+                    } finally {
+                        if (requestId === this.diffPreviewRequestId) {
+                            this.isLoadingDiffPreview = false;
+
+                            if (this.diffPreviewAbortController === controller) {
+                                this.diffPreviewAbortController = null;
+                            }
+                        }
+                    }
                 },
 
                 async handleGitlessDrop(event, side) {
@@ -1704,6 +1874,7 @@
                 },
 
                 resetForm() {
+                    this.cancelDiffPreviewRequest();
                     this.phase = 'form';
                     this.baseVersionDropdownOpen = false;
                     this.headVersionDropdownOpen = false;
@@ -1716,6 +1887,7 @@
                     this.packagingMessage = '';
                     this.currentJobId = null;
                     this.form.customName = '';
+                    this.resetDiffPreview();
                     this.gitless = {
                         baseArchive: null,
                         headArchive: null,
@@ -1725,6 +1897,10 @@
                         zipProgress: '',
                         error: '',
                     };
+
+                    if (this.canPreviewDiff) {
+                        this.previewDetectedChanges();
+                    }
                 },
             };
         }

@@ -27,6 +27,84 @@ class DeploymentPackageService
 {
     // ── Public entry point ───────────────────────────────────────────────────
 
+    public function previewChanges(
+        string $baseVersion,
+        string $headVersion,
+        string $repo,
+        string $vcsProvider = 'github',
+        string $vcsToken = ''
+    ): array {
+        $baseVersion = trim($baseVersion);
+        $headVersion = trim($headVersion);
+        $tempBasePath = storage_path('app/temp/preview-'.uniqid());
+
+        File::ensureDirectoryExists($tempBasePath);
+        $this->grantWindowsPermissions($tempBasePath);
+
+        $baseZipPath = $tempBasePath.DIRECTORY_SEPARATOR.'base.zip';
+        $headZipPath = $tempBasePath.DIRECTORY_SEPARATOR.'head.zip';
+
+        try {
+            if ($vcsProvider === 'local-pc') {
+                $this->archiveLocalRepository($repo, $baseVersion, $baseZipPath);
+                $this->archiveLocalRepository($repo, $headVersion, $headZipPath);
+            } elseif ($vcsProvider === 'gitlab') {
+                $base = rtrim(config('services.gitlab.base_url'), '/');
+                $encodedRepo = rawurlencode($repo);
+
+                $baseResponse = Http::withToken($vcsToken)
+                    ->withOptions(['sink' => $baseZipPath])
+                    ->get("{$base}/api/v4/projects/{$encodedRepo}/repository/archive.zip", ['sha' => $baseVersion]);
+
+                if ($baseResponse->failed()) {
+                    throw new \RuntimeException("GitLab: failed to download base version {$baseVersion}. Status: {$baseResponse->status()}.");
+                }
+
+                $headResponse = Http::withToken($vcsToken)
+                    ->withOptions(['sink' => $headZipPath])
+                    ->get("{$base}/api/v4/projects/{$encodedRepo}/repository/archive.zip", ['sha' => $headVersion]);
+
+                if ($headResponse->failed()) {
+                    throw new \RuntimeException("GitLab: failed to download head version {$headVersion}. Status: {$headResponse->status()}.");
+                }
+            } elseif (str_contains($repo, '/')) {
+                [$owner, $repoName] = explode('/', $repo, 2);
+                /** @var GitHubService $githubService */
+                $githubService = app(GitHubService::class);
+
+                if (! $githubService->downloadZip($owner, $repoName, $baseVersion, $baseZipPath, null, $vcsToken ?: null)) {
+                    throw new \RuntimeException("Failed to download base version {$baseVersion}. Check repository access or API limits.");
+                }
+
+                if (! $githubService->downloadZip($owner, $repoName, $headVersion, $headZipPath, null, $vcsToken ?: null)) {
+                    throw new \RuntimeException("Failed to download head version {$headVersion}. Check repository access or API limits.");
+                }
+            } else {
+                throw new \RuntimeException('Unsupported repository format for change preview.');
+            }
+
+            $this->grantWindowsPermissions($baseZipPath);
+            $this->grantWindowsPermissions($headZipPath);
+
+            $diffData = $this->compareFileSizeWithProgress(
+                $baseZipPath,
+                $headZipPath,
+                static function (array $stageData, string $message): void {}
+            );
+
+            return [
+                'added' => count($diffData['addedFiles']),
+                'deleted' => count($diffData['deletedFiles']),
+                'modified' => count($diffData['modifiedFiles']),
+                'total' => count($diffData['changed']),
+            ];
+        } finally {
+            if (File::isDirectory($tempBasePath)) {
+                File::deleteDirectory($tempBasePath);
+            }
+        }
+    }
+
     /**
      * Run the complete package generation pipeline.
      *

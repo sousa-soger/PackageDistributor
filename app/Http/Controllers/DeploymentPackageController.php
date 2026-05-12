@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\OAuthTokenRefreshException;
+use App\Http\Requests\PreviewDeploymentPackageRequest;
 use App\Http\Requests\QueueDeploymentPackageRequest;
 use App\Http\Requests\QueueGitlessDeploymentPackageRequest;
 use App\Jobs\GenerateDeploymentPackageJob;
 use App\Models\DeploymentJob;
+use App\Models\Repository;
+use App\Models\User;
+use App\Services\DeploymentPackageService;
+use App\Services\OAuthTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -260,6 +266,80 @@ class DeploymentPackageController extends Controller
         }
     }
 
+    public function previewChanges(
+        PreviewDeploymentPackageRequest $request,
+        DeploymentPackageService $service,
+        OAuthTokenService $oauthTokens
+    ): JsonResponse {
+        session()->save();
+
+        $repository = $request->packageRepository();
+
+        if (! $repository) {
+            return response()->json([
+                'message' => 'Choose a repository before previewing changes.',
+            ], 422);
+        }
+
+        if (! in_array($repository->provider, ['github', 'gitlab', 'local-pc'], true)) {
+            return response()->json([
+                'message' => 'Change preview is not available for this repository type.',
+            ], 422);
+        }
+
+        if (($repository->status ?? 'connected') !== 'connected') {
+            return response()->json([
+                'message' => 'Reconnect or sync this repository before previewing changes.',
+            ], 422);
+        }
+
+        if ($repository->provider === 'local-pc' && (! $repository->storage_path || ! File::isDirectory($repository->storage_path))) {
+            return response()->json([
+                'message' => 'This local repository is missing its stored Git mirror. Reconnect or upload it again before previewing changes.',
+            ], 422);
+        }
+
+        $packageRepository = $repository->provider === 'local-pc'
+            ? $repository->storage_path
+            : $repository->name;
+        $vcsToken = '';
+
+        if (in_array($repository->provider, ['github', 'gitlab'], true)) {
+            /** @var User|null $actor */
+            $actor = $request->user();
+
+            try {
+                $vcsToken = $this->repositoryAccessToken($repository, $actor, $oauthTokens);
+            } catch (OAuthTokenRefreshException $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            if ($vcsToken === '') {
+                return response()->json([
+                    'message' => 'The repository owner needs to reconnect OAuth or save a PAT before changes can be previewed.',
+                ], 422);
+            }
+        }
+
+        try {
+            return response()->json([
+                'summary' => $service->previewChanges(
+                    $request->validated('base_version'),
+                    $request->validated('head_version'),
+                    $packageRepository,
+                    $repository->provider,
+                    $vcsToken
+                ),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to preview changes: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Poll progress for a specific queued job (by DB ID).
      * Fast reads from cache; falls back to DB progress column when cache is cold.
@@ -408,6 +488,21 @@ class DeploymentPackageController extends Controller
     private function isZipArchiveUpload(UploadedFile $uploadedFile): bool
     {
         return strtolower($uploadedFile->getClientOriginalExtension()) === 'zip';
+    }
+
+    private function repositoryAccessToken(Repository $repository, ?User $fallbackUser, OAuthTokenService $oauthTokens): string
+    {
+        if ($repository->access_token) {
+            return $repository->access_token;
+        }
+
+        $owner = $repository->user ?? $fallbackUser;
+
+        if (! $owner) {
+            return '';
+        }
+
+        return $oauthTokens->accessToken($owner, $repository->provider) ?? '';
     }
 
     private function createZip(string $packageRoot, string $folderName): ?string

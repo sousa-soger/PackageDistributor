@@ -151,6 +151,9 @@ Route::middleware('auth')->group(function () {
 
     // ── V3 — Queue-based ──────────────────────────────────────────────────────
 
+    Route::post('/deployments/preview-changes', [DeploymentPackageController::class, 'previewChanges'])
+        ->name('deployments.preview-changes');
+
     // Submit a new queued deployment job (returns immediately with job_id)
     Route::post('/deployments/queue-job', [DeploymentPackageController::class, 'queueJob'])
         ->name('deployments.queue-job');

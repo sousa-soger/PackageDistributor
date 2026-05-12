@@ -15,24 +15,24 @@ class AuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $incomingFields = $request->validate([
-            'loginemail' => 'required|email',
+            'loginusername' => ['required', 'string'],
             'loginpassword' => 'required',
         ]);
 
-        $email = $incomingFields['loginemail'];
+        $username = trim($incomingFields['loginusername']);
         $password = $incomingFields['loginpassword'];
 
         if (config('ldap.enabled')) {
-            return $this->loginWithLdap($request, $email, $password);
+            return $this->loginWithLdap($request, $username, $password);
         }
 
-        return $this->loginWithDatabase($request, $email, $password);
+        return $this->loginWithDatabase($request, $username, $password);
     }
 
-    private function loginWithLdap(Request $request, string $email, string $password): RedirectResponse
+    private function loginWithLdap(Request $request, string $username, string $password): RedirectResponse
     {
         $ldap = new LdapService;
-        $ldapUser = $ldap->authenticate($email, $password);
+        $ldapUser = $ldap->authenticate($username, $password);
 
         if (! $ldapUser) {
             throw ValidationException::withMessages([
@@ -48,17 +48,21 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
-    private function loginWithDatabase(Request $request, string $email, string $password): RedirectResponse
+    private function loginWithDatabase(Request $request, string $username, string $password): RedirectResponse
     {
-        $userExists = User::where('email', $email)->exists();
+        $userExists = User::query()
+            ->where('ldap_username', $username)
+            ->orWhere('email', $username)
+            ->exists();
 
         if (! $userExists) {
             throw ValidationException::withMessages([
-                'loginemail' => "The email address you entered isn't connected to an account.",
+                'loginusername' => "The LDAP username you entered isn't connected to an account.",
             ]);
         }
 
-        if (! Auth::attempt(['email' => $email, 'password' => $password])) {
+        if (! Auth::attempt(['ldap_username' => $username, 'password' => $password])
+            && ! Auth::attempt(['email' => $username, 'password' => $password])) {
             throw ValidationException::withMessages([
                 'loginpassword' => 'Incorrect password.',
             ]);

@@ -1,6 +1,6 @@
 <x-head-html/>
-<body class="bg-[#f5f7fb] text-slate-800 min-h-screen">
-    <div class="flex min-h-screen">
+<body class="min-h-screen bg-background text-foreground antialiased">
+    <div class="flex min-h-screen w-full" style="background-image: var(--gradient-surface);">
 
         <main class="flex-1">
             @yield('content')
