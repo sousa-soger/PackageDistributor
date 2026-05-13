@@ -40,7 +40,8 @@
                                         x-text="selectedRepository.url">
                                     </a>
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-1.5">
+                                    <div class="mt-3 flex flex-wrap items-center gap-1.5 ">
+                                        {{-- -
                                         <span x-show="selectedRepository.ownerName"
                                             class="inline-flex items-center gap-1.5 text-[11px] font-semibold pl-1 pr-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 text-foreground">
                                             <span class="relative flex shrink-0 overflow-hidden rounded-full h-4 w-4">
@@ -59,6 +60,7 @@
                                             </svg>
                                             <span x-text="`Owner - ${selectedRepository.ownerName}`"></span>
                                         </span>
+                                        --}}
                                         <span
                                             class="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/70 text-muted-foreground inline-flex items-center gap-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -404,7 +406,28 @@
                                         yet.</p>
                                 </template>
 
+                                <template x-if="selectedRepository.ownerName">
+                                    <div class="mb-4">
+                                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                            Owner</div>
+                                        <div class="flex items-center gap-3 rounded-lg border border-border/60 p-3">
+                                            <div class="h-9 w-9 rounded-full brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold shrink-0 text-[hsl(var(--on-brand))]"
+                                                x-text="selectedRepository.ownerName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()">
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-xs font-semibold truncate"
+                                                    x-text="selectedRepository.ownerName"></div>
+                                            </div>
+                                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-md border border-primary/30 text-primary">Owner</span>
+                                        </div>
+                                    </div>
+                                </template>
+
+
                                 <div x-show="selectedRepository.users.length > 0">
+                                    <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Members
+                                    </div>
                                     <ul class="space-y-2">
                                         <template x-for="user in selectedRepository.users"
                                             :key="`repository-user-${user.id}`">
@@ -416,7 +439,7 @@
                                                 </template>
                                                 <template x-if="!user.avatar">
                                                     <div
-                                                        class="h-9 w-9 rounded-lg brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
+                                                        class="h-9 w-9 rounded-full brand-gradient-bg shadow-soft flex items-center justify-center text-[11px] font-semibold on-brand shrink-0"
                                                         x-text="user.initials"></div>
                                                 </template>
                                                 <div class="min-w-0 flex-1">

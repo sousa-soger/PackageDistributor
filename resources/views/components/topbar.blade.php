@@ -84,7 +84,7 @@
                     @else
                         <span
                             class="flex h-full w-full items-center justify-center rounded-full brand-gradient-bg text-[hsl(var(--on-brand))] text-xs font-semibold">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                            {{ strtoupper(implode('', array_map(fn($w) => $w[0], array_slice(explode(' ', trim(Auth::user()->name)), 0, 2)))) }}
                         </span>
                     @endif
                 </span>

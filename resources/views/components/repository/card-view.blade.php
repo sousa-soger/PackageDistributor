@@ -10,7 +10,7 @@
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <div class="flex items-center gap-3 min-w-0">
                         <div
-                            class="h-12 w-12 rounded-lg brand-soft-bg flex items-center justify-center flex-shrink-0 text-primary"
+                            class="h-12 w-12 rounded-lg brand-soft-bg flex items-center justify-center border border-primary/30 flex-shrink-0 text-primary"
                             x-html="providerIcon(repo.provider)">
                         </div>
                         <div class="min-w-0 flex-1">
@@ -30,15 +30,15 @@
 
                 <div class="mt-3 flex flex-wrap gap-1.5">
                     <span x-show="repo.ownerName"
-                        class="inline-flex items-center gap-1.5 text-[11px] font-semibold pl-1 pr-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 text-foreground">
-                        <span class="relative flex shrink-0 overflow-hidden rounded-full h-4 w-4">
+                        class="inline-flex items-center gap-1.5 text-xs font-semibold pl-1.5 pr-2.5 py-1 rounded-full border border-primary/5 bg-primary/10 text-foreground">
+                        <span class="relative flex shrink-0 overflow-hidden rounded-full h-5 w-5">
                             <span
-                                class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[8px] font-semibold"
+                                class="flex h-full w-full items-center justify-center rounded-full bg-muted brand-gradient-bg text-[hsl(var(--on-brand))] text-[9px] font-semibold"
                                 x-text="repo.ownerInitials"></span>
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-crown h-2.5 w-2.5 text-primary">
+                            class="lucide lucide-crown h-3 w-3 text-primary">
                             <path
                                 d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z">
                             </path>

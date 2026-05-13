@@ -5,29 +5,29 @@
 
 @section('topbar_actions')
     <div x-data="{
-                                                                                            showModal: @js($errors->any()),
-                                                                                            modalMode: 'create',
-                                                                                            selectedColor: @js(old('color', $colorOptions[0] ?? 'from-brand-rose to-brand-iris')),
-                                                                                            editId: null,
-                                                                                            editName: '',
-                                                                                            editDescription: '',
-                                                                                            openCreate() {
-                                                                                                this.modalMode = 'create';
-                                                                                                this.editId = null;
-                                                                                                this.editName = '';
-                                                                                                this.editDescription = '';
-                                                                                                this.selectedColor = @js($colorOptions[0] ?? 'from-brand-rose to-brand-iris');
-                                                                                                this.showModal = true;
-                                                                                            },
-                                                                                            openEdit(project) {
-                                                                                                this.modalMode = 'edit';
-                                                                                                this.editId = project.id;
-                                                                                                this.editName = project.name;
-                                                                                                this.editDescription = project.description === 'No description added yet.' ? '' : project.description;
-                                                                                                this.selectedColor = project.color;
-                                                                                                this.showModal = true;
-                                                                                            },
-                                                                                        }"
+        showModal: @js($errors->any()),
+        modalMode: 'create',
+        selectedColor: @js(old('color', $colorOptions[0] ?? 'from-brand-rose to-brand-iris')),
+        editId: null,
+        editName: '',
+        editDescription: '',
+        openCreate() {
+            this.modalMode = 'create';
+            this.editId = null;
+            this.editName = '';
+            this.editDescription = '';
+            this.selectedColor = @js($colorOptions[0] ?? 'from-brand-rose to-brand-iris');
+            this.showModal = true;
+        },
+        openEdit(project) {
+            this.modalMode = 'edit';
+            this.editId = project.id;
+            this.editName = project.name;
+            this.editDescription = project.description === 'No description added yet.' ? '' : project.description;
+            this.selectedColor = project.color;
+            this.showModal = true;
+        },
+    }"
         @open-create-project.window="openCreate()" @open-edit-project.window="openEdit($event.detail)">
         <button type="button" @click="openCreate()"
             class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium brand-gradient-bg text-[hsl(var(--on-brand))] shadow-soft hover:brightness-[1.03] active:brightness-95 transition-base h-9 rounded-md px-3">
@@ -126,11 +126,11 @@
     </div>
 
     <div class="space-y-6" x-data="projectsPage({
-                                                                                            projects: @js($projects),
-                                                                                            csrfToken: @js(csrf_token()),
-                                                                                            ldapSearchUrl: @js(route('ldap.users.search')),
-                                                                                            roleOptions: @js($projectRoleOptions),
-                                                                                        })">
+        projects: @js($projects),
+        csrfToken: @js(csrf_token()),
+        ldapSearchUrl: @js(route('ldap.users.search')),
+        roleOptions: @js($projectRoleOptions),
+    })">
         {{-- Search header --}}
         <div class="mb-5 relative max-w-md">
             <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center">
@@ -468,10 +468,10 @@
                                                                     <span
                                                                         class="text-[10px] font-medium px-2 py-0.5 rounded-md border whitespace-nowrap"
                                                                         :class="{
-                                                                                                                        'bg-success/10 text-success border-success/30': repo.status === 'connected',
-                                                                                                                        'bg-queued/10 text-queued border-queued/30': repo.status === 'expired',
-                                                                                                                        'bg-failed/10 text-failed border-failed/30': repo.status !== 'connected' && repo.status !== 'expired',
-                                                                                                                    }"
+                                                                            'bg-success/10 text-success border-success/30': repo.status === 'connected',
+                                                                            'bg-queued/10 text-queued border-queued/30': repo.status === 'expired',
+                                                                            'bg-failed/10 text-failed border-failed/30': repo.status !== 'connected' && repo.status !== 'expired',
+                                                                        }"
                                                                         x-text="repo.status === 'connected' ? 'Connected' : repo.status === 'expired' ? 'Expired' : 'Needs auth'"></span>
                                                                 </li>
                                                             </template>

@@ -5,28 +5,28 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-6 pt-4 pb-12" x-data="quickCreatePackage({
-                                    repositories: @js($repositories),
-                                    queueUrl: '{{ route('deployments.queue-job') }}',
-                                    gitlessQueueUrl: '{{ route('deployments.queue-gitless-job') }}',
-                                    previewUrl: '{{ route('deployments.preview-changes') }}',
-                                    jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                                    downloadUrl: '{{ route('download.archive') }}',
-                                    csrfToken: '{{ csrf_token() }}',
-                                    completedPackages: @js($packages),
-                                    dbQueuedPackages: @js($queuedPackages),
-                                    selectedRepositoryId: @js($selectedRepositoryId),
-                                    repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
-                                })" x-init="init()"
-        @keydown.escape.window="baseVersionDropdownOpen = false; headVersionDropdownOpen = false">
+    repositories: @js($repositories),
+    queueUrl: '{{ route('deployments.queue-job') }}',
+    gitlessQueueUrl: '{{ route('deployments.queue-gitless-job') }}',
+    previewUrl: '{{ route('deployments.preview-changes') }}',
+    jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+    downloadUrl: '{{ route('download.archive') }}',
+    csrfToken: '{{ csrf_token() }}',
+    completedPackages: @js($packages),
+    dbQueuedPackages: @js($queuedPackages),
+    selectedRepositoryId: @js($selectedRepositoryId),
+    repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
+    })" x-init="init()"
+    @keydown.escape.window="baseVersionDropdownOpen = false; headVersionDropdownOpen = false">
         <div x-show="phase === 'form'" x-cloak class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
 
 
             <div class="space-y-5">
                 <div class="section-card p-2">
-                    <div class="grid grid-cols-2 gap-1.5 rounded-lg bg-secondary/50 p-1">
+                    <div class="grid grid-cols-2  gap-1.5 rounded-lg bg-secondary/75 p-1">
                         <button type="button"
-                            class="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all"
-                            :class="sourceMode === 'repository' ? 'bg-card shadow-soft text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                            class="flex items-center border justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-base"
+                            :class="sourceMode === 'repository' ? 'border-primary/50 brand-soft-bg shadow-soft' : 'border-transparent section-card hover:border-primary/30 hover:bg-secondary/40'"
                             @click="setSourceMode('repository')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -39,8 +39,8 @@
                             Registered repository
                         </button>
                         <button type="button"
-                            class="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all"
-                            :class="sourceMode === 'gitless' ? 'bg-card shadow-soft text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                            class="flex items-center border justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-base"
+                            :class="sourceMode === 'gitless' ? 'border-primary/50 brand-soft-bg shadow-soft' : 'border-transparent section-card hover:border-primary/30 hover:bg-secondary/40'"
                             @click="setSourceMode('gitless')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -59,7 +59,9 @@
                     </p>
                 </div>
 
-                <section class="section-card" x-show="sourceMode === 'repository'">
+                <section class="section-card transition-all duration-300" x-show="sourceMode === 'repository'"
+                    id="repository-section"
+                    :class="repoSectionHighlighted ? 'ring-1 ring-offset-1 ring-primary/60 shadow-[0_0_0_4px_hsl(var(--primary)/0.14)] scale-[1.005] animate-section-flash' : ''">
                     <div class="mb-5 flex items-start gap-3">
                         <div
                             class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg brand-soft-bg text-sm font-semibold text-primary">
@@ -70,7 +72,7 @@
                         </div>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]" x-show="repositories.length > 0">
                         <div class="space-y-2">
                             <label class="text-sm font-medium leading-none mb-2">Repository</label>
                             <div class="relative" x-data="{ repoDropdownOpen: false }"
@@ -78,7 +80,7 @@
                                 <button type="button" role="combobox" :aria-expanded="repoDropdownOpen"
                                     aria-autocomplete="none" :data-state="repoDropdownOpen ? 'open' : 'closed'"
                                     :disabled="repositories.length === 0" @click="repoDropdownOpen = !repoDropdownOpen"
-                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
                                     <span style="pointer-events: none;">
                                         <template x-if="!selectedRepositoryOption">
                                             <span class="text-muted-foreground">Choose repository</span>
@@ -143,11 +145,14 @@
                     </div>
 
                     <template x-if="repositories.length === 0">
-                        <div
-                            class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
-                            Connect a GitHub, GitLab, or local repository, or ask the owner to invite you as a Maintainer or
-                            Package Creator.
-                        </div>
+                        <a href="{{ route('repositories') }}">
+                            <div
+                                class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+                                Connect a GitHub, GitLab, or local repository, or ask the owner to invite you as a
+                                Maintainer or
+                                Package Creator.
+                            </div>
+                        </a>
                     </template>
 
                     <div class="flex flex-wrap items-center gap-2 mt-4 text-xs text-muted-foreground"
@@ -290,13 +295,13 @@
                             <label class="text-sm font-medium leading-none">Base version</label>
                             <div class="relative">
                                 <button
-                                    class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between font-normal"
+                                    class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between font-normal"
                                     type="button" role="combobox"
                                     :aria-expanded="baseVersionDropdownOpen ? 'true' : 'false'" aria-haspopup="dialog"
                                     aria-controls="base-version-dropdown"
                                     :data-state="baseVersionDropdownOpen ? 'open' : 'closed'"
-                                    :disabled="isLoadingVersions || allRepoVersions.length === 0"
-                                    @click="toggleVersionDropdown('base')">
+                                    :class="(isLoadingVersions || allRepoVersions.length === 0) ? 'opacity-50 cursor-not-allowed' : ''"
+                                    @click="allRepoVersions.length === 0 ? highlightRepoSection() : toggleVersionDropdown('base')">
                                     <span class="flex items-center gap-2 truncate">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -437,13 +442,13 @@
                             <label class="text-sm font-medium leading-none">Target version</label>
                             <div class="relative">
                                 <button
-                                    class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between font-normal"
+                                    class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between font-normal"
                                     type="button" role="combobox"
                                     :aria-expanded="headVersionDropdownOpen ? 'true' : 'false'" aria-haspopup="dialog"
                                     aria-controls="head-version-dropdown"
                                     :data-state="headVersionDropdownOpen ? 'open' : 'closed'"
-                                    :disabled="isLoadingVersions || allRepoVersions.length === 0"
-                                    @click="toggleVersionDropdown('head')">
+                                    :class="(isLoadingVersions || allRepoVersions.length === 0) ? 'opacity-50 cursor-not-allowed' : ''"
+                                    @click="allRepoVersions.length === 0 ? highlightRepoSection() : toggleVersionDropdown('head')">
                                     <span class="flex items-center gap-2 truncate">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -759,47 +764,47 @@
                         </div>
                     </template>
                     <!--
-                                <div class="mt-5">
-                                    <button type="button"
-                                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
-                                        @click="showAdvanced = !showAdvanced">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                            class="lucide lucide-chevron-down h-4 w-4 transition-transform"
-                                            :class="showAdvanced ? 'rotate-180' : ''">
-                                            <path d="m6 9 6 6 6-6"></path>
-                                        </svg>
-                                        Advanced settings
-                                    </button>
+                    <div class="mt-5">
+                        <button type="button"
+                            class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
+                            @click="showAdvanced = !showAdvanced">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="lucide lucide-chevron-down h-4 w-4 transition-transform"
+                                :class="showAdvanced ? 'rotate-180' : ''">
+                                <path d="m6 9 6 6 6-6"></path>
+                            </svg>
+                            Advanced settings
+                        </button>
 
-                                    <div x-show="showAdvanced"
-                                        class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
-                                        <div class="grid gap-4 md:grid-cols-2">
-                                            <div class="space-y-2">
-                                                <label class="text-sm font-medium leading-none">Output format</label>
-                                                <select
-                                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                    x-model="form.format">
-                                                    <option value=".zip">ZIP</option>
-                                                    <option value=".tar.gz">TAR.GZ</option>
-                                                    <option value="both">Both</option>
-                                                </select>
-                                            </div>
-                                            <label
-                                                class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
-                                                <span>
-                                                    <span class="block text-sm font-medium leading-none">Generate rollback
-                                                        package</span>
-                                                    <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently
-                                                        generates update and rollback together.</span>
-                                                </span>
-                                                <input type="checkbox" class="rounded border-input text-primary focus:ring-primary"
-                                                    x-model="form.rollback" checked>
-                                            </label>
-                                        </div>
-                                    </div>
+                        <div x-show="showAdvanced"
+                            class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium leading-none">Output format</label>
+                                    <select
+                                        class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                        x-model="form.format">
+                                        <option value=".zip">ZIP</option>
+                                        <option value=".tar.gz">TAR.GZ</option>
+                                        <option value="both">Both</option>
+                                    </select>
                                 </div>
-                            -->
+                                <label
+                                    class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
+                                    <span>
+                                        <span class="block text-sm font-medium leading-none">Generate rollback
+                                            package</span>
+                                        <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently
+                                            generates update and rollback together.</span>
+                                    </span>
+                                    <input type="checkbox" class="rounded border-input text-primary focus:ring-primary"
+                                        x-model="form.rollback" checked>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    -->
                 </section>
             </div>
 
@@ -1049,6 +1054,7 @@
                 repoTags: [],
                 repoReleases: [],
                 isLoadingVersions: false,
+                repoSectionHighlighted: false,
                 baseVersionDropdownOpen: false,
                 headVersionDropdownOpen: false,
                 baseVersionSearch: '',
@@ -1114,6 +1120,17 @@
                     if (this.selectedRepository) {
                         this.fetchRepoVersions();
                     }
+                },
+
+                highlightRepoSection() {
+                    const el = document.getElementById('repository-section');
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    this.repoSectionHighlighted = true;
+                    setTimeout(() => {
+                        this.repoSectionHighlighted = false;
+                    }, 1500);
                 },
 
                 setSourceMode(mode) {
