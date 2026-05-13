@@ -489,16 +489,17 @@ class DeploymentPackageController extends Controller
 
         $packageRoot = storage_path("app/deployment-packages/{$folderName}");
         $archivePath = $packageRoot.$format;
+        $tarPath = $packageRoot.'.tar';
 
-        if (File::exists($packageRoot) && File::isDirectory($packageRoot)) {
-            if ($format === '.tar.gz') {
-                if (! $this->createTarGz($packageRoot, $folderName)) {
+        if ($format === '.tar.gz') {
+            if ((File::exists($packageRoot) && File::isDirectory($packageRoot)) || File::exists($tarPath)) {
+                if (! $this->createTarGz($packageRoot)) {
                     return response('Could not generate tar.gz file.', 500);
                 }
-            } else {
-                if (! $this->createZip($packageRoot, $folderName)) {
-                    return response('Could not generate ZIP file.', 500);
-                }
+            }
+        } elseif (File::exists($packageRoot) && File::isDirectory($packageRoot)) {
+            if (! $this->createZip($packageRoot)) {
+                return response('Could not generate ZIP file.', 500);
             }
         }
 
@@ -529,7 +530,7 @@ class DeploymentPackageController extends Controller
         return $oauthTokens->accessToken($owner, $repository->provider) ?? '';
     }
 
-    private function createZip(string $packageRoot, string $folderName): ?string
+    private function createZip(string $packageRoot): ?string
     {
         $zipPath = $packageRoot.'.zip';
         if (File::exists($zipPath)) {
@@ -557,26 +558,86 @@ class DeploymentPackageController extends Controller
         return null;
     }
 
-    private function createTarGz(string $packageRoot, string $folderName): ?string
+    private function createTarGz(string $packageRoot): ?string
     {
         $tarGzPath = $packageRoot.'.tar.gz';
+        $tarPath = $packageRoot.'.tar';
+
         if (File::exists($tarGzPath)) {
             return $tarGzPath;
         }
 
         try {
-            $tarPath = $packageRoot.'.tar';
-            $tar = new \PharData($tarPath);
-            $tar->buildFromDirectory($packageRoot);
-            $tar->compress(\Phar::GZ);
+            if (! File::exists($tarPath)) {
+                if (! File::exists($packageRoot) || ! File::isDirectory($packageRoot)) {
+                    return null;
+                }
+
+                $tar = new \PharData($tarPath);
+                $tar->buildFromDirectory($packageRoot);
+            }
+
+            if (! $this->gzipFile($tarPath, $tarGzPath)) {
+                return null;
+            }
+
             if (File::exists($tarPath)) {
                 unlink($tarPath);
             }
 
-            return $tarGzPath;
+            return File::exists($tarGzPath) ? $tarGzPath : null;
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    private function gzipFile(string $sourcePath, string $targetPath): bool
+    {
+        $sourceHandle = fopen($sourcePath, 'rb');
+
+        if ($sourceHandle === false) {
+            return false;
+        }
+
+        $targetHandle = gzopen($targetPath, 'wb9');
+
+        if ($targetHandle === false) {
+            fclose($sourceHandle);
+
+            return false;
+        }
+
+        try {
+            while (! feof($sourceHandle)) {
+                $chunk = fread($sourceHandle, 1024 * 1024);
+
+                if ($chunk === false) {
+                    throw new \RuntimeException("Could not read archive source [{$sourcePath}].");
+                }
+
+                if ($chunk === '') {
+                    continue;
+                }
+
+                if (gzwrite($targetHandle, $chunk) === false) {
+                    throw new \RuntimeException("Could not write gzipped archive [{$targetPath}].");
+                }
+            }
+        } catch (\Throwable $e) {
+            gzclose($targetHandle);
+            fclose($sourceHandle);
+
+            if (File::exists($targetPath)) {
+                unlink($targetPath);
+            }
+
+            return false;
+        }
+
+        gzclose($targetHandle);
+        fclose($sourceHandle);
+
+        return File::exists($targetPath);
     }
 
     // =========================================================================

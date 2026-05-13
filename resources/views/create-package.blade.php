@@ -5,18 +5,18 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto space-y-6 pt-4 pb-12" x-data="quickCreatePackage({
-                                repositories: @js($repositories),
-                                queueUrl: '{{ route('deployments.queue-job') }}',
-                                gitlessQueueUrl: '{{ route('deployments.queue-gitless-job') }}',
-                                previewUrl: '{{ route('deployments.preview-changes') }}',
-                                jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
-                                downloadUrl: '{{ route('download.archive') }}',
-                                csrfToken: '{{ csrf_token() }}',
-                                completedPackages: @js($packages),
-                                dbQueuedPackages: @js($queuedPackages),
-                                selectedRepositoryId: @js($selectedRepositoryId),
-                                repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
-                            })" x-init="init()"
+                                    repositories: @js($repositories),
+                                    queueUrl: '{{ route('deployments.queue-job') }}',
+                                    gitlessQueueUrl: '{{ route('deployments.queue-gitless-job') }}',
+                                    previewUrl: '{{ route('deployments.preview-changes') }}',
+                                    jobProgressBaseUrl: '{{ url('/deployments/jobs') }}',
+                                    downloadUrl: '{{ route('download.archive') }}',
+                                    csrfToken: '{{ csrf_token() }}',
+                                    completedPackages: @js($packages),
+                                    dbQueuedPackages: @js($queuedPackages),
+                                    selectedRepositoryId: @js($selectedRepositoryId),
+                                    repositoryVersionsBaseUrl: '{{ url('/repositories') }}'
+                                })" x-init="init()"
         @keydown.escape.window="baseVersionDropdownOpen = false; headVersionDropdownOpen = false">
         <div x-show="phase === 'form'" x-cloak class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
 
@@ -759,47 +759,47 @@
                         </div>
                     </template>
                     <!--
-                            <div class="mt-5">
-                                <button type="button"
-                                    class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
-                                    @click="showAdvanced = !showAdvanced">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                        class="lucide lucide-chevron-down h-4 w-4 transition-transform"
-                                        :class="showAdvanced ? 'rotate-180' : ''">
-                                        <path d="m6 9 6 6 6-6"></path>
-                                    </svg>
-                                    Advanced settings
-                                </button>
+                                <div class="mt-5">
+                                    <button type="button"
+                                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-base"
+                                        @click="showAdvanced = !showAdvanced">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                            class="lucide lucide-chevron-down h-4 w-4 transition-transform"
+                                            :class="showAdvanced ? 'rotate-180' : ''">
+                                            <path d="m6 9 6 6 6-6"></path>
+                                        </svg>
+                                        Advanced settings
+                                    </button>
 
-                                <div x-show="showAdvanced"
-                                    class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
-                                    <div class="grid gap-4 md:grid-cols-2">
-                                        <div class="space-y-2">
-                                            <label class="text-sm font-medium leading-none">Output format</label>
-                                            <select
-                                                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                x-model="form.format">
-                                                <option value=".zip">ZIP</option>
-                                                <option value=".tar.gz">TAR.GZ</option>
-                                                <option value="both">Both</option>
-                                            </select>
+                                    <div x-show="showAdvanced"
+                                        class="mt-4 animate-fade-in rounded-md border border-border bg-secondary/30 p-4">
+                                        <div class="grid gap-4 md:grid-cols-2">
+                                            <div class="space-y-2">
+                                                <label class="text-sm font-medium leading-none">Output format</label>
+                                                <select
+                                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                    x-model="form.format">
+                                                    <option value=".zip">ZIP</option>
+                                                    <option value=".tar.gz">TAR.GZ</option>
+                                                    <option value="both">Both</option>
+                                                </select>
+                                            </div>
+                                            <label
+                                                class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
+                                                <span>
+                                                    <span class="block text-sm font-medium leading-none">Generate rollback
+                                                        package</span>
+                                                    <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently
+                                                        generates update and rollback together.</span>
+                                                </span>
+                                                <input type="checkbox" class="rounded border-input text-primary focus:ring-primary"
+                                                    x-model="form.rollback" checked>
+                                            </label>
                                         </div>
-                                        <label
-                                            class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3">
-                                            <span>
-                                                <span class="block text-sm font-medium leading-none">Generate rollback
-                                                    package</span>
-                                                <span class="block text-[11px] text-muted-foreground mt-1.5">Your backend currently
-                                                    generates update and rollback together.</span>
-                                            </span>
-                                            <input type="checkbox" class="rounded border-input text-primary focus:ring-primary"
-                                                x-model="form.rollback" checked>
-                                        </label>
                                     </div>
                                 </div>
-                            </div>
-                        -->
+                            -->
                 </section>
             </div>
 
@@ -958,9 +958,8 @@
                     <button type="button" x-show="packagingResult?.zip_size"
                         class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-running/30 bg-card px-2.5 text-xs font-semibold text-running transition-colors hover:bg-running/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         @click="downloadPackage('.zip')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-download h-3.5 w-3.5">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
@@ -971,9 +970,8 @@
                     <button type="button" x-show="packagingResult?.targz_size"
                         class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-running/30 bg-card px-2.5 text-xs font-semibold text-running transition-colors hover:bg-running/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         @click="downloadPackage('.tar.gz')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-download h-3.5 w-3.5">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>

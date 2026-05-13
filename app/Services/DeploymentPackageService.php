@@ -701,24 +701,90 @@ class DeploymentPackageService
     private function buildTarGz(string $packageRoot): ?string
     {
         $tarGzPath = $packageRoot.'.tar.gz';
+        $tarPath = $packageRoot.'.tar';
 
         if (file_exists($tarGzPath)) {
             return $tarGzPath;
         }
 
         try {
-            $tarPath = $packageRoot.'.tar';
-            $tar = new \PharData($tarPath);
-            $tar->buildFromDirectory($packageRoot);
-            $tar->compress(\Phar::GZ);
+            if (! file_exists($tarPath)) {
+                $tar = new \PharData($tarPath);
+                $tar->buildFromDirectory($packageRoot);
+            }
+
+            if (! $this->gzipFile($tarPath, $tarGzPath)) {
+                return null;
+            }
+
             if (file_exists($tarPath)) {
                 unlink($tarPath);
             }
 
-            return $tarGzPath;
+            return file_exists($tarGzPath) ? $tarGzPath : null;
         } catch (\Throwable $e) {
+            Log::warning('Could not create tar.gz archive: '.$e->getMessage(), [
+                'package_root' => $packageRoot,
+                'tar_path' => $tarPath,
+                'tar_gz_path' => $tarGzPath,
+            ]);
+
             return null;
         }
+    }
+
+    private function gzipFile(string $sourcePath, string $targetPath): bool
+    {
+        $sourceHandle = fopen($sourcePath, 'rb');
+
+        if ($sourceHandle === false) {
+            return false;
+        }
+
+        $targetHandle = gzopen($targetPath, 'wb9');
+
+        if ($targetHandle === false) {
+            fclose($sourceHandle);
+
+            return false;
+        }
+
+        try {
+            while (! feof($sourceHandle)) {
+                $chunk = fread($sourceHandle, 1024 * 1024);
+
+                if ($chunk === false) {
+                    throw new \RuntimeException("Could not read archive source [{$sourcePath}].");
+                }
+
+                if ($chunk === '') {
+                    continue;
+                }
+
+                if (gzwrite($targetHandle, $chunk) === false) {
+                    throw new \RuntimeException("Could not write gzipped archive [{$targetPath}].");
+                }
+            }
+        } catch (\Throwable $e) {
+            gzclose($targetHandle);
+            fclose($sourceHandle);
+
+            if (file_exists($targetPath)) {
+                unlink($targetPath);
+            }
+
+            Log::warning('Could not gzip tar archive: '.$e->getMessage(), [
+                'source_path' => $sourcePath,
+                'target_path' => $targetPath,
+            ]);
+
+            return false;
+        }
+
+        gzclose($targetHandle);
+        fclose($sourceHandle);
+
+        return file_exists($targetPath);
     }
 
     // ── Version diff text file ────────────────────────────────────────────────
