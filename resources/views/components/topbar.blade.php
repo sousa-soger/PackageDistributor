@@ -251,11 +251,17 @@
                 <div role="separator" class="-mx-1 my-1 h-px" style="background:hsl(var(--muted))"></div>
 
                 {{-- Logout --}}
-                <form method="POST" action="{{ route('logout.user') }}">
+                <form
+                    method="POST"
+                    action="{{ route('logout.user') }}"
+                    x-data="{ submitting: false }"
+                    @submit="if (submitting) { $event.preventDefault(); return; } submitting = true"
+                >
                     @csrf
-                    <button type="submit" role="menuitem" tabindex="-1"
+                    <button type="submit" role="menuitem" tabindex="-1" :disabled="submitting"
                         class="w-full relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent"
-                        style="color:hsl(var(--failed))">
+                        style="color:hsl(var(--failed))"
+                        :class="submitting ? 'opacity-70 cursor-not-allowed' : ''">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="h-4 w-4">
@@ -263,7 +269,8 @@
                             <polyline points="16 17 21 12 16 7" />
                             <line x1="21" x2="9" y1="12" y2="12" />
                         </svg>
-                        Log out
+                        <span x-show="!submitting">Log out</span>
+                        <span x-show="submitting">Logging out...</span>
                     </button>
                 </form>
             </div>
