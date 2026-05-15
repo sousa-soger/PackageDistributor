@@ -1,0 +1,82 @@
+@layer utilities {
+    @keyframes mui-indeterminate {
+        0% {
+            left: -35%;
+            right: 100%;
+        }
+
+        60% {
+            left: 100%;
+            right: -90%;
+        }
+
+        100% {
+            left: 100%;
+            right: -90%;
+        }
+    }
+
+    .animate-indeterminate {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: auto !important;
+        animation: mui-indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+    }
+
+    @keyframes row-ripple-success {
+        0% {
+            background-image: radial-gradient(circle, transparent 38%, rgba(130, 247, 204, 0.72) 50%, transparent 62%);
+            background-size: 0px 0px;
+        }
+
+        75% {
+            background-image: radial-gradient(circle, transparent 38%, rgba(130, 247, 204, 0.06) 50%, transparent 62%);
+            background-size: 5000px 5000px;
+        }
+
+        100% {
+            background-image: none;
+            background-size: 5000px 5000px;
+        }
+    }
+
+    .animate-row-success {
+        background-color: #ffffff;
+        background-repeat: no-repeat;
+        background-position: center;
+        animation: row-ripple-success 6s cubic-bezier(0.25, 1, 0.16, 1) 60ms 1 forwards;
+    }
+
+    @keyframes row-indeterminate {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    .animate-row-indeterminate {
+        background: linear-gradient(90deg, transparent 25%, rgba(219, 234, 254, 0.6) 50%, transparent 75%);
+        background-size: 200% 100%;
+        animation: row-indeterminate 2.5s infinite linear;
+    }
+
+    /* Running job row: shimmer sweeps over the progress fill */
+    @keyframes row-progress-shimmer {
+        0% {
+            background-position: 200% 0, 0 0;
+        }
+
+        100% {
+            background-position: -200% 0, 0 0;
+        }
+    }
+
+    .animate-row-running {
+        animation: row-progress-shimmer 2.2s linear infinite !important;
+        background-size: 200% 100%, 100% 100% !important;
+    }
+}

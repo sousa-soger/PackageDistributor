@@ -124,6 +124,8 @@ Route::middleware('auth')->group(function () {
 });
 
 // ** Route for auth
+Route::get('/api/auth/session-status', [AuthController::class, 'sessionStatus'])->name('auth.session-status');
+Route::post('/api/auth/revoke-current-session', [AuthController::class, 'revokeCurrentSession'])->name('auth.revoke-current-session');
 Route::post('/register', [AuthController::class, 'register'])->name('register.user');
 Route::post('/login', [AuthController::class, 'login'])->name('login.user');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout.user');

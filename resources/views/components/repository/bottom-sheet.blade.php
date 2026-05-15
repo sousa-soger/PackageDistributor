@@ -332,7 +332,7 @@
                                         People and Roles
                                     </h4>
                                     <span class="text-[11px] text-muted-foreground"
-                                        x-text="selectedRepository.memberCount"></span>
+                                        x-text="Number(selectedRepository.memberCount ?? 0) + (selectedRepository.ownerName ? 1 : 0)"></span>
                                 </div>
 
                                 <div x-show="selectedRepository.membersError"

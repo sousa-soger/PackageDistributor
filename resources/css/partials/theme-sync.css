@@ -1,0 +1,50 @@
+/*
+  Dark-mode colour sync
+  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  Placed OUTSIDE all @layer blocks intentionally. Per the CSS cascade spec,
+  unlayered styles beat every @layer rule (including Tailwind @layer utilities)
+  regardless of selector specificity. This ensures every element â€” whether it
+  carries a Tailwind `transition-colors` (150 ms) class or a custom
+  `transition-base` (200 ms) class â€” uses the same colour transition timing
+  during regular interactions. The `.theme-switching` escape hatch below
+  temporarily forces one shared fade across the whole UI while the dark class
+  flips, so theme changes stay visually in sync instead of drifting across
+  components.
+*/
+
+/*Change these values to adjust the theme transition speed*/
+:root {
+    --theme-fade-duration: 0s;
+    --theme-fade-easing: ease-in-out;
+}
+/* ////////////////////////////////////////////////////// */
+
+*,
+*::before,
+*::after {
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-duration: var(--theme-fade-duration);
+    transition-timing-function: var(--theme-fade-easing);
+}
+
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+    transition-property: color, background-color, border-color, box-shadow, opacity !important;
+    transition-duration: var(--theme-fade-duration) !important;
+    transition-timing-function: var(--theme-fade-easing) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after,
+    .theme-switching,
+    .theme-switching *,
+    .theme-switching *::before,
+    .theme-switching *::after {
+        transition-duration: 0s !important;
+    }
+}

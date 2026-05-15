@@ -3,7 +3,16 @@
 @section('title', 'Log in')
 
 @section('content')
-    <section class="relative min-h-screen overflow-hidden">
+    <section
+        class="relative min-h-screen overflow-hidden"
+        x-data="authLoginPageData({
+            initialLoginMode: @js(old('loginmode', config('ldap.enabled') ? 'ldap' : 'local')),
+            sessionStatusUrl: @js(route('auth.session-status')),
+            revokeSessionUrl: @js(route('auth.revoke-current-session')),
+            homeUrl: @js(route('home')),
+        })"
+        x-init="init()"
+    >
         <div class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
 
             <div class="flex items-center justify-between">
@@ -18,6 +27,33 @@
                         </span>
                     </div>
                 </header>
+
+                <div class=" justify-end rounded-lg border border-border/60 bg-card/30 p-1 backdrop-blur">
+                    <div class="grid grid-cols-2 gap-1">
+                        <button
+                            type="button"
+                            @click="loginMode = 'ldap'"
+                            :disabled="isLoginBlocked()"
+                            class="rounded-md px-2.5 py-1.5 text-[11px] font-medium tracking-tight transition-base"
+                            :class="loginMode === 'ldap'
+                                ? 'bg-background/80 text-foreground shadow-sm ring-1 ring-border/70'
+                                : 'text-muted-foreground hover:bg-background/40 hover:text-foreground'"
+                        >
+                            LDAP login
+                        </button>
+                        <button
+                            type="button"
+                            @click="loginMode = 'local'"
+                            :disabled="isLoginBlocked()"
+                            class="rounded-md px-2.5 py-1.5 text-[11px] font-medium tracking-tight transition-base"
+                            :class="loginMode === 'local'
+                                ? 'bg-background/80 text-foreground shadow-sm ring-1 ring-border/70'
+                                : 'text-muted-foreground hover:bg-background/40 hover:text-foreground'"
+                        >
+                            Local test user
+                        </button>
+                    </div>
+                </div>
 
                 <div x-data="themeToggleData()">
                     <button @click="toggle()" type="button"
@@ -40,7 +76,7 @@
 
             {{-- Main grid --}}
             <div
-                class="grid flex-1 grid-cols- items-center gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:gap-16 lg:py-1">
+                class="grid flex-1 grid-cols-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:gap-16 lg:py-1">
 
                 {{-- Left hero --}}
                 <section class="flex max-w-xl flex-col">
@@ -102,7 +138,7 @@
                 {{-- Right login panel --}}
                 <aside class="w-full lg:justify-self-end">
                     <div class="glass-panel overflow-hidden">
-                        <header class="border-b border-border/60 bg-gradient-to-br from-card/80 to-card/40 px-7 py-6">
+                        <header class="border-b border-border/60 brand-soft-bg px-7 py-6">
                             <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Welcome back
                             </p>
@@ -114,16 +150,23 @@
                             </p>
                         </header>
 
-                        <form action="{{ route('login.user') }}" method="POST" class="space-y-5 px-7 py-6">
+                        <form id="loginForm" action="{{ route('login.user') }}" method="POST" class="space-y-5 px-7 py-6">
                             @csrf
+                            <input type="hidden" name="loginmode" :value="loginMode">
 
                             <div class="space-y-2">
                                 <label for="loginusername" class="block text-xs font-semibold">
-                                    LDAP Username
+                                    <span x-show="loginMode === 'ldap'">LDAP Username</span>
+                                    <span x-show="loginMode === 'local'">Email or Local Username</span>
                                 </label>
-                                <input id="loginusername" name="loginusername" type="text" autocomplete="username"
-                                    placeholder="Enter your LDAP username" value="{{ old('loginusername') }}"
+                                <input id="loginusername" name="loginusername" type="text" autocomplete="username" required
+                                    :placeholder="loginMode === 'ldap' ? 'Enter your LDAP username' : 'Enter your email or local username'"
+                                    value="{{ old('loginusername') }}"
+                                    :disabled="isLoginBlocked()"
                                     class="h-11 w-full rounded-lg border border-border/70 bg-background/40 px-3.5 text-sm placeholder:text-muted-foreground/70 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-ring/30">
+                                <p class="text-[11px] text-muted-foreground" x-show="loginMode === 'local'">
+                                    Use this mode to sign in with a registered non-LDAP test account.
+                                </p>
                                 @error('loginusername')
                                     <p class="text-xs text-failed">{{ $message }}</p>
                                 @enderror
@@ -135,11 +178,13 @@
                                 </label>
 
                                 <div class="relative">
-                                    <input id="loginpassword" name="loginpassword" type="password"
+                                    <input id="loginpassword" name="loginpassword" type="password" required
                                         autocomplete="current-password" placeholder="Enter your password"
+                                        :disabled="isLoginBlocked()"
                                         class="h-11 w-full rounded-lg border border-border/70 bg-background/40 px-3.5 pr-12 text-sm placeholder:text-muted-foreground/70 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-ring/30">
 
                                     <button id="togglePassword" type="button" aria-label="Show password"
+                                        :disabled="isLoginBlocked()"
                                         class="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
                                         <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -168,13 +213,13 @@
                                 @enderror
                             </div>
 
-                            <button type="submit"
+                            <button id="loginSubmitButton" type="submit" :disabled="isLoginBlocked()"
                                 class="brand-gradient-bg mt-2 h-11 w-full rounded-lg text-sm font-semibold tracking-tight shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99] text-[hsl(var(--on-brand))]">
                                 Log in
                             </button>
                         </form>
 
-                        <footer class="border-t border-border/60 bg-card/30 px-7 py-4">
+                        <footer class="border-t border-border/60 bg-card/30 px-7 py-4" x-show="loginMode === 'local'">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 {{--
                                 <p class="text-xs text-muted-foreground">
@@ -194,6 +239,47 @@
                         Use the same LDAP username you use elsewhere in the company workspace.
                     </p>
                 </aside>
+            </div>
+        </div>
+
+        <div
+            x-show="sessionConflictVisible"
+            x-cloak
+            class="fixed inset-0 z-40 flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm"
+        >
+            <div class="w-full max-w-md rounded-2xl border border-border bg-card shadow-lg">
+                <div class="border-b border-border/60 px-6 py-5">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Session conflict</p>
+                    <h2 class="mt-2 text-xl font-semibold tracking-tight text-foreground">A session is already active</h2>
+                    <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        Currently Logged in as:
+                        <span class="font-semibold text-foreground" x-text="sessionConflictUsername"></span>
+                    </p>
+                </div>
+
+                <div class="space-y-4 px-6 py-5">
+                    <button
+                        type="button"
+                        @click="continueToLogin()"
+                        :disabled="isRevokingSession"
+                        class="inline-flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <span x-show="!isRevokingSession">Continue to Login</span>
+                        <span x-show="isRevokingSession">Revoking session...</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="continueAsActiveUser()"
+                        :disabled="isRevokingSession"
+                        class="inline-flex h-10 w-full items-center justify-center rounded-md brand-gradient-bg px-4 text-sm font-medium text-[hsl(var(--on-brand))] shadow-soft transition-base hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <span>Continue as </span>
+                        <span class="ml-1" x-text="sessionConflictUsername"></span>
+                    </button>
+
+                    <p x-show="sessionConflictError" x-text="sessionConflictError" class="text-xs text-failed"></p>
+                </div>
             </div>
         </div>
     </section>
@@ -259,6 +345,100 @@
 
 @push('scripts')
     <script>
+        function authLoginPageData({
+            initialLoginMode,
+            sessionStatusUrl,
+            revokeSessionUrl,
+            homeUrl,
+        }) {
+            return {
+                loginMode: initialLoginMode,
+                sessionStatusUrl,
+                revokeSessionUrl,
+                homeUrl,
+                sessionConflictVisible: false,
+                sessionConflictUsername: '',
+                sessionConflictError: '',
+                sessionCheckPending: false,
+                isRevokingSession: false,
+
+                init() {
+                    this.initSessionConflict();
+                },
+
+                isLoginBlocked() {
+                    return this.sessionCheckPending || this.sessionConflictVisible || this.isRevokingSession;
+                },
+
+                async initSessionConflict() {
+                    this.sessionCheckPending = true;
+                    this.sessionConflictError = '';
+
+                    try {
+                        const response = await fetch(this.sessionStatusUrl, {
+                            headers: {
+                                Accept: 'application/json',
+                            },
+                            credentials: 'same-origin',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Could not verify your current session.');
+                        }
+
+                        const payload = await response.json();
+
+                        if (payload.active) {
+                            this.sessionConflictUsername = payload.username || 'Current user';
+                            this.sessionConflictVisible = true;
+                        }
+                    } catch (error) {
+                        this.sessionConflictError = error.message || 'Could not verify your current session.';
+                    } finally {
+                        this.sessionCheckPending = false;
+                    }
+                },
+
+                continueAsActiveUser() {
+                    window.location.href = this.homeUrl;
+                },
+
+                async continueToLogin() {
+                    this.isRevokingSession = true;
+                    this.sessionConflictError = '';
+
+                    try {
+                        const csrfToken = document.querySelector('#loginForm input[name="_token"]')?.value;
+                        const response = await fetch(this.revokeSessionUrl, {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': csrfToken || '',
+                            },
+                            credentials: 'same-origin',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Could not revoke the active session.');
+                        }
+
+                        const payload = await response.json();
+                        const csrfInput = document.querySelector('#loginForm input[name="_token"]');
+                        if (csrfInput && payload.csrfToken) {
+                            csrfInput.value = payload.csrfToken;
+                        }
+
+                        this.sessionConflictVisible = false;
+                        this.sessionConflictUsername = '';
+                    } catch (error) {
+                        this.sessionConflictError = error.message || 'Could not revoke the active session.';
+                    } finally {
+                        this.isRevokingSession = false;
+                    }
+                },
+            };
+        }
+
         function themeToggleData() {
             return {
                 theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
@@ -273,6 +453,8 @@
         const toggleButton = document.getElementById('togglePassword');
         const eyeOpen = document.getElementById('eyeOpen');
         const eyeClosed = document.getElementById('eyeClosed');
+        const loginForm = document.getElementById('loginForm');
+        const loginSubmitButton = document.getElementById('loginSubmitButton');
         const registerModal = document.getElementById('registerModal');
 
         if (toggleButton && passwordInput && eyeOpen && eyeClosed) {
@@ -282,6 +464,43 @@
                 eyeOpen.classList.toggle('hidden', !isPassword);
                 eyeClosed.classList.toggle('hidden', isPassword);
                 toggleButton.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            });
+        }
+
+        if (loginForm && loginSubmitButton) {
+            loginForm.addEventListener('submit', function (event) {
+                if (loginForm.hasAttribute('x-data')) {
+                    // No-op placeholder so Alpine can mount before submit guard runs.
+                }
+
+                const alpineState = Alpine.$data(document.querySelector('section[x-data]'));
+                if (alpineState?.isLoginBlocked && alpineState.isLoginBlocked()) {
+                    event.preventDefault();
+                    return;
+                }
+
+                if (loginForm.dataset.submitting === 'true') {
+                    event.preventDefault();
+                    return;
+                }
+
+                loginForm.dataset.submitting = 'true';
+                loginSubmitButton.disabled = true;
+                loginSubmitButton.textContent = 'Signing in...';
+                loginSubmitButton.classList.add('opacity-70', 'cursor-not-allowed');
+
+                if (passwordInput) {
+                    passwordInput.readOnly = true;
+                }
+
+                const usernameInput = document.getElementById('loginusername');
+                if (usernameInput) {
+                    usernameInput.readOnly = true;
+                }
+
+                if (toggleButton) {
+                    toggleButton.disabled = true;
+                }
             });
         }
 

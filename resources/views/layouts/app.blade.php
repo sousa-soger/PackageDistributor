@@ -1,7 +1,7 @@
 <x-head-html/>
 
     <body class="min-h-screen antialiased" style="background-color: hsl(var(--background)); color: hsl(var(--foreground));">
-        <div class="flex min-h-screen w-full" style="background-image: var(--gradient-surface);">
+        <div class="app-shell-surface flex min-h-screen w-full">
 
             <x-sidebar />
 

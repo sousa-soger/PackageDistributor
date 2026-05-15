@@ -254,7 +254,9 @@
         },
 
         memberLabel(repo) {
-          const count = Number(repo?.memberCount ?? 0);
+          const members = Number(repo?.memberCount ?? 0);
+          const ownerOffset = repo?.ownerName ? 1 : 0;
+          const count = members + ownerOffset;
           return `${count} member${count === 1 ? '' : 's'}`;
         },
 

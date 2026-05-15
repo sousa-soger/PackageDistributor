@@ -23,14 +23,15 @@
 
             <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="max-w-3xl">
+                    <!--
                     <div
                         class="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
                         <span class="status-dot bg-success animate-pulse-soft"></span>
                         Deployment workspace ready
                     </div>
-
+                    -->
                     <h1 class="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                        Welcome back, <span class="brand-gradient-text">{{ $displayName }}</span>
+                        Welcome, <span class="brand-gradient-text">{{ $displayName }}</span>
                     </h1>
 
                     <p class="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
@@ -48,18 +49,20 @@
                             <path d="M12 5v14"></path>
                             <path d="M5 12h14"></path>
                         </svg>
-                        Create Package
+                        <p class="py-10">Create Package</p>
                     </a>
 
                     <a href="{{ route('repositories') }}"
                         class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M15 6a9 9 0 0 0-9 9V3"></path>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-git-branch h-4 w-4">
+                            <line x1="6" x2="6" y1="3" y2="15"></line>
                             <circle cx="18" cy="6" r="3"></circle>
                             <circle cx="6" cy="18" r="3"></circle>
+                            <path d="M18 9a9 9 0 0 1-9 9"></path>
                         </svg>
+                        <span>
                         Connect Repository
                     </a>
                 </div>
@@ -300,6 +303,7 @@
                 </p>
 
                 <div class="mt-5 space-y-2">
+                    <!--
                     <a href="{{ route('projects') }}"
                         class="flex items-center justify-between rounded-xl border border-border/70 bg-background px-4 py-3 text-sm font-medium transition-base hover:bg-secondary/50">
                         <span>Projects</span>
@@ -309,7 +313,7 @@
                             <path d="m9 18 6-6-6-6"></path>
                         </svg>
                     </a>
-
+                -->
                     <a href="{{ route('team') }}"
                         class="flex items-center justify-between rounded-xl border border-border/70 bg-background px-4 py-3 text-sm font-medium transition-base hover:bg-secondary/50">
                         <span>Team</span>

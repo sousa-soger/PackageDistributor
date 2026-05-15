@@ -10,12 +10,29 @@
         (() => {
             const root = document.documentElement;
             const storageKey = 'theme';
-            const disableTransitionsClass = 'theme-switching';
+            const themeSwitchClass = 'theme-switching';
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
             const resolveDarkMode = (theme) => theme === 'dark' || (theme === 'system' && mediaQuery.matches);
+            const getThemeFadeDuration = () => {
+                const duration = getComputedStyle(root).getPropertyValue('--theme-fade-duration').trim();
+
+                if (!duration) {
+                    return 240;
+                }
+
+                if (duration.endsWith('ms')) {
+                    return Number.parseFloat(duration);
+                }
+
+                if (duration.endsWith('s')) {
+                    return Number.parseFloat(duration) * 1000;
+                }
+
+                return Number.parseFloat(duration) || 240;
+            };
 
             window.applyThemePreference = (theme, persist = true) => {
-                root.classList.add(disableTransitionsClass);
+                root.classList.add(themeSwitchClass);
                 root.classList.toggle('dark', resolveDarkMode(theme));
 
                 if (persist) {
@@ -26,11 +43,9 @@
                     }
                 }
 
-                window.requestAnimationFrame(() => {
-                    window.requestAnimationFrame(() => {
-                        root.classList.remove(disableTransitionsClass);
-                    });
-                });
+                window.setTimeout(() => {
+                    root.classList.remove(themeSwitchClass);
+                }, getThemeFadeDuration());
             };
 
             root.classList.toggle('dark', resolveDarkMode(localStorage.getItem(storageKey) || 'system'));

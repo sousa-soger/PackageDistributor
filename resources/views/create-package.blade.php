@@ -61,7 +61,7 @@
 
                 <section class="section-card transition-all duration-300" x-show="sourceMode === 'repository'"
                     id="repository-section"
-                    :class="repoSectionHighlighted ? 'ring-1 ring-offset-1 ring-primary/60 shadow-[0_0_0_4px_hsl(var(--primary)/0.14)] scale-[1.005] animate-section-flash' : ''">
+                    :class="repoSectionHighlighted ? 'ring-1 ring-primary/60 shadow-[0_0_0_4px_hsl(var(--primary)/0.14)] scale-[1.005] animate-section-flash' : ''">
                     <div class="mb-5 flex items-start gap-3">
                         <div
                             class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg brand-soft-bg text-sm font-semibold text-primary">
@@ -146,11 +146,24 @@
 
                     <template x-if="repositories.length === 0">
                         <a href="{{ route('repositories') }}">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info h-4 w-4">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" x2="12" y1="16" y2="12"></line>
+                                    <line x1="12" x2="12.01" y1="8" y2="8"></line>
+                                </svg>
+                                <p class="text-muted-foreground">
+                                    No repository found for your account
+                                </p>
+                            </div>
                             <div
-                                class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
-                                Connect a GitHub, GitLab, or local repository, or ask the owner to invite you as a
-                                Maintainer or
-                                Package Creator.
+                                class="mt-4 rounded-md border border-amber-200 bg-amber-500/10 hover:bg-amber-500/18 px-4 py-3 text-sm text-amber-600 flex justify-between items-center">
+                                <span>
+                                    Register and connect a repository or ask the owner to invite you as a Maintainer or Package Creator.
+                                </span>
+                                <span class="underline cursor-pointer">
+                                    Manage repositories 
+                                </span>
                             </div>
                         </a>
                     </template>

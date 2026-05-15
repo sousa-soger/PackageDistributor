@@ -198,9 +198,9 @@
                                             <th class="px-5 py-2.5 text-left font-medium">Env</th>
                                             <th class="px-5 py-2.5 text-left font-medium">Size</th>
                                             <th class="px-5 py-2.5 text-left font-medium">Created by</th>
-                                            <th class="px-5 py-2.5 text-left font-medium">Created</th>
+                                            {{-- <th class="px-5 py-2.5 text-left font-medium">Created</th> --}}
                                             <th class="px-5 py-2.5 text-left font-medium">Download</th>
-                                            <th class="px-5 py-2.5 text-right font-medium">Actions</th>
+                                            <th class="px-5 py-2.5 text-center font-medium">Actions</th>
                                         </tr>
                                     </thead>
 
@@ -220,21 +220,27 @@
                                         @endphp
 
                                         <tbody x-show="packageMatches({{ $package->id }})" x-cloak
+                                            x-data="{ confirmDelete: false }"
                                             class="border-t border-border/60 first:border-t-0">
-                                            <tr @click="togglePackage({{ $package->id }})"
+                                            <tr x-show="!confirmDelete" x-cloak
+                                                @click="togglePackage({{ $package->id }})"
                                                 class="cursor-pointer transition-base hover:bg-secondary/40">
                                                 <td class="px-5 py-3">
-                                                    <div class="max-w-xs truncate font-mono text-[11px] text-foreground/80"
+                                                    <div class=" max-w-xs truncate font-mono text-[14px] text-foreground/80"
                                                         title="{{ $package->package_name }}">
                                                         {{ $package->package_name }}
+                                                    </div>
+                                                    <div class="whitespace-nowrap text-[10px] text-muted-foreground"
+                                                        title="{{ $package->created_at?->format('d M Y, h:i A') }}">
+                                                        {{ $package->created_at?->diffForHumans() ?? '-' }}
                                                     </div>
                                                 </td>
 
                                                 <td class="px-5 py-3">
                                                     <div class="font-mono text-xs">
-                                                        {{ $package->base_version }}
+                                                        <span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold tracking-wider bg-failed/10 text-failed border-failed/30">{{ $package->base_version }}</span>
                                                         <span class="text-muted-foreground">&rarr;</span>
-                                                        {{ $package->head_version }}
+                                                        <span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold tracking-wider bg-success/10 text-success border-success/30">{{ $package->head_version }}</span>
                                                     </div>
                                                 </td>
 
@@ -268,12 +274,12 @@
                                                         <span class="truncate text-xs">{{ $creatorName }}</span>
                                                     </div>
                                                 </td>
-
+                                                <!--
                                                 <td class="whitespace-nowrap px-5 py-3 text-[11px] text-muted-foreground"
                                                     title="{{ $package->created_at?->format('d M Y, h:i A') }}">
                                                     {{ $package->created_at?->diffForHumans() ?? '-' }}
                                                 </td>
-
+                                                -->
                                                 <td class="px-5 py-3">
                                                     @if ($isPackageReady)
                                                         <a href="{{ route('download.archive', ['folder' => $package->package_name, 'format' => '.zip']) }}"
@@ -304,6 +310,37 @@
                                                             zip
                                                         </button>
                                                     @endif
+
+                                                    @if ($isPackageReady)
+                                                        <a href="{{ route('download.archive', ['folder' => $package->package_name, 'format' => '.tar.gz']) }}"
+                                                            @click.stop
+                                                            class="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-running/30 bg-card px-2.5 text-xs font-semibold text-running transition-colors hover:bg-running/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                            title="Download tar.gz">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                                class="lucide lucide-download h-3.5 w-3.5">
+                                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                                <polyline points="7 10 12 15 17 10"></polyline>
+                                                                <line x1="12" x2="12" y1="15" y2="3"></line>
+                                                            </svg>
+                                                            tar.gz
+                                                        </a>
+                                                    @else
+                                                        <button type="button" disabled
+                                                            class="inline-flex h-8 cursor-not-allowed items-center justify-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-muted-foreground opacity-60">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                                class="lucide lucide-download h-3.5 w-3.5">
+                                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                                <polyline points="7 10 12 15 17 10"></polyline>
+                                                                <line x1="12" x2="12" y1="15" y2="3"></line>
+                                                            </svg>
+                                                            tar.gz
+                                                        </button>
+                                                    @endif
+
                                                 </td>
 
                                                 <td class="px-5 py-3">
@@ -325,7 +362,7 @@
 
                                                         @if ($canDeletePackage)
                                                             <button type="button"
-                                                                @click.stop="deletePackage({{ $package->id }}, @js($package->package_name))"
+                                                                @click.stop="confirmDelete = true; expandedPackageId = null"
                                                                 class="inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium text-failed transition-colors hover:bg-failed/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                                                 aria-label="Delete package"
                                                                 title="Delete package">
@@ -356,30 +393,74 @@
                                                 </td>
                                             </tr>
 
-                                            <tr x-show="isPackageExpanded({{ $package->id }})" x-cloak class="border-t border-border/50 bg-secondary/30">
+                                            <tr x-show="confirmDelete" x-cloak class="border-t border-failed/20 bg-failed/5">
+                                                <td colspan="8" class="px-5 py-3">
+                                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                            <div class="text-sm text-foreground animate-fade-in">
+                                                                Remove <span class="font-semibold">{{ $package->package_name }}</span> permanently?
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <button type="button" @click.stop="confirmDelete = false"
+                                                                    class="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-base hover:bg-secondary">
+                                                                    Cancel
+                                                                </button>
+                                                                <button type="button"
+                                                                    @click.stop="deletePackage({{ $package->id }}, @js($package->package_name))"
+                                                                    class="inline-flex items-center justify-center rounded-lg border border-failed/40 px-3 py-1.5 text-xs font-semibold text-failed transition-base hover:bg-failed/10">
+                                                                    Confirm remove
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr x-show="!confirmDelete && isPackageExpanded({{ $package->id }})" x-cloak class="border-t border-border/50 bg-secondary/30">
                                                 <td colspan="8" class="px-6 py-5">
                                                     <div class="grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_auto]">
                                                         <div class="min-w-0">
                                                             <div class="text-sm">
-                                                                <span class="font-bold">Package:</span>
-                                                                <span class="ml-1 font-mono text-[11px] font-semibold">{{ $package->package_name }}</span>
+                                                                <span class="text-lg font-bold">{{ $package->package_name }}</span>
                                                             </div>
 
                                                             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                <span class="font-medium">zip:</span>
+                                                                <span class="font-semibold">zip:</span>
                                                                 <span>Size: {{ $package->zip_size ?? 'N/A' }}</span>
                                                                 <span class="opacity-50">|</span>
-                                                                <span class="break-all">SHA256:
-                                                                    <span class="font-mono text-[10px]">{{ $package->zip_sha256 ?? 'N/A' }}</span>
+                                                                <span>
+                                                                    <button type="button"
+                                                                        @click.stop="copyHash(@js($package->zip_sha256 ?? ''), 'zip-{{ $package->id }}')"
+                                                                        class="inline-flex flex-row items-center gap-1 rounded px-0.5 font-mono text-running/70 transition-colors hover:text-running/90"
+                                                                        :title="isHashCopied('zip-{{ $package->id }}') ? 'Copied!' : 'Click to copy SHA256'"
+                                                                    >
+                                                                        SHA256
+                                                                        <svg x-show="!isHashCopied('zip-{{ $package->id }}')" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0">
+                                                                            <path d="M12.5 3A1.5 1.5 0 0 1 14 4.5V6h1.5A1.5 1.5 0 0 1 17 7.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 6 15.5V14H4.5A1.5 1.5 0 0 1 3 12.5v-8A1.5 1.5 0 0 1 4.5 3zm1.5 9.5a1.5 1.5 0 0 1-1.5 1.5H7v1.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5H14zM4.5 4a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5z" />
+                                                                        </svg>
+                                                                        <svg x-show="isHashCopied('zip-{{ $package->id }}')" x-cloak width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;color:var(--color-success)">
+                                                                            <path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                        </svg>
+                                                                    </button>
                                                                 </span>
                                                             </div>
 
                                                             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                <span class="font-medium">tar.gz:</span>
+                                                                <span class="font-semibold">tar.gz:</span>
                                                                 <span>Size: {{ $package->targz_size ?? 'N/A' }}</span>
                                                                 <span class="opacity-50">|</span>
-                                                                <span class="break-all">SHA256:
-                                                                    <span class="font-mono text-[10px]">{{ $package->targz_sha256 ?? 'N/A' }}</span>
+                                                                <span>
+                                                                    <button type="button"
+                                                                        @click.stop="copyHash(@js($package->targz_sha256 ?? ''), 'targz-{{ $package->id }}')"
+                                                                        class="inline-flex flex-row items-center gap-1 rounded px-0.5 font-mono text-running/70 transition-colors hover:text-running/90"
+                                                                        :title="isHashCopied('targz-{{ $package->id }}') ? 'Copied!' : 'Click to copy SHA256'"
+                                                                    >
+                                                                        SHA256
+                                                                        <svg x-show="!isHashCopied('targz-{{ $package->id }}')" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0">
+                                                                            <path d="M12.5 3A1.5 1.5 0 0 1 14 4.5V6h1.5A1.5 1.5 0 0 1 17 7.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 6 15.5V14H4.5A1.5 1.5 0 0 1 3 12.5v-8A1.5 1.5 0 0 1 4.5 3zm1.5 9.5a1.5 1.5 0 0 1-1.5 1.5H7v1.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5H14zM4.5 4a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5z" />
+                                                                        </svg>
+                                                                        <svg x-show="isHashCopied('targz-{{ $package->id }}')" x-cloak width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;color:var(--color-success)">
+                                                                            <path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                        </svg>
+                                                                    </button>
                                                                 </span>
                                                             </div>
 
@@ -423,6 +504,7 @@
                                                             @endif
                                                         </div>
 
+                                                        <!--
                                                         <div class="min-w-[14rem]">
                                                             <h4 class="mb-3 text-sm font-bold text-foreground">Download Package</h4>
                                                             <div class="flex flex-wrap items-center gap-3 lg:flex-col lg:items-stretch">
@@ -457,6 +539,7 @@
                                                                 @endif
                                                             </div>
                                                         </div>
+                                                        -->
                                                     </div>
                                                 </td>
                                             </tr>
@@ -480,6 +563,8 @@
                 repositoryFilter: 'all',
                 creatorFilter: 'all',
                 expandedPackageId: null,
+                copiedHashKey: null,
+                copiedHashTimeout: null,
                 openRepositories: {},
                 repositories: config.repositories || {},
                 packages: config.packages || {},
@@ -541,6 +626,32 @@
 
                 isPackageExpanded(packageId) {
                     return this.expandedPackageId === packageId;
+                },
+
+                isHashCopied(hashKey) {
+                    return this.copiedHashKey === hashKey;
+                },
+
+                async copyHash(text, hashKey) {
+                    const wasCopied = await this.copyToClipboard(text);
+
+                    if (!wasCopied) {
+                        return;
+                    }
+
+                    this.copiedHashKey = hashKey;
+
+                    if (this.copiedHashTimeout) {
+                        clearTimeout(this.copiedHashTimeout);
+                    }
+
+                    this.copiedHashTimeout = setTimeout(() => {
+                        if (this.copiedHashKey === hashKey) {
+                            this.copiedHashKey = null;
+                        }
+
+                        this.copiedHashTimeout = null;
+                    }, 2000);
                 },
 
                 get selectedRepositoryProvider() {
@@ -641,10 +752,6 @@
                 },
 
                 async deletePackage(packageId, packageName) {
-                    if (!confirm(`${packageName} will be permanently deleted. Continue?`)) {
-                        return;
-                    }
-
                     const response = await fetch(this.bulkDeleteUrl, {
                         method: 'DELETE',
                         headers: {
@@ -677,6 +784,57 @@
                             message,
                         },
                     }));
+                },
+
+                async copyToClipboard(text) {
+                    if (!text || text === 'N/A') {
+                        return false;
+                    }
+
+                    try {
+                        await this.writeClipboardText(text);
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'success', message: 'SHA256 hash copied to clipboard.' },
+                        }));
+
+                        return true;
+                    } catch {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'error', message: 'Failed to copy to clipboard.' },
+                        }));
+
+                        return false;
+                    }
+                },
+
+                async writeClipboardText(text) {
+                    if (navigator.clipboard?.writeText) {
+                        try {
+                            await navigator.clipboard.writeText(text);
+
+                            return;
+                        } catch {
+                        }
+                    }
+
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.position = 'fixed';
+                    textarea.style.top = '-9999px';
+                    textarea.style.left = '-9999px';
+
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    textarea.setSelectionRange(0, textarea.value.length);
+
+                    const wasCopied = document.execCommand('copy');
+                    textarea.remove();
+
+                    if (!wasCopied) {
+                        throw new Error('Clipboard copy failed.');
+                    }
                 },
             };
         }
