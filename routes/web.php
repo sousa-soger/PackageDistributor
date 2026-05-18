@@ -11,6 +11,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectInvolvementController;
 use App\Http\Controllers\RepositoryController;
+use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
@@ -119,6 +120,11 @@ Route::middleware('auth')->group(function () {
         ->name('packages.done');
     Route::get('/packages/queue', [PackageController::class, 'queuedPackages'])
         ->name('packages.queue');
+
+    Route::get('/servers', [ServerController::class, 'index'])->name('servers.index');
+    Route::post('/servers', [ServerController::class, 'store'])->name('servers.store');
+    Route::patch('/servers/{server}', [ServerController::class, 'update'])->name('servers.update');
+    Route::delete('/servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 });

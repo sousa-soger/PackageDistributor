@@ -106,6 +106,21 @@
                         <span>Packages</span>
                     </a>
                 </li>
+                {{-- Servers --}}
+                <li>
+                    <a href="{{ route('servers.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group
+                            {{ request()->routeIs('servers.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                        @if(request()->routeIs('servers.*'))
+                            <span class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full brand-gradient-bg"></span>
+                        @endif
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                        <span>Servers</span>
+                    </a>
+                </li>
                 {{-- Settings --}}
                 <li>
                     <a href="{{ route('settings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200 group

@@ -58,4 +58,9 @@ class Project extends Model
     {
         return $this->hasMany(DeploymentJob::class);
     }
+
+    public function servers(): HasMany
+    {
+        return $this->hasMany(Server::class);
+    }
 }

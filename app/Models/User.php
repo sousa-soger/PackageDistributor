@@ -123,6 +123,11 @@ class User extends Authenticatable
         return $this->hasMany(DeploymentJob::class);
     }
 
+    public function servers(): HasMany
+    {
+        return $this->hasMany(Server::class);
+    }
+
     public function teamRole(?Team $team = null): ?string
     {
         if (! $team) {
